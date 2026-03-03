@@ -19,7 +19,6 @@ export default function WordDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // 編集用のState
   const [editWord, setEditWord] = useState("");
   const [editTranslation, setEditTranslation] = useState("");
   const [editPos, setEditPos] = useState("");
@@ -43,32 +42,41 @@ export default function WordDetail() {
         setEditNotes(data.notes || "");
         setEditExample(data.example_sentence || ""); 
         setEditExampleTranslation(data.example_translation || ""); 
-      } else if (error) {
-        console.error(error);
       }
       setIsLoading(false);
     }
     fetchWord();
   }, [wordId]);
 
+  // 🌟 音声再生関数の強化版
   const speak = useCallback((text: string, isEnglish: boolean = false) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     
+    // 1. 以前の再生を強制キャンセルし、フリーズ対策でresume()を呼ぶ
     window.speechSynthesis.cancel();
+    window.speechSynthesis.resume(); 
+
     const utterance = new SpeechSynthesisUtterance(text);
     
     if (isEnglish) {
       utterance.lang = "en-US";
     } else {
+      // 🌟 言語マップを拡充（ポルトガル語やロシア語なども追加可能）
       const langMap: Record<string, string> = {
         it: "it-IT",
         fr: "fr-FR",
         es: "es-ES",
         de: "de-DE",
+        pt: "pt-PT", // ポルトガル語を追加
         ja: "ja-JP",
         ko: "ko-KR",
+        ru: "ru-RU",
+        zh: "zh-CN",
+        en: "en-US",
       };
-      utterance.lang = langMap[vocab.language_code] || vocab.language_code;
+      
+      const code = vocab?.language_code;
+      utterance.lang = langMap[code] || (code ? `${code}-${code.toUpperCase()}` : "en-US");
     }
     
     utterance.rate = 0.9;
@@ -141,7 +149,6 @@ export default function WordDetail() {
 
           {!isEditing ? (
             <div className="space-y-8 sm:space-y-10 mt-6">
-              {/* 単語セクション */}
               <div className="text-center relative group">
                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3">Word</p>
                 <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
@@ -149,18 +156,15 @@ export default function WordDetail() {
                   <button 
                     onClick={() => speak(vocab.word)}
                     className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-full flex items-center justify-center text-lg sm:text-xl hover:bg-blue-50 hover:scale-110 transition-all shadow-sm shrink-0"
-                    title="Play Audio"
                   >🔊</button>
                 </div>
               </div>
 
-              {/* 意味セクション */}
               <div className="text-center border-t-2 border-gray-50 pt-8 sm:pt-10">
                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3">Meaning</p>
                 <h2 className="text-3xl sm:text-4xl font-bold text-blue-600">{vocab.translation}</h2>
               </div>
 
-              {/* 例文セクション */}
               {(vocab.example_sentence || vocab.example_translation) && (
                 <div className="bg-blue-50 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-blue-100 relative group">
                   <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.3em] mb-4 text-center">Context & Example</p>
@@ -183,7 +187,6 @@ export default function WordDetail() {
                 </div>
               )}
 
-              {/* 🛠 修正: スマホ(sm未満)では縦並びに、PC(sm以上)では横並びにする */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t-2 border-gray-50 pt-8 sm:pt-10">
                 <div className="bg-gray-50 p-5 sm:p-6 rounded-3xl border border-gray-100 flex flex-col items-center sm:items-start text-center sm:text-left">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Part of Speech</p>
@@ -204,7 +207,6 @@ export default function WordDetail() {
                 </div>
               </div>
 
-              {/* ノート */}
               {vocab.notes && (
                 <div className="bg-gray-50 p-6 sm:p-8 rounded-3xl border-2 border-gray-100">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Personal Notes</p>
@@ -212,14 +214,12 @@ export default function WordDetail() {
                 </div>
               )}
 
-              {/* アクションボタン */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 sm:pt-10">
                 <button onClick={() => setIsEditing(true)} className="flex-1 bg-gray-900 text-white font-black py-4 sm:py-5 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl">✏️ Edit Details</button>
                 <button onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto px-8 bg-red-50 text-red-500 font-black py-4 sm:py-5 rounded-2xl sm:rounded-[2rem] hover:bg-red-100 transition-all">🗑️ Delete</button>
               </div>
             </div>
           ) : (
-            // ✏️ 編集モード
             <div className="space-y-6 mt-6">
               <h2 className="text-2xl sm:text-3xl font-black mb-6 sm:mb-8 tracking-tight">Edit Word</h2>
               <div className="space-y-4">
@@ -231,8 +231,6 @@ export default function WordDetail() {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning</label>
                   <input type="text" value={editTranslation} onChange={(e) => setEditTranslation(e.target.value)} className="w-full p-4 sm:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl sm:rounded-3xl font-bold text-lg sm:text-xl outline-none focus:border-blue-500 transition-all" />
                 </div>
-                
-                {/* 🛠 修正: スマホでは縦並び、PCでは横並びに。 (L2)(EN)表記も削除 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Example Sentence</label>
@@ -243,8 +241,6 @@ export default function WordDetail() {
                     <textarea value={editExampleTranslation} onChange={(e) => setEditExampleTranslation(e.target.value)} rows={3} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl sm:rounded-3xl font-medium outline-none focus:border-blue-500 transition-all" />
                   </div>
                 </div>
-                
-                {/* 🛠 修正: Cancelボタンが卵型になるのを防ぐため flex の比率と角丸を調整 */}
                 <div className="flex gap-3 sm:gap-4 pt-6">
                   <button onClick={() => setIsEditing(false)} className="w-1/3 bg-gray-100 text-gray-500 font-black py-4 sm:py-5 rounded-2xl sm:rounded-[2rem]">Cancel</button>
                   <button onClick={handleUpdate} className="flex-1 bg-blue-600 text-white font-black py-4 sm:py-5 rounded-2xl sm:rounded-[2rem] px-4 sm:px-10 shadow-xl shadow-blue-100">Save Changes</button>

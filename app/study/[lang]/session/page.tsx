@@ -24,16 +24,34 @@ export default function StudySession() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
+  // 🌟 強化版音声再生エンジン（全ページ共通の最強仕様）
   const speak = useCallback((text: string, isEnglish: boolean = false) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
+    
+    // フリーズ対策: キャンセル後に強制レジューム
     window.speechSynthesis.cancel();
+    window.speechSynthesis.resume(); 
+
     const utterance = new SpeechSynthesisUtterance(text);
+    
     if (isEnglish) {
       utterance.lang = "en-US";
     } else {
-      const langMap: Record<string, string> = { it: "it-IT", fr: "fr-FR", es: "es-ES", de: "de-DE", ja: "ja-JP", ko: "ko-KR" };
-      utterance.lang = langMap[langCode] || langCode;
+      const langMap: Record<string, string> = { 
+        it: "it-IT", 
+        fr: "fr-FR", 
+        es: "es-ES", 
+        de: "de-DE", 
+        pt: "pt-PT", // ポルトガル語追加
+        ja: "ja-JP", 
+        ko: "ko-KR",
+        ru: "ru-RU",
+        zh: "zh-CN"
+      };
+      // マップにない場合は自動生成（例：pl -> pl-PL）
+      utterance.lang = langMap[langCode] || `${langCode}-${langCode.toUpperCase()}`;
     }
+    
     utterance.rate = 0.9;
     window.speechSynthesis.speak(utterance);
   }, [langCode]);
@@ -68,6 +86,7 @@ export default function StudySession() {
       }));
       setWords(preparedWords);
       const firstWord = preparedWords[0];
+      // 🌟 最初の単語を読み上げ
       setTimeout(() => speak(firstWord.isReversed ? firstWord.translation : firstWord.word, firstWord.isReversed), 500);
     } else {
       setWords([]);
@@ -90,10 +109,7 @@ export default function StudySession() {
       if (quality === 3) interval = Math.max(1, Math.round(interval * 1.2));
       if (quality === 5) interval = Math.round(interval * 1.3);
       
-      if (quality >= 4) {
-        mistake_count = 0;
-      }
-      
+      if (quality >= 4) mistake_count = 0;
       repetition += 1;
     }
     
@@ -107,14 +123,13 @@ export default function StudySession() {
     const currentWord = words[currentIndex];
     const newStats = calculateNextReview(quality, currentWord);
     const nextReviewDate = new Date();
+    
     if (newStats.interval === 0) {
       nextReviewDate.setMinutes(nextReviewDate.getMinutes() + 10);
     } else {
       nextReviewDate.setDate(nextReviewDate.getDate() + newStats.interval);
     }
     
-    // 🌟 ここを修正！: Good(4) または Easy(5) を選んだ時だけ true (Mastered) にする！
-    // 以前は `newStats.interval > 0` だったので Hard でも Mastered になっていました。
     const isRemembered = quality >= 4;
     
     await supabase.from("vocab").update({ 
@@ -132,12 +147,14 @@ export default function StudySession() {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
       const nextWord = words[nextIdx];
+      // 🌟 次の単語を読み上げ
       setTimeout(() => speak(nextWord.isReversed ? nextWord.translation : nextWord.word, nextWord.isReversed), 300);
     } else {
       setIsFinished(true);
     }
   };
 
+  // 🌟 カードを裏返した時に「答え」を読み上げる
   useEffect(() => {
     if (isFlipped && words[currentIndex]) {
       const currentWord = words[currentIndex];
@@ -223,25 +240,18 @@ export default function StudySession() {
         <div className="relative w-full max-w-sm h-[380px] [perspective:1000px] mb-8" onClick={() => setIsFlipped(!isFlipped)}>
           <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
             
-            {/* FRONT Side */}
             <div className="absolute inset-0 bg-white border-4 border-gray-100 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden]">
               <button onClick={(e) => { e.stopPropagation(); speak(frontText, currentWord.isReversed); }} className="absolute top-6 right-6 w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center hover:bg-blue-50 transition-colors text-xl">🔊</button>
-              
               <span className="absolute top-10 text-[10px] font-black text-gray-300 uppercase tracking-widest">
                 {currentWord.isReversed ? "Translate" : "Question"}
               </span>
-              
               <h2 className="text-4xl md:text-5xl font-black text-gray-900 text-center leading-tight tracking-tight px-4">{frontText}</h2>
-              
               <p className="absolute bottom-10 text-blue-400 font-bold text-[10px] uppercase tracking-widest animate-pulse italic">Tap to flip</p>
             </div>
 
-            {/* BACK Side */}
             <div className="absolute inset-0 bg-blue-600 border-4 border-blue-400 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden] [transform:rotateY(180deg)] text-white text-center">
               <button onClick={(e) => { e.stopPropagation(); speak(backText, !currentWord.isReversed); }} className="absolute top-6 right-6 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-xl">🔊</button>
-              
               <span className="absolute top-10 text-[10px] font-black opacity-50 uppercase tracking-widest">Answer</span>
-              
               <div className="flex flex-col items-center justify-center w-full">
                 <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight mb-6">{backText}</h2>
                 {currentWord.example_sentence && (
