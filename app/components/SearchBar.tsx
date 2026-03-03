@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // 🌟 画面移動の魔法を追加！
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,6 +10,7 @@ const supabase = createClient(
 );
 
 export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
+  const router = useRouter(); // 🌟 これも追加！
   const [languages, setLanguages] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState(forcedLang || "all");
   const [query, setQuery] = useState("");
@@ -28,7 +30,6 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     if (forcedLang) setSelectedLang(forcedLang);
   }, [forcedLang]);
 
-  // 🌟 現在の言語情報を取得（表示用）
   const currentLangData = languages.find(l => l.code === selectedLang);
 
   const executeSearch = async (searchQuery: string) => {
@@ -38,7 +39,6 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
       return;
     }
 
-    // 🌟 ここが「両方通行」の正体！ Word も Translation も両方検索しています
     let dbQuery = supabase
       .from("vocab")
       .select("*")
@@ -56,6 +56,7 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     setIsOpen(true);
   };
 
+  // 🌟 文字を打った時の自動検索（そのまま維持！）
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.trim()) executeSearch(query);
@@ -64,9 +65,14 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     return () => clearTimeout(timer);
   }, [query, selectedLang]);
 
-  const handleManualSearch = async (e?: React.FormEvent) => {
+  // 🌟 ここを変更！：Enterや虫眼鏡を押したら、検索ページへジャンプ！
+  const handleManualSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    await executeSearch(query);
+    if (!query.trim()) return;
+    
+    // サジェストの小窓を閉じて、検索結果ページへ飛ぶ
+    setIsOpen(false);
+    router.push(`/search?q=${encodeURIComponent(query)}&lang=${selectedLang}`);
   };
 
   useEffect(() => {
@@ -106,7 +112,6 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
         <div className="flex-1 flex items-center px-4">
           <input
             type="text"
-            // 🌟 プレースホルダーを「イタリア語 または 英語で検索」のように分かりやすくしました
             placeholder={
               forcedLang 
               ? `Search ${currentLangData?.name || ""} or English...` 
@@ -131,7 +136,6 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
                 <div className="text-2xl opacity-40 group-hover:opacity-100 transition-opacity">🔍</div>
                 <div>
                   <p className="text-lg font-black text-gray-900 group-hover:text-blue-600">
-                    {/* 🌟 検索語が翻訳(英語)にヒットした場合でも、単語が見やすいように表示 */}
                     {vocab.word} 
                   </p>
                   <p className="text-sm font-medium text-gray-500">
