@@ -17,7 +17,7 @@ export default function Dashboard() {
   const [totalReviews, setTotalReviews] = useState(0);
   const [vocabStats, setVocabStats] = useState<any[]>([]);
   const [heatmapValues, setHeatmapValues] = useState<any[]>([]);
-  const [streak, setStreak] = useState(0); // 🌟 新規追加：連続学習日数
+  const [streak, setStreak] = useState(0); 
   const [isMounted, setIsMounted] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -34,7 +34,6 @@ export default function Dashboard() {
       const loadedVocab = allVocab || [];
       setTotalWords(loadedVocab.length);
 
-      // ヒートマップ（草カレンダー）のデータ計算
       const counts: { [key: string]: number } = {};
       loadedVocab.forEach((word) => {
         const dateStr = word.last_reviewed || word.created_at;
@@ -50,7 +49,6 @@ export default function Dashboard() {
       }));
       setHeatmapValues(calculatedHeatmap);
 
-      // 🌟 Streak（連続学習日数）の計算
       let currentStreak = 0;
       const now = new Date();
       const todayStr = now.toISOString().split("T")[0];
@@ -62,7 +60,6 @@ export default function Dashboard() {
       let checkDate = new Date(now);
       
       if (counts[todayStr]) {
-        // 今日すでに勉強している場合
         while (true) {
           const dStr = checkDate.toISOString().split("T")[0];
           if (counts[dStr] && counts[dStr] > 0) {
@@ -71,7 +68,6 @@ export default function Dashboard() {
           } else break;
         }
       } else if (counts[yesterdayStr]) {
-        // 今日はまだだけど、昨日までは勉強していた場合（記録は継続中）
         checkDate = yesterday;
         while (true) {
           const dStr = checkDate.toISOString().split("T")[0];
@@ -81,7 +77,6 @@ export default function Dashboard() {
           } else break;
         }
       } else {
-        // 途切れてしまった場合
         currentStreak = 0;
       }
       setStreak(currentStreak);
@@ -200,13 +195,16 @@ export default function Dashboard() {
            </div>
 
            <div className="w-full md:w-1/3 flex flex-col gap-4 justify-center">
-              <div className="bg-blue-600 rounded-3xl p-8 text-white shadow-xl shadow-blue-100 transition-all hover:scale-[1.02]">
-                 <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2 leading-none">Review Today</p>
-                 <p className="text-5xl font-black leading-none">{totalReviews}</p>
-                 <p className="text-sm mt-4 font-medium italic opacity-90">Ready for your daily challenge?</p>
-              </div>
+              {/* 🛠 修正: Link で囲ってクリックできるようにしました */}
+              <Link href="/history" className="block group">
+                <div className="bg-blue-600 rounded-3xl p-8 text-white shadow-xl shadow-blue-100 transition-all group-hover:scale-[1.02] group-hover:bg-blue-700 active:scale-95">
+                   <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2 leading-none">Review Today</p>
+                   <p className="text-5xl font-black leading-none">{totalReviews}</p>
+                   <p className="text-sm mt-4 font-medium italic opacity-90">Ready for your daily challenge?</p>
+                   <p className="text-[10px] mt-3 font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">Click to see history →</p>
+                </div>
+              </Link>
 
-              {/* 🌟 新規追加：Streak カード */}
               <div className="bg-orange-50 rounded-3xl p-6 border-2 border-orange-100 flex justify-between items-center group transition-colors hover:bg-orange-100">
                  <span className="text-orange-600 font-bold uppercase text-xs tracking-widest flex items-center gap-2">
                    <span className="text-xl">🔥</span> Day Streak
