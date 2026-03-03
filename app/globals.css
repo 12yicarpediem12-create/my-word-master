@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- ヒートマップ・最終安定版 --- */
+
+.heatmap-container, .overflow-visible {
+  width: 100% !important;
+  padding: 20px 10px 10px 45px !important; 
+  display: block !important;
+}
+
+.react-calendar-heatmap {
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+/* 1. 曜日のラベル：白枠内に収まり、マス目に密着 */
+.react-calendar-heatmap .react-calendar-heatmap-weekday-label {
+  font-size: 8px !important;
+  fill: #9ca3af !important;
+  font-weight: 600 !important;
+  transform: translateX(-28px) !important;
+}
+
+/* 2. 月のラベル：横移動をリセットし、縦の位置だけ調整 */
+.react-calendar-heatmap .react-calendar-heatmap-month-label {
+  font-size: 9px !important;
+  fill: #9ca3af !important;
+  font-weight: 600 !important;
+  transform: translateY(-10px) !important;
+  text-anchor: start !important;
+}
+
+/* 3. マス目の形状 */
+.react-calendar-heatmap rect {
+  rx: 2.2; ry: 2.2;
+  stroke: none;
+}
+
+/* カラー設定 */
+.react-calendar-heatmap .color-empty { fill: #f3f4f6 !important; }
+.react-calendar-heatmap .color-scale-1 { fill: #dcfce7 !important; }
+.react-calendar-heatmap .color-scale-2 { fill: #86efac !important; }
+.react-calendar-heatmap .color-scale-3 { fill: #22c55e !important; }
+.react-calendar-heatmap .color-scale-4 { fill: #16a34a !important; }
+
+/* 4. 凡例 */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 15px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+.legend-box { width: 11px; height: 11px; border-radius: 2px; }
+
+/* 5. ツールチップ（黒い吹き出し） */
+.custom-tooltip {
+  background-color: #000 !important;
+  color: #fff !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  opacity: 1 !important;
+  z-index: 9999 !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+}
+
+/* app/globals.css の一番下に追加 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}

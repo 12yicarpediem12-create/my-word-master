@@ -1,0 +1,24 @@
+{
+  "node": {
+    "60f9b0a2265d2b64b780e8f46f2b4eca034a604925": {
+      "workers": {
+        "app/manage/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fyosuke%2Fmy-vocab-app%2Fapp%2Factions%2Fai.ts%22%2C%5B%7B%22id%22%3A%2260f9b0a2265d2b64b780e8f46f2b4eca034a604925%22%2C%22exportedName%22%3A%22generateWordDetails%22%2C%22filename%22%3A%22app%2Factions%2Fai.ts%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/page": {
+          "moduleId": "(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2FUsers%2Fyosuke%2Fmy-vocab-app%2Fapp%2Factions%2Fai.ts%22%2C%5B%7B%22id%22%3A%2260f9b0a2265d2b64b780e8f46f2b4eca034a604925%22%2C%22exportedName%22%3A%22generateWordDetails%22%2C%22filename%22%3A%22app%2Factions%2Fai.ts%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/manage/page": "action-browser",
+        "app/page": "action-browser"
+      },
+      "filename": "app/actions/ai.ts",
+      "exportedName": "generateWordDetails"
+    }
+  },
+  "edge": {},
+  "encryptionKey": "uphIqUXU8n5gkfqiLlgQwggaC7Icf/9azfZsSR+3ByI="
+}

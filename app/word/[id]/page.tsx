@@ -1,0 +1,256 @@
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+export default function WordDetail() {
+  const params = useParams();
+  const router = useRouter();
+  const wordId = params.id as string;
+
+  const [vocab, setVocab] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // 編集用のState
+  const [editWord, setEditWord] = useState("");
+  const [editTranslation, setEditTranslation] = useState("");
+  const [editPos, setEditPos] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editExample, setEditExample] = useState(""); 
+  const [editExampleTranslation, setEditExampleTranslation] = useState(""); 
+
+  useEffect(() => {
+    async function fetchWord() {
+      const { data, error } = await supabase
+        .from("vocab")
+        .select("*")
+        .eq("id", wordId)
+        .single();
+
+      if (data) {
+        setVocab(data);
+        setEditWord(data.word);
+        setEditTranslation(data.translation);
+        setEditPos(data.part_of_speech || "");
+        setEditNotes(data.notes || "");
+        setEditExample(data.example_sentence || ""); 
+        setEditExampleTranslation(data.example_translation || ""); 
+      } else if (error) {
+        console.error(error);
+      }
+      setIsLoading(false);
+    }
+    fetchWord();
+  }, [wordId]);
+
+  // 🌟 音声読み上げ関数
+  const speak = useCallback((text: string, isEnglish: boolean = false) => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    if (isEnglish) {
+      utterance.lang = "en-US";
+    } else {
+      const langMap: Record<string, string> = {
+        it: "it-IT",
+        fr: "fr-FR",
+        es: "es-ES",
+        de: "de-DE",
+        ja: "ja-JP",
+        ko: "ko-KR",
+      };
+      utterance.lang = langMap[vocab.language_code] || vocab.language_code;
+    }
+    
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }, [vocab]);
+
+  const handleToggleRemembered = async () => {
+    const newStatus = !vocab.is_remembered;
+    const { error } = await supabase
+      .from("vocab")
+      .update({ is_remembered: newStatus })
+      .eq("id", wordId);
+
+    if (!error) {
+      setVocab({ ...vocab, is_remembered: newStatus });
+    }
+  };
+
+  const handleUpdate = async () => {
+    const { error } = await supabase
+      .from("vocab")
+      .update({
+        word: editWord,
+        translation: editTranslation,
+        part_of_speech: editPos || null,
+        notes: editNotes || null,
+        example_sentence: editExample || null, 
+        example_translation: editExampleTranslation || null, 
+      })
+      .eq("id", wordId);
+
+    if (!error) {
+      setVocab({
+        ...vocab,
+        word: editWord,
+        translation: editTranslation,
+        part_of_speech: editPos,
+        notes: editNotes,
+        example_sentence: editExample,
+        example_translation: editExampleTranslation,
+      });
+      setIsEditing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this word?")) return;
+    setIsDeleting(true);
+    const { error } = await supabase.from("vocab").delete().eq("id", wordId);
+    if (!error) router.push("/");
+    else setIsDeleting(false);
+  };
+
+  if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400">Loading...</div>;
+  if (!vocab) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-900 underline"><Link href="/">Word Not Found. Go Back</Link></div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+      <nav className="bg-white border-b-2 border-gray-200 px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600">WordMaster.</Link>
+        <button onClick={() => router.back()} className="text-sm font-bold text-gray-500 hover:text-blue-600 flex items-center gap-2"><span>←</span> Back</button>
+      </nav>
+
+      <main className="max-w-2xl mx-auto px-6 py-16">
+        <div className="bg-white rounded-[3rem] p-10 border-2 border-gray-200 shadow-lg relative overflow-hidden">
+          
+          <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black uppercase tracking-widest px-8 py-4 rounded-bl-[2rem] border-b-2 border-l-2 border-blue-100">
+            {vocab.language_code}
+          </div>
+
+          {!isEditing ? (
+            <div className="space-y-10 mt-6">
+              {/* 単語セクション */}
+              <div className="text-center relative group">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3">Word</p>
+                <div className="flex items-center justify-center gap-4">
+                  <h1 className="text-6xl font-black text-gray-900 tracking-tight">{vocab.word}</h1>
+                  <button 
+                    onClick={() => speak(vocab.word)}
+                    className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-xl hover:bg-blue-50 hover:scale-110 transition-all shadow-sm"
+                    title="Play Audio"
+                  >🔊</button>
+                </div>
+              </div>
+
+              {/* 意味セクション */}
+              <div className="text-center border-t-2 border-gray-50 pt-10">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3">Meaning</p>
+                <h2 className="text-4xl font-bold text-blue-600">{vocab.translation}</h2>
+              </div>
+
+              {/* 例文セクション */}
+              {(vocab.example_sentence || vocab.example_translation) && (
+                <div className="bg-blue-50 p-8 rounded-[2.5rem] border-2 border-blue-100 relative group">
+                  <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.3em] mb-4 text-center">Context & Example</p>
+                  {vocab.example_sentence && (
+                    <div className="flex flex-col items-center gap-4">
+                      <p className="text-xl font-bold text-gray-900 text-center leading-relaxed italic">
+                        "{vocab.example_sentence}"
+                      </p>
+                      <button 
+                        onClick={() => speak(vocab.example_sentence)}
+                        className="bg-white/80 p-3 rounded-2xl shadow-sm hover:bg-white transition-all text-sm"
+                      >🔊 Listen to sentence</button>
+                    </div>
+                  )}
+                  {vocab.example_translation && (
+                    <p className="text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">
+                      {vocab.example_translation}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* 品詞・ステータス */}
+              <div className="grid grid-cols-2 gap-4 border-t-2 border-gray-50 pt-10">
+                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Part of Speech</p>
+                  <p className="font-bold text-gray-800 text-lg">{vocab.part_of_speech || "---"}</p>
+                </div>
+                <div className="bg-gray-50 p-6 rounded-3xl border border-gray-100 flex flex-col items-center">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mastery</p>
+                  <button 
+                    onClick={handleToggleRemembered}
+                    className={`w-full py-3 rounded-2xl font-black text-xs transition-all uppercase tracking-widest ${
+                      vocab.is_remembered 
+                        ? "bg-green-500 text-white shadow-lg shadow-green-100" 
+                        : "bg-orange-100 text-orange-600"
+                    }`}
+                  >
+                    {vocab.is_remembered ? "✅ Mastered" : "🔥 Learning"}
+                  </button>
+                </div>
+              </div>
+
+              {/* ノート */}
+              {vocab.notes && (
+                <div className="bg-gray-50 p-8 rounded-3xl border-2 border-gray-100">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Personal Notes</p>
+                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{vocab.notes}</p>
+                </div>
+              )}
+
+              {/* アクションボタン */}
+              <div className="flex gap-4 pt-10">
+                <button onClick={() => setIsEditing(true)} className="flex-1 bg-gray-900 text-white font-black py-5 rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl">✏️ Edit Details</button>
+                <button onClick={handleDelete} disabled={isDeleting} className="px-8 bg-red-50 text-red-500 font-black py-5 rounded-[2rem] hover:bg-red-100 transition-all">🗑️</button>
+              </div>
+            </div>
+          ) : (
+            // ✏️ 編集モード（UIは変更なし、ロジックは保持）
+            <div className="space-y-6 mt-6">
+              <h2 className="text-3xl font-black mb-8 tracking-tight">Edit Word</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
+                  <input type="text" value={editWord} onChange={(e) => setEditWord(e.target.value)} className="w-full p-5 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold text-xl outline-none focus:border-blue-500 transition-all" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning</label>
+                  <input type="text" value={editTranslation} onChange={(e) => setEditTranslation(e.target.value)} className="w-full p-5 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold text-xl outline-none focus:border-blue-500 transition-all" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Example (L2)</label>
+                    <textarea value={editExample} onChange={(e) => setEditExample(e.target.value)} rows={3} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-3xl font-medium outline-none focus:border-blue-500 transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Translation (EN)</label>
+                    <textarea value={editExampleTranslation} onChange={(e) => setEditExampleTranslation(e.target.value)} rows={3} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-3xl font-medium outline-none focus:border-blue-500 transition-all" />
+                  </div>
+                </div>
+                <div className="flex gap-4 pt-6">
+                  <button onClick={() => setIsEditing(false)} className="flex-1 bg-gray-100 text-gray-500 font-black py-5 rounded-[2rem]">Cancel</button>
+                  <button onClick={handleUpdate} className="flex-2 bg-blue-600 text-white font-black py-5 rounded-[2rem] px-10 shadow-xl shadow-blue-100">Save Changes</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
