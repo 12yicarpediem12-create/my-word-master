@@ -186,45 +186,53 @@ export default function StudySession() {
   const previewEasy = calculateNextReview(5, currentWord).interval + "d";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col overflow-hidden select-none">
-      <div className="h-2 bg-gray-200 w-full"><div className="h-full bg-blue-600 transition-all duration-700" style={{ width: `${progress}%` }} /></div>
+    <div className="min-h-screen bg-gray-50 flex flex-col select-none">
+      {/* ProgressBar - Fixed height */}
+      <div className="h-2 bg-gray-200 w-full shrink-0">
+        <div className="h-full bg-blue-600 transition-all duration-700" style={{ width: `${progress}%` }} />
+      </div>
       
-      <main className="flex-1 flex flex-col items-center justify-center p-4 relative">
-        <button onClick={() => setMode(null)} className="absolute top-6 left-6 text-gray-400 hover:text-gray-900 font-black flex items-center gap-2 uppercase text-[10px] tracking-widest"><span>←</span> Back</button>
+      {/* 🛠 修正: justify-center を排除し、上端からのパディング pt-12 で固定 */}
+      <main className="flex-1 flex flex-col items-center justify-start pt-12 pb-10 p-4 relative">
+        
+        <button onClick={() => setMode(null)} className="absolute top-6 left-6 text-gray-400 hover:text-gray-900 font-black flex items-center gap-2 uppercase text-[10px] tracking-widest">
+          <span>←</span> Back
+        </button>
 
-        <div className="text-center mb-4">
+        {/* Status Area - Fixed Height to prevent shifting */}
+        <div className="text-center h-16 mb-4 flex flex-col justify-center">
           <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] mb-1">{mode} • {direction}</p>
           <p className="text-gray-400 font-bold text-xs">{currentIndex + 1} / {words.length}</p>
         </div>
 
-        {/* 🌟 固定された高さのカードコンテナ */}
-        <div className="relative w-full max-w-sm h-[360px] [perspective:1000px] group" onClick={() => setIsFlipped(!isFlipped)}>
+        {/* 🌟 Card Container: Fixed Size */}
+        <div className="relative w-full max-w-sm h-[380px] [perspective:1000px] mb-8" onClick={() => setIsFlipped(!isFlipped)}>
           <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
             
-            {/* 表面 (FRONT) */}
-            <div className="absolute inset-0 bg-white border-4 border-gray-100 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden] relative">
+            {/* FRONT Side */}
+            <div className="absolute inset-0 bg-white border-4 border-gray-100 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden]">
               <button onClick={(e) => { e.stopPropagation(); speak(frontText, currentWord.isReversed); }} className="absolute top-6 right-6 w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center hover:bg-blue-50 transition-colors text-xl">🔊</button>
               
-              {/* 絶対配置のラベル：文字の位置を固定するため */}
-              <span className="absolute top-10 text-[10px] font-black text-gray-300 uppercase tracking-widest">{currentWord.isReversed ? "Translate" : "Question"}</span>
+              <span className="absolute top-10 text-[10px] font-black text-gray-300 uppercase tracking-widest">
+                {currentWord.isReversed ? "Translate" : "Question"}
+              </span>
               
               <h2 className="text-4xl md:text-5xl font-black text-gray-900 text-center leading-tight tracking-tight px-4">{frontText}</h2>
               
               <p className="absolute bottom-10 text-blue-400 font-bold text-[10px] uppercase tracking-widest animate-pulse italic">Tap to flip</p>
             </div>
 
-            {/* 裏面 (BACK) */}
-            <div className="absolute inset-0 bg-blue-600 border-4 border-blue-400 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden] [transform:rotateY(180deg)] text-white relative">
+            {/* BACK Side */}
+            <div className="absolute inset-0 bg-blue-600 border-4 border-blue-400 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden] [transform:rotateY(180deg)] text-white text-center">
               <button onClick={(e) => { e.stopPropagation(); speak(backText, !currentWord.isReversed); }} className="absolute top-6 right-6 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-xl">🔊</button>
               
-              {/* 表面と同じ位置に絶対配置 */}
               <span className="absolute top-10 text-[10px] font-black opacity-50 uppercase tracking-widest">Answer</span>
               
               <div className="flex flex-col items-center justify-center w-full">
-                <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight mb-4">{backText}</h2>
+                <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight mb-6">{backText}</h2>
                 {currentWord.example_sentence && (
-                  <div className="bg-black/10 p-4 rounded-2xl border border-white/10 max-w-full">
-                    <p className="text-[11px] italic font-medium leading-relaxed opacity-95">"{currentWord.example_sentence}"</p>
+                  <div className="bg-black/10 p-5 rounded-2xl border border-white/10 w-full max-w-[280px]">
+                    <p className="text-[12px] italic font-medium leading-relaxed opacity-95">"{currentWord.example_sentence}"</p>
                   </div>
                 )}
               </div>
@@ -232,21 +240,21 @@ export default function StudySession() {
           </div>
         </div>
 
-        {/* SRS 評価ボタン */}
-        <div className={`mt-6 grid grid-cols-4 gap-2 w-full max-w-sm transition-all duration-500 ${isFlipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(0); }} className="flex flex-col items-center justify-center bg-white border-2 border-red-100 text-red-500 py-3 rounded-2xl hover:bg-red-50 transition-colors active:scale-95 shadow-sm">
+        {/* 🌟 SRS Buttons: Fixed location below the card */}
+        <div className={`grid grid-cols-4 gap-2 w-full max-w-sm transition-all duration-500 ${isFlipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+          <button onClick={(e) => { e.stopPropagation(); handleResult(0); }} className="flex flex-col items-center justify-center bg-white border-2 border-red-100 text-red-500 py-4 rounded-2xl hover:bg-red-50 shadow-sm transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Again</span>
             <span className="text-[9px] font-bold opacity-60 mt-0.5">{previewAgain}</span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(3); }} className="flex flex-col items-center justify-center bg-white border-2 border-orange-100 text-orange-500 py-3 rounded-2xl hover:bg-orange-50 transition-colors active:scale-95 shadow-sm">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(3); }} className="flex flex-col items-center justify-center bg-white border-2 border-orange-100 text-orange-500 py-4 rounded-2xl hover:bg-orange-50 shadow-sm transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Hard</span>
             <span className="text-[9px] font-bold opacity-60 mt-0.5">{previewHard}</span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(4); }} className="flex flex-col items-center justify-center bg-green-500 text-white py-3 rounded-2xl hover:bg-green-600 transition-colors active:scale-95 shadow-md">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(4); }} className="flex flex-col items-center justify-center bg-green-500 text-white py-4 rounded-2xl hover:bg-green-600 shadow-md transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Good</span>
             <span className="text-[9px] font-bold opacity-80 mt-0.5">{previewGood}</span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(5); }} className="flex flex-col items-center justify-center bg-blue-500 text-white py-3 rounded-2xl hover:bg-blue-600 transition-colors active:scale-95 shadow-md">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(5); }} className="flex flex-col items-center justify-center bg-blue-500 text-white py-4 rounded-2xl hover:bg-blue-600 shadow-md transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Easy</span>
             <span className="text-[9px] font-bold opacity-80 mt-0.5">{previewEasy}</span>
           </button>
