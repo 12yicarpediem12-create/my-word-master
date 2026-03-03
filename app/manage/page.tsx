@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react"; // 🌟 useEffectを追加
+import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import CreateCardForm from "../components/CreateCardForm";
 
@@ -9,7 +9,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// 🌟 魔法の辞書：言語名を入力すると、自動でコードと国旗を判定します！
 const LANGUAGE_AUTO_MAP: Record<string, { code: string; emoji: string }> = {
   english: { code: "en", emoji: "🇺🇸" },
   spanish: { code: "es", emoji: "🇪🇸" },
@@ -40,8 +39,6 @@ export default function ManageLibrary() {
   const [isSubmittingLang, setIsSubmittingLang] = useState(false);
   const [langSuccessMsg, setLangSuccessMsg] = useState("");
 
-  // 🌟 【追加】この画面（Manage Library）が開かれた瞬間に、
-  // ホーム画面のサイドバーが残した「スクロール禁止」を強制的に解除（unset）する魔法！
   useEffect(() => {
     document.body.style.overflow = "unset";
   }, []);
@@ -52,30 +49,20 @@ export default function ManageLibrary() {
     if (!input) return;
     
     setIsSubmittingLang(true);
-
-    // 入力された文字を小文字にして辞書と照らし合わせる
     const lowerInput = input.toLowerCase();
-    
-    // 辞書にあればそれを使用、なければ自動生成（最初の2文字 ＋ 地球の絵文字）
     const matchedData = LANGUAGE_AUTO_MAP[lowerInput];
     const finalCode = matchedData ? matchedData.code : lowerInput.substring(0, 2);
     const finalEmoji = matchedData ? matchedData.emoji : "🌐";
-    
-    // 表示用の名前（先頭だけ大文字にする。例: "french" -> "French"）
     const finalName = input.charAt(0).toUpperCase() + input.slice(1).toLowerCase();
 
     const { error } = await supabase.from("languages").insert([
-      {
-        code: finalCode,
-        name: finalName,
-        emoji: finalEmoji,
-      },
+      { code: finalCode, name: finalName, emoji: finalEmoji },
     ]);
 
     setIsSubmittingLang(false);
 
     if (!error) {
-      setLangSuccessMsg(`${finalEmoji} ${finalName} added automatically!`);
+      setLangSuccessMsg(`${finalEmoji} ${finalName} added!`);
       setLangInput("");
       setTimeout(() => setLangSuccessMsg(""), 3000);
     } else {
@@ -86,55 +73,61 @@ export default function ManageLibrary() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
       {/* ナビゲーションバー */}
-      <nav className="bg-white border-b-2 border-gray-200 px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-        <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
+      <nav className="bg-white border-b-2 border-gray-200 px-4 md:px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <Link href="/" className="text-2xl md:text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
           WordMaster.
         </Link>
-        <Link href="/" className="text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest flex items-center gap-2">
-          <span>←</span> Back to Dashboard
+        <Link href="/" className="text-[10px] md:text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest flex items-center gap-2">
+          <span>←</span> Back
         </Link>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-12 flex flex-col gap-12">
-        <header className="mb-4">
-          <h1 className="text-5xl font-black text-gray-900 tracking-tight mb-4 text-center md:text-left">Manage Library</h1>
-          <p className="text-xl text-gray-600 font-medium italic text-center md:text-left">
+      {/* 🛠 修正: スマホ用に px-4 / pt-12 を設定。md以上では px-8 / pt-16 に広げる */}
+      <main className="max-w-4xl mx-auto px-4 md:px-8 pt-12 md:pt-16 flex flex-col gap-10">
+        
+        {/* ヘッダーセクション */}
+        <header className="flex flex-col gap-2">
+          <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+            Manage Library
+          </h1>
+          <p className="text-sm md:text-xl text-gray-500 font-medium italic">
             Expand your horizons. Add new words and languages.
           </p>
         </header>
 
-        {/* 1. 一番上：単語の追加（部品の呼び出し） */}
-        <section>
+        {/* 1. 単語追加フォーム (CreateCardForm 内のレスポンシブ対応はこの部品側で行う必要があります) */}
+        <section className="w-full">
           <CreateCardForm />
         </section>
 
-        {/* 2. その下：スマート言語追加フォーム */}
-        <section>
-          <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm w-full transition-all hover:shadow-md">
-            <h2 className="text-sm font-bold tracking-widest text-gray-900 uppercase mb-8 flex items-center gap-3">
-              <span className="text-xl">🌍</span> QUICK ADD LANGUAGE
+        {/* 2. 言語追加フォーム */}
+        <section className="w-full">
+          <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-200 shadow-sm transition-all hover:shadow-md">
+            <h2 className="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mb-6 flex items-center gap-2">
+              <span className="text-lg">🌍</span> Quick Add Language
             </h2>
 
-            <form onSubmit={handleAddLanguage} className="space-y-6">
-              <div className="flex flex-col md:flex-row gap-6">
+            <form onSubmit={handleAddLanguage} className="space-y-4">
+              {/* 🛠 修正: 入力欄とボタンを縦並び(flex-col)にし、タブレット以上で横並び(md:flex-row)にする */}
+              <div className="flex flex-col md:flex-row gap-4">
                 <input
                   type="text"
-                  placeholder="Type a language (e.g. French, Japanese...)"
+                  placeholder="Type a language (e.g. French...)"
                   value={langInput}
                   onChange={(e) => setLangInput(e.target.value)}
-                  className="w-full md:flex-1 p-5 bg-gray-50 border-2 border-gray-200 rounded-2xl font-bold text-gray-900 placeholder-gray-400 outline-none focus:border-green-500 transition-colors text-lg"
+                  className="w-full md:flex-1 p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-gray-900 placeholder-gray-300 outline-none focus:border-green-400 transition-all text-base md:text-lg"
                   required
                 />
                 
                 <button
                   type="submit"
                   disabled={isSubmittingLang}
-                  className="w-full md:w-auto px-10 py-5 bg-green-500 text-white font-bold text-lg rounded-2xl shadow-lg hover:bg-green-600 hover:scale-[1.01] transition-all disabled:opacity-50 whitespace-nowrap"
+                  className="w-full md:w-auto px-8 py-4 md:py-5 bg-green-500 text-white font-black text-sm md:text-lg rounded-2xl shadow-lg shadow-green-100 hover:bg-green-600 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
                 >
                   {isSubmittingLang ? "Adding..." : langSuccessMsg || "+ Add Language"}
                 </button>
               </div>
-              <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-4">
+              <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-2">
                 ✨ Flags and codes will be added automatically.
               </p>
             </form>
