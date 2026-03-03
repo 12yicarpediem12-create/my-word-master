@@ -1,7 +1,0 @@
-[00:00:01.105] Server  LOG     > [PWA] PWA support is disabled
-[00:00:01.105] Server  LOG     > [PWA] PWA support is disabled
-[00:00:01.197] Server  LOG     ✓ Ready in 1092ms
-[00:00:04.762] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:04.762] Browser WARN    GoTrueClient@sb-dmubqcbyezscagglzdds-auth-token:1 (2.98.0) 2026-03-03T18:16:39.059Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
-[00:00:07.218] Browser WARN    GoTrueClient@sb-dmubqcbyezscagglzdds-auth-token:2 (2.98.0) 2026-03-03T18:16:41.426Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
-[00:00:07.218] Browser WARN    GoTrueClient@sb-dmubqcbyezscagglzdds-auth-token:3 (2.98.0) 2026-03-03T18:16:41.427Z Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.
