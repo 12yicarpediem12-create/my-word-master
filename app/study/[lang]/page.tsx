@@ -55,7 +55,6 @@ export default function LanguageHub() {
     if (langCode) fetchData();
   }, [langCode]);
 
-  // 詳細な統計（品詞別マスター率）の計算
   const posStats = useMemo(() => {
     return POS_LIST.map(pos => {
       const posVocab = vocabList.filter(v => v.part_of_speech === pos);
@@ -77,7 +76,6 @@ export default function LanguageHub() {
   const masteredWords = vocabList.filter(v => v.is_remembered).length;
   const globalPercentage = totalWords === 0 ? 0 : Math.round((masteredWords / totalWords) * 100);
 
-  // 🌟 弱点（ミス回数が1回以上の単語）をカウント
   const weakWordsCount = vocabList.filter(v => (v.mistake_count || 0) > 0).length;
 
   return (
@@ -92,7 +90,6 @@ export default function LanguageHub() {
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         
-        {/* メインヘッダー */}
         <div className="bg-white rounded-[2.5rem] p-10 border-2 border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8 mb-8 relative overflow-hidden">
           <div className="flex items-center gap-6 z-10">
             <div className="text-7xl md:text-8xl">{language?.emoji}</div>
@@ -102,18 +99,17 @@ export default function LanguageHub() {
             </div>
           </div>
           
-          {/* 🛠 修正: sm:items-stretch を追加して、ボタンの高さを揃える */}
-          <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 z-10 w-full md:w-auto mt-4 md:mt-0">
-            {/* 🌟 弱点が存在する時だけ出現する緊急アラートボタン */}
+          {/* 🛠 修正: 両方のボタンに h-[84px] を指定して完全に高さを固定 */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 z-10 w-full md:w-auto mt-4 md:mt-0">
             {weakWordsCount > 0 && (
               <button 
                 onClick={() => router.push(`/study/${langCode}/session`)} 
-                // 🛠 修正: h-full を追加し高さを親に合わせる。上下へのホバーエフェクトに変更。
-                className="w-full sm:w-auto h-full px-6 py-4 bg-red-50 text-red-600 font-black text-lg rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 shadow-sm"
+                // 🛠 修正: h-[84px]を追加し、パディング(py)を削除。中の要素が自動で中央に揃います。
+                className="w-full sm:w-auto h-[84px] px-6 bg-red-50 text-red-600 font-black text-lg rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 shadow-sm"
               >
-                <span className="text-2xl animate-pulse">🚨</span> 
+                <span className="text-3xl animate-pulse">🚨</span> 
                 <div className="text-left leading-tight">
-                  <p className="text-[10px] uppercase tracking-widest opacity-80">Needs Focus</p>
+                  <p className="text-[10px] uppercase tracking-widest opacity-80 mb-0.5">Needs Focus</p>
                   <p>{weakWordsCount} Weak Points</p>
                 </div>
               </button>
@@ -122,18 +118,17 @@ export default function LanguageHub() {
             <button 
               onClick={() => router.push(`/study/${langCode}/session`)} 
               disabled={totalWords === 0}
-              // 🛠 修正: h-full を追加。同じくホバー時に横幅・高さがブレないよう調整。
-              className="w-full sm:w-auto h-full px-10 py-4 bg-blue-600 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              // 🛠 修正: 同じく h-[84px] を追加。
+              className="w-full sm:w-auto h-[84px] px-10 bg-blue-600 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
-              <span className="text-2xl">🚀</span> Start Session
+              <span className="text-3xl">🚀</span> 
+              <span className="whitespace-nowrap">Start Session</span>
             </button>
           </div>
         </div>
 
-        {/* 究極の進捗レポートセクション */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           
-          {/* 左：全体マスター率（円グラフ） */}
           <div className="lg:col-span-1 bg-white rounded-3xl p-8 border-2 border-gray-200 flex flex-col items-center justify-center shadow-sm">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Overall Mastery</h3>
             <div className="relative w-40 h-40 flex items-center justify-center">
@@ -150,7 +145,6 @@ export default function LanguageHub() {
             </div>
           </div>
 
-          {/* 右：品詞別の詳細バー */}
           <div className="lg:col-span-2 bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Mastery by Category</h3>
             <div className="space-y-5">
@@ -172,7 +166,6 @@ export default function LanguageHub() {
           </div>
         </div>
 
-        {/* 今日のランダム単語 */}
         {randomWord && (
           <div className="mb-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -187,7 +180,6 @@ export default function LanguageHub() {
           </div>
         )}
 
-        {/* フィルター ＆ 単語リスト */}
         <div className="mb-8 overflow-x-auto pb-2">
           <div className="flex gap-3">
             <button onClick={() => setActiveFilter("All")} className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === "All" ? "bg-gray-900 border-gray-900 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-gray-900"}`}>All</button>
@@ -201,7 +193,6 @@ export default function LanguageHub() {
           {filteredList.length > 0 ? (
             <div className="divide-y-2 divide-gray-100">
               {filteredList.map((vocab) => {
-                // 🌟 リスト上でも「この単語はミスが多い（弱点）」と一目でわかるように炎アイコンを表示
                 const isWeak = (vocab.mistake_count || 0) > 0;
                 return (
                   <Link href={`/word/${vocab.id}`} key={vocab.id} className="p-6 hover:bg-gray-50 transition-colors flex items-center justify-between group block">
