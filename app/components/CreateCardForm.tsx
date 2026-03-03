@@ -18,6 +18,10 @@ export default function CreateCardForm() {
   const [newExample, setNewExample] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
   
+  // 🌟 新機能: カテゴリーと活用のステート
+  const [newCategory, setNewCategory] = useState("");
+  const [newConjugation, setNewConjugation] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [existingWordId, setExistingWordId] = useState<string | null>(null);
@@ -33,7 +37,7 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  // 🌟 重複チェックのロジックを大幅強化！
+  // 重複チェック
   useEffect(() => {
     const checkDuplicate = async () => {
       if (!newWord.trim() || !selectedLang) {
@@ -41,22 +45,18 @@ export default function CreateCardForm() {
         return;
       }
 
-      // まず、その言語のその単語をすべて取得（maybeSingleはやめて複数対応に）
       const { data } = await supabase
         .from("vocab")
         .select("id, part_of_speech")
         .eq("language_code", selectedLang)
-        .ilike("word", newWord.trim()); // 単語は ilike で曖昧検索
+        .ilike("word", newWord.trim());
 
       if (data && data.length > 0) {
-        // 🌟 JS側で品詞を大文字小文字・空白を無視して比較
         const normalizedNewPos = newPos.trim().toLowerCase();
-        
         const duplicate = data.find(item => {
           const itemPos = (item.part_of_speech || "").trim().toLowerCase();
           return itemPos === normalizedNewPos;
         });
-
         setExistingWordId(duplicate ? duplicate.id : null);
       } else {
         setExistingWordId(null);
@@ -67,17 +67,25 @@ export default function CreateCardForm() {
     return () => clearTimeout(timer);
   }, [newWord, selectedLang, newPos]);
 
+  // 🌟 Geminiによる自動生成
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setIsGenerating(true);
     try {
       const aiData = await generateWordDetails(newWord, selectedLang);
+      
       setNewTranslation(aiData.translation || "");
       setNewPos(aiData.part_of_speech || "");
       setNewExample(aiData.example_sentence || "");
       setNewExampleTranslation(aiData.example_translation || "");
+      
+      // 🌟 Geminiが生成したカテゴリーと活用をセット
+      setNewCategory(aiData.category || "Other");
+      setNewConjugation(aiData.conjugation || "");
+      
     } catch (error) {
-      console.error(error);
+      console.error("AI Generation Error:", error);
+      alert("AI had a hiccup. Please try again!");
     } finally {
       setIsGenerating(false);
     }
@@ -96,6 +104,8 @@ export default function CreateCardForm() {
         part_of_speech: newPos || null,
         example_sentence: newExample || null,
         example_translation: newExampleTranslation || null,
+        category: newCategory || "Other", // 🌟 保存！
+        conjugation: newConjugation || null, // 🌟 保存！
         is_remembered: false,
       },
     ]);
@@ -106,7 +116,11 @@ export default function CreateCardForm() {
       setNewPos("");
       setNewExample("");
       setNewExampleTranslation("");
+      setNewCategory("");
+      setNewConjugation("");
       window.location.reload();
+    } else {
+      alert("Error adding word to database.");
     }
     setIsSubmitting(false);
   };
@@ -120,7 +134,7 @@ export default function CreateCardForm() {
       </div>
 
       <h2 className="text-2xl md:text-3xl font-black mb-2 text-gray-900 mt-6 md:mt-0">Grow your Library</h2>
-      <p className="text-sm md:text-base text-gray-500 font-medium mb-8">Add new words manually or let AI do the heavy lifting.</p>
+      <p className="text-sm md:text-base text-gray-500 font-medium mb-8">Gemini 1.5 Flash is ready to help you categorize and conjugate.</p>
 
       <form onSubmit={handleAddWord} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -158,16 +172,17 @@ export default function CreateCardForm() {
           </div>
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Part of Speech</label>
-            <select value={newPos} onChange={(e) => setNewPos(e.target.value)} className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all appearance-none">
-              <option value="">Select...</option>
-              <option value="Noun">Noun</option>
-              <option value="Verb">Verb</option>
-              <option value="Adjective">Adjective</option>
-              <option value="Adverb">Adverb</option>
-              <option value="Phrase">Phrase</option>
-            </select>
+            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Verb (-are)" className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all" />
           </div>
         </div>
+
+        {/* 🌟 活用情報のプレビュー表示（動詞の時だけ表示） */}
+        {newConjugation && (
+          <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-100">
+            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">AI Conjugation Tip</p>
+            <p className="text-sm font-bold text-amber-900 italic">{newConjugation}</p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
