@@ -90,8 +90,10 @@ export default function LanguageHub() {
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         
-        <div className="bg-white rounded-[2.5rem] p-10 border-2 border-gray-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8 mb-8 relative overflow-hidden">
-          <div className="flex items-center gap-6 z-10">
+        {/* 🛠 修正: md:flex-row を lg:flex-row に変更。窮屈な時は無理せず縦並びにします */}
+        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border-2 border-gray-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 mb-8 relative overflow-hidden">
+          
+          <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-6 z-10">
             <div className="text-7xl md:text-8xl">{language?.emoji}</div>
             <div>
               <h1 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 mb-2">{language?.name}</h1>
@@ -99,18 +101,19 @@ export default function LanguageHub() {
             </div>
           </div>
           
-          {/* 🛠 修正: 両方のボタンに h-[84px] を指定して完全に高さを固定 */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 z-10 w-full md:w-auto mt-4 md:mt-0">
+          {/* 🛠 修正: shrink-0 を追加して、ボタンが横から押し潰されるのを防ぎます */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 z-10 w-full lg:w-auto shrink-0 mt-4 lg:mt-0">
             {weakWordsCount > 0 && (
               <button 
                 onClick={() => router.push(`/study/${langCode}/session`)} 
-                // 🛠 修正: h-[84px]を追加し、パディング(py)を削除。中の要素が自動で中央に揃います。
-                className="w-full sm:w-auto h-[84px] px-6 bg-red-50 text-red-600 font-black text-lg rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 shadow-sm"
+                // 🛠 修正: shrink-0 を追加
+                className="w-full sm:w-auto h-[80px] px-6 bg-red-50 text-red-600 font-black rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 shadow-sm shrink-0"
               >
                 <span className="text-3xl animate-pulse">🚨</span> 
-                <div className="text-left leading-tight">
+                {/* 🛠 修正: whitespace-nowrap を追加し、絶対に改行させない */}
+                <div className="text-left leading-tight whitespace-nowrap">
                   <p className="text-[10px] uppercase tracking-widest opacity-80 mb-0.5">Needs Focus</p>
-                  <p>{weakWordsCount} Weak Points</p>
+                  <p className="text-lg">{weakWordsCount} Weak Point{weakWordsCount > 1 ? 's' : ''}</p>
                 </div>
               </button>
             )}
@@ -118,11 +121,11 @@ export default function LanguageHub() {
             <button 
               onClick={() => router.push(`/study/${langCode}/session`)} 
               disabled={totalWords === 0}
-              // 🛠 修正: 同じく h-[84px] を追加。
-              className="w-full sm:w-auto h-[84px] px-10 bg-blue-600 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              // 🛠 修正: shrink-0 と whitespace-nowrap を追加
+              className="w-full sm:w-auto h-[80px] px-8 bg-blue-600 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 shrink-0 whitespace-nowrap"
             >
               <span className="text-3xl">🚀</span> 
-              <span className="whitespace-nowrap">Start Session</span>
+              <span>Start Session</span>
             </button>
           </div>
         </div>

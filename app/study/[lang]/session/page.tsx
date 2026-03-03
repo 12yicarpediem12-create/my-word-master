@@ -77,20 +77,29 @@ export default function StudySession() {
 
   const calculateNextReview = (quality: number, currentWord: any) => {
     let { repetition, efactor, interval, mistake_count } = currentWord;
+    
     if (quality < 3) {
       repetition = 0;
       interval = 0;
-      mistake_count += 1;
+      mistake_count = (mistake_count || 0) + 1; 
     } else {
       if (repetition === 0) interval = 1;
       else if (repetition === 1) interval = 6;
       else interval = Math.round(interval * efactor);
+      
       if (quality === 3) interval = Math.max(1, Math.round(interval * 1.2));
       if (quality === 5) interval = Math.round(interval * 1.3);
+      
+      if (quality >= 4) {
+        mistake_count = 0;
+      }
+      
       repetition += 1;
     }
+    
     efactor = efactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
     if (efactor < 1.3) efactor = 1.3;
+    
     return { repetition, efactor, interval, mistake_count };
   };
 
@@ -103,7 +112,11 @@ export default function StudySession() {
     } else {
       nextReviewDate.setDate(nextReviewDate.getDate() + newStats.interval);
     }
-    const isRemembered = newStats.interval > 0;
+    
+    // 🌟 ここを修正！: Good(4) または Easy(5) を選んだ時だけ true (Mastered) にする！
+    // 以前は `newStats.interval > 0` だったので Hard でも Mastered になっていました。
+    const isRemembered = quality >= 4;
+    
     await supabase.from("vocab").update({ 
       is_remembered: isRemembered,
       last_reviewed: new Date().toISOString(),
@@ -134,10 +147,7 @@ export default function StudySession() {
 
   if (!mode) {
     return (
-      // 🛠 修正: justify-center を justify-start に変更し、上部に pt-20〜24 の余白を設けてCancelボタンとの衝突を回避
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-24 pb-12 px-4 relative">
-        
-        {/* 🛠 修正: Cancelボタンもスマホ向けに少し位置を調整 (left-6) */}
         <button onClick={() => router.back()} className="absolute top-6 left-6 md:top-8 md:left-8 text-gray-400 hover:text-gray-900 font-bold flex items-center gap-1 uppercase tracking-widest text-xs md:text-sm">
           <span className="text-lg leading-none">✕</span> Cancel
         </button>
@@ -196,25 +206,20 @@ export default function StudySession() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col select-none">
-      {/* ProgressBar - Fixed height */}
       <div className="h-2 bg-gray-200 w-full shrink-0">
         <div className="h-full bg-blue-600 transition-all duration-700" style={{ width: `${progress}%` }} />
       </div>
       
-      {/* 🛠 修正: justify-center を排除し、上端からのパディング pt-12 で固定 */}
       <main className="flex-1 flex flex-col items-center justify-start pt-12 pb-10 p-4 relative">
-        
         <button onClick={() => setMode(null)} className="absolute top-6 left-6 text-gray-400 hover:text-gray-900 font-black flex items-center gap-2 uppercase text-[10px] tracking-widest">
           <span>←</span> Back
         </button>
 
-        {/* Status Area - Fixed Height to prevent shifting */}
         <div className="text-center h-16 mb-4 flex flex-col justify-center">
           <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.5em] mb-1">{mode} • {direction}</p>
           <p className="text-gray-400 font-bold text-xs">{currentIndex + 1} / {words.length}</p>
         </div>
 
-        {/* 🌟 Card Container: Fixed Size */}
         <div className="relative w-full max-w-sm h-[380px] [perspective:1000px] mb-8" onClick={() => setIsFlipped(!isFlipped)}>
           <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
             
@@ -249,7 +254,6 @@ export default function StudySession() {
           </div>
         </div>
 
-        {/* 🌟 SRS Buttons: Fixed location below the card */}
         <div className={`grid grid-cols-4 gap-2 w-full max-w-sm transition-all duration-500 ${isFlipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
           <button onClick={(e) => { e.stopPropagation(); handleResult(0); }} className="flex flex-col items-center justify-center bg-white border-2 border-red-100 text-red-500 py-4 rounded-2xl hover:bg-red-50 shadow-sm transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Again</span>
