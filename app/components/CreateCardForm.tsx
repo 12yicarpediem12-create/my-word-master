@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-// 🌟 さっき作ったAIの関数をインポート！
 import { generateWordDetails } from "../actions/ai";
 
 const supabase = createClient(
@@ -19,7 +18,7 @@ export default function CreateCardForm() {
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false); // 🌟 AI考え中フラグ
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     async function fetchLangs() {
@@ -32,7 +31,6 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  // 🌟 魔法のAI自動入力ボタンを押した時の処理
   const handleAIGenerate = async () => {
     if (!newWord.trim()) {
       alert("First, type a word to generate details for!");
@@ -41,10 +39,8 @@ export default function CreateCardForm() {
     
     setIsGenerating(true);
     try {
-      // サーバーアクションを呼び出してAIに考えてもらう
       const aiData = await generateWordDetails(newWord, selectedLang);
       
-      // フォームに結果を流し込む！
       setNewTranslation(aiData.translation || "");
       setNewPos(aiData.part_of_speech || "");
       setNewExample(aiData.example_sentence || "");
@@ -75,13 +71,11 @@ export default function CreateCardForm() {
     ]);
 
     if (!error) {
-      // 成功したらフォームを空にする
       setNewWord("");
       setNewTranslation("");
       setNewPos("");
       setNewExample("");
       setNewExampleTranslation("");
-      // リロードしてダッシュボードに反映（簡易的）
       window.location.reload();
     } else {
       alert("Error adding word.");
@@ -92,36 +86,55 @@ export default function CreateCardForm() {
   if (languages.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-8 md:p-12 border-2 border-gray-200 shadow-sm relative overflow-hidden">
-      <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black uppercase tracking-widest px-8 py-4 rounded-bl-[2.5rem] border-b-2 border-l-2 border-blue-100">
+    <div className="bg-white rounded-[2.5rem] p-6 md:p-12 border-2 border-gray-200 shadow-sm relative overflow-hidden">
+      
+      {/* 🌟 右上のバッジ: スマホでは少し小さく調整 */}
+      <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-widest px-4 md:px-8 py-3 md:py-4 rounded-bl-[1.5rem] md:rounded-bl-[2.5rem] border-b-2 border-l-2 border-blue-100">
         Add New Word
       </div>
 
-      <h2 className="text-3xl font-black mb-2 text-gray-900">Grow your Library</h2>
-      <p className="text-gray-500 font-medium mb-8">Add new words manually or let AI do the heavy lifting.</p>
+      <h2 className="text-2xl md:text-3xl font-black mb-2 text-gray-900 mt-6 md:mt-0">Grow your Library</h2>
+      <p className="text-sm md:text-base text-gray-500 font-medium mb-8">Add new words manually or let AI do the heavy lifting.</p>
 
       <form onSubmit={handleAddWord} className="space-y-6">
+        
+        {/* 1段目: Language & Word */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Language セレクト */}
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Language</label>
-            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-5 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Language</label>
+            <select 
+              value={selectedLang} 
+              onChange={(e) => setSelectedLang(e.target.value)} 
+              className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer"
+            >
               {languages.map((l) => (
                 <option key={l.code} value={l.code}>{l.emoji} {l.name}</option>
               ))}
             </select>
           </div>
 
+          {/* Word 入力 & Auto-Fill ボタン */}
           <div className="relative">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
-            <div className="flex gap-2">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mangiare" className="flex-1 p-5 bg-gray-50 border-2 border-gray-100 rounded-3xl font-black text-xl outline-none focus:border-blue-500 transition-all" />
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Word</label>
+            {/* 🛠 修正: スマホでは flex-col (縦並び)、PCでは flex-row (横並び) にして被りを防止！ */}
+            <div className="flex flex-col md:flex-row gap-3">
+              <input 
+                type="text" 
+                value={newWord} 
+                onChange={(e) => setNewWord(e.target.value)} 
+                required 
+                placeholder="e.g. mangiare" 
+                className="flex-1 p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl outline-none focus:border-blue-500 transition-all w-full" 
+              />
               
-              {/* 🌟 これが魔法のボタンです！ */}
               <button 
                 type="button" 
                 onClick={handleAIGenerate} 
                 disabled={isGenerating || !newWord.trim()}
-                className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 rounded-3xl hover:scale-105 active:scale-95 transition-all shadow-lg shadow-purple-200 disabled:opacity-50 disabled:scale-100 flex items-center justify-center min-w-[120px]"
+                // 🛠 修正: スマホ用に py-4、PC用に py-5 にしてボタンの高さを揃え、幅を w-full から md:w-auto に切り替え
+                className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 md:py-0 rounded-2xl md:rounded-3xl hover:-translate-y-1 transition-all shadow-lg shadow-purple-200 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center whitespace-nowrap"
               >
                 {isGenerating ? "✨ Thinking..." : "✨ Auto-Fill"}
               </button>
@@ -129,14 +142,26 @@ export default function CreateCardForm() {
           </div>
         </div>
 
+        {/* 2段目: Meaning & Part of Speech */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning (English)</label>
-            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="e.g. to eat" className="w-full p-5 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold text-gray-700 outline-none focus:border-blue-500 transition-all" />
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Meaning (English)</label>
+            <input 
+              type="text" 
+              value={newTranslation} 
+              onChange={(e) => setNewTranslation(e.target.value)} 
+              required 
+              placeholder="e.g. to eat" 
+              className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-700 outline-none focus:border-blue-500 transition-all" 
+            />
           </div>
           <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Part of Speech</label>
-            <select value={newPos} onChange={(e) => setNewPos(e.target.value)} className="w-full p-5 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all appearance-none">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Part of Speech</label>
+            <select 
+              value={newPos} 
+              onChange={(e) => setNewPos(e.target.value)} 
+              className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all appearance-none"
+            >
               <option value="">Select...</option>
               <option value="Noun">Noun</option>
               <option value="Verb">Verb</option>
@@ -147,19 +172,38 @@ export default function CreateCardForm() {
           </div>
         </div>
 
+        {/* 3段目: Examples */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Sentence (Target)</label>
-             <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} placeholder="Mi piace mangiare la pizza." className="w-full p-5 bg-blue-50/50 border-2 border-blue-100 rounded-3xl font-medium text-gray-800 outline-none focus:border-blue-500 transition-all" />
+             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2 block mb-1">Example Sentence (Target)</label>
+             <textarea 
+                value={newExample} 
+                onChange={(e) => setNewExample(e.target.value)} 
+                rows={2} 
+                placeholder="Mi piace mangiare la pizza." 
+                className="w-full p-4 md:p-5 bg-blue-50/50 border-2 border-blue-100 rounded-2xl md:rounded-3xl font-medium text-gray-800 outline-none focus:border-blue-500 transition-all resize-none" 
+             />
           </div>
           <div>
-             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Translation (English)</label>
-             <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} placeholder="I like to eat pizza." className="w-full p-5 bg-blue-50/50 border-2 border-blue-100 rounded-3xl font-medium text-gray-600 outline-none focus:border-blue-500 transition-all" />
+             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2 block mb-1">Example Translation (English)</label>
+             <textarea 
+                value={newExampleTranslation} 
+                onChange={(e) => setNewExampleTranslation(e.target.value)} 
+                rows={2} 
+                placeholder="I like to eat pizza." 
+                className="w-full p-4 md:p-5 bg-blue-50/50 border-2 border-blue-100 rounded-2xl md:rounded-3xl font-medium text-gray-600 outline-none focus:border-blue-500 transition-all resize-none" 
+             />
           </div>
         </div>
 
+        {/* 登録ボタン */}
         <div className="pt-4">
-          <button type="submit" disabled={isSubmitting} className="w-full bg-gray-900 text-white font-black text-xl py-5 rounded-[2rem] hover:bg-gray-800 shadow-xl transition-all disabled:opacity-50">
+          <button 
+            type="submit" 
+            disabled={isSubmitting} 
+            // 🛠 修正: スマホでは文字サイズを少し落とし(text-lg)、パディングを調整
+            className="w-full bg-gray-900 text-white font-black text-lg md:text-xl py-4 md:py-5 rounded-2xl md:rounded-[2rem] hover:bg-gray-800 hover:-translate-y-1 shadow-xl transition-all disabled:opacity-50 disabled:hover:translate-y-0"
+          >
             {isSubmitting ? "Adding to Library..." : "➕ Add to Library"}
           </button>
         </div>

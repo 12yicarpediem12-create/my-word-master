@@ -102,12 +102,14 @@ export default function LanguageHub() {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center gap-4 z-10 w-full md:w-auto mt-4 md:mt-0">
+          {/* 🛠 修正: sm:items-stretch を追加して、ボタンの高さを揃える */}
+          <div className="flex flex-col sm:flex-row sm:items-stretch gap-4 z-10 w-full md:w-auto mt-4 md:mt-0">
             {/* 🌟 弱点が存在する時だけ出現する緊急アラートボタン */}
             {weakWordsCount > 0 && (
               <button 
                 onClick={() => router.push(`/study/${langCode}/session`)} 
-                className="w-full sm:w-auto px-6 py-6 bg-red-50 text-red-600 font-black text-lg rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:scale-105 transition-all flex items-center justify-center gap-2 shadow-sm"
+                // 🛠 修正: h-full を追加し高さを親に合わせる。上下へのホバーエフェクトに変更。
+                className="w-full sm:w-auto h-full px-6 py-4 bg-red-50 text-red-600 font-black text-lg rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 shadow-sm"
               >
                 <span className="text-2xl animate-pulse">🚨</span> 
                 <div className="text-left leading-tight">
@@ -120,7 +122,8 @@ export default function LanguageHub() {
             <button 
               onClick={() => router.push(`/study/${langCode}/session`)} 
               disabled={totalWords === 0}
-              className="w-full sm:w-auto px-10 py-6 bg-blue-600 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-blue-700 hover:scale-105 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              // 🛠 修正: h-full を追加。同じくホバー時に横幅・高さがブレないよう調整。
+              className="w-full sm:w-auto h-full px-10 py-4 bg-blue-600 text-white font-black text-xl rounded-2xl shadow-xl hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               <span className="text-2xl">🚀</span> Start Session
             </button>

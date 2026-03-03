@@ -134,18 +134,27 @@ export default function StudySession() {
 
   if (!mode) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6">
-        <button onClick={() => router.back()} className="absolute top-8 left-8 text-gray-400 hover:text-gray-900 font-bold">✕ Cancel</button>
-        <h1 className="text-4xl font-black mb-10 text-gray-900 tracking-tight text-center">Study Setup</h1>
-        <div className="mb-12 w-full max-w-md bg-white p-2 rounded-3xl border-2 border-gray-200 flex shadow-sm">
+      // 🛠 修正: justify-center を justify-start に変更し、上部に pt-20〜24 の余白を設けてCancelボタンとの衝突を回避
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-start pt-24 pb-12 px-4 relative">
+        
+        {/* 🛠 修正: Cancelボタンもスマホ向けに少し位置を調整 (left-6) */}
+        <button onClick={() => router.back()} className="absolute top-6 left-6 md:top-8 md:left-8 text-gray-400 hover:text-gray-900 font-bold flex items-center gap-1 uppercase tracking-widest text-xs md:text-sm">
+          <span className="text-lg leading-none">✕</span> Cancel
+        </button>
+        
+        <h1 className="text-3xl md:text-4xl font-black mb-8 text-gray-900 tracking-tight text-center">Study Setup</h1>
+        
+        <div className="mb-10 w-full max-w-md bg-white p-2 rounded-3xl border-2 border-gray-200 flex shadow-sm">
           {["recognition", "production", "chaos"].map((d) => (
             <button key={d} onClick={() => setDirection(d as Direction)} className={`flex-1 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex flex-col items-center gap-1 transition-all ${direction === d ? "bg-blue-600 text-white shadow-lg" : "text-gray-400 hover:bg-gray-50"}`}>
               <span className="text-xl mb-1">{d === 'recognition' ? '📖' : d === 'production' ? '✍️' : '🎲'}</span>
-              {d === 'recognition' ? 'Target → Eng' : d === 'production' ? 'Eng → Target' : 'Chaos'}
+              <span className="hidden sm:inline">{d === 'recognition' ? 'Target → Eng' : d === 'production' ? 'Eng → Target' : 'Chaos'}</span>
+              <span className="sm:hidden">{d === 'recognition' ? 'Target' : d === 'production' ? 'English' : 'Chaos'}</span>
             </button>
           ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-6xl">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-6xl">
           <button onClick={() => startSession("learning")} className="bg-white border-2 border-gray-100 p-8 rounded-[3rem] hover:border-orange-500 hover:shadow-xl transition-all group text-center">
             <div className="text-5xl mb-4 group-hover:scale-110 transition-transform">🔥</div>
             <h3 className="text-xl font-black mb-2">Learning</h3>
