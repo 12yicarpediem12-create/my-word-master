@@ -1,51 +1,50 @@
 "use server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 1. APIキーの読み込みを確認
-const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey || "");
-
 export async function generateWordDetails(word: string, langCode: string) {
-  // キーがない場合は即座にエラーを投げる（デバッグを楽にするため）
+  const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY?.trim();
+  
   if (!apiKey) {
-    throw new Error("API Key is missing in environment variables!");
+    throw new Error("API Key is missing in Vercel settings.");
   }
 
+  // 🌟 Gemini 3世代に対応した初期化
+  const genAI = new GoogleGenerativeAI(apiKey);
+
   try {
-    // 2. モデルの初期化 (1.5 Flashを指定)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // 🌟 モデル名をスクリーンショット通りの最新版に変更
+    // 'gemini-3-flash' は現在最も高速で推奨されているモデルです
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
     const prompt = `
-      Analyze the following word for a language learner.
-      Target Language Code: ${langCode}
-      Word: ${word}
-
-      Please provide the following in JSON format:
+      Analyze the word "${word}" for a learner of ${langCode}.
+      Return ONLY a JSON object:
       {
-        "translation": "Short English meaning",
-        "part_of_speech": "Noun, Verb, Adjective, Adverb, or Phrase",
-        "category": "Choose one: Travel, Food, Work, Daily, Emotion, Health, Culture, or Other",
-        "example_sentence": "A simple natural example sentence in ${langCode}",
-        "example_translation": "English translation of the example",
-        "conjugation": "If it is a Verb, provide basic present tense for (io, tu, lui/lei) in ${langCode}. Format like 'io: ..., tu: ..., lui/lei: ...'. If not a verb, return null."
+        "translation": "English meaning",
+        "part_of_speech": "POS",
+        "category": "Travel, Food, Work, Daily, Emotion, Health, Culture, or Other",
+        "example_sentence": "sentence in ${langCode}",
+        "example_translation": "English translation",
+        "conjugation": "If verb, provide 'io, tu, lui/lei' forms. If not, null"
       }
-
-      Important: Return ONLY the JSON object. Do not include any markdown formatting like \`\`\`json.
+      Strictly return ONLY JSON.
     `;
 
-    // 3. AIにリクエストを送信
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    // 4. Geminiがたまに付けるマークダウンの枠（ ```json ... ``` ）を掃除
+    // JSONのクリーンアップ（マークダウン除去）
     const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
     
-    console.log("Gemini Response cleaned:", cleanJson);
-
     return JSON.parse(cleanJson);
+
   } catch (error: any) {
-    console.error("Gemini Server Error:", error.message);
-    throw new Error("AI failed to generate details: " + error.message);
+    console.error("DEBUG Gemini Error:", error.message);
+    // 万が一 'gemini-3-flash' でダメな場合は 'gemini-3.1-pro' を試すようメッセージを出す
+    if (error.message.includes("404")) {
+      throw new Error("Model not found. Please verify if 'gemini-3-flash' is available in your AI Studio region.");
+    }
+    throw new Error("AI failed: " + error.message);
   }
 }
