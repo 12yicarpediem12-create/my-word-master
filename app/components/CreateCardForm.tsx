@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { generateWordDetails } from "../actions/ai";
+import Link from "next/link"; // 🌟 既存単語へのリンク用に追加
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +21,9 @@ export default function CreateCardForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 🌟 重複チェック用のステート
+  const [existingWordId, setExistingWordId] = useState<string | null>(null);
+
   useEffect(() => {
     async function fetchLangs() {
       const { data } = await supabase.from("languages").select("*");
@@ -30,6 +34,28 @@ export default function CreateCardForm() {
     }
     fetchLangs();
   }, []);
+
+  // 🌟 リアルタイム重複チェック
+  useEffect(() => {
+    const checkDuplicate = async () => {
+      if (!newWord.trim() || !selectedLang) {
+        setExistingWordId(null);
+        return;
+      }
+
+      const { data } = await supabase
+        .from("vocab")
+        .select("id")
+        .eq("language_code", selectedLang)
+        .ilike("word", newWord.trim()) // 大文字小文字を区別せず検索
+        .maybeSingle();
+
+      setExistingWordId(data ? data.id : null);
+    };
+
+    const timer = setTimeout(checkDuplicate, 300); // 300msの待機（タイピング中に何度もDBを叩かない工夫）
+    return () => clearTimeout(timer);
+  }, [newWord, selectedLang]);
 
   const handleAIGenerate = async () => {
     if (!newWord.trim()) {
@@ -88,7 +114,6 @@ export default function CreateCardForm() {
   return (
     <div className="bg-white rounded-[2.5rem] p-6 md:p-12 border-2 border-gray-200 shadow-sm relative overflow-hidden">
       
-      {/* 🌟 右上のバッジ: スマホでは少し小さく調整 */}
       <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-widest px-4 md:px-8 py-3 md:py-4 rounded-bl-[1.5rem] md:rounded-bl-[2.5rem] border-b-2 border-l-2 border-blue-100">
         Add New Word
       </div>
@@ -98,10 +123,8 @@ export default function CreateCardForm() {
 
       <form onSubmit={handleAddWord} className="space-y-6">
         
-        {/* 1段目: Language & Word */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Language セレクト */}
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Language</label>
             <select 
@@ -115,10 +138,21 @@ export default function CreateCardForm() {
             </select>
           </div>
 
-          {/* Word 入力 & Auto-Fill ボタン */}
           <div className="relative">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Word</label>
-            {/* 🛠 修正: スマホでは flex-col (縦並び)、PCでは flex-row (横並び) にして被りを防止！ */}
+            <div className="flex justify-between items-end mb-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
+              
+              {/* 🌟 重複警告バッジ：見つかった時だけフワッと出現 */}
+              {existingWordId && (
+                <Link 
+                  href={`/word/${existingWordId}`}
+                  className="text-[9px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-tighter animate-bounce hover:bg-red-200 transition-colors"
+                >
+                  ⚠️ Already exists! Click to view
+                </Link>
+              )}
+            </div>
+
             <div className="flex flex-col md:flex-row gap-3">
               <input 
                 type="text" 
@@ -126,14 +160,17 @@ export default function CreateCardForm() {
                 onChange={(e) => setNewWord(e.target.value)} 
                 required 
                 placeholder="e.g. mangiare" 
-                className="flex-1 p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl outline-none focus:border-blue-500 transition-all w-full" 
+                className={`flex-1 p-4 md:p-5 border-2 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl outline-none transition-all w-full ${
+                  existingWordId 
+                  ? "bg-red-50 border-red-200 focus:border-red-400 text-red-900" 
+                  : "bg-gray-50 border-gray-100 focus:border-blue-500 text-gray-900"
+                }`} 
               />
               
               <button 
                 type="button" 
                 onClick={handleAIGenerate} 
                 disabled={isGenerating || !newWord.trim()}
-                // 🛠 修正: スマホ用に py-4、PC用に py-5 にしてボタンの高さを揃え、幅を w-full から md:w-auto に切り替え
                 className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 md:py-0 rounded-2xl md:rounded-3xl hover:-translate-y-1 transition-all shadow-lg shadow-purple-200 disabled:opacity-50 disabled:hover:translate-y-0 flex items-center justify-center whitespace-nowrap"
               >
                 {isGenerating ? "✨ Thinking..." : "✨ Auto-Fill"}
@@ -142,7 +179,6 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* 2段目: Meaning & Part of Speech */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Meaning (English)</label>
@@ -172,7 +208,6 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* 3段目: Examples */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
              <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2 block mb-1">Example Sentence (Target)</label>
@@ -196,12 +231,10 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* 登録ボタン */}
         <div className="pt-4">
           <button 
             type="submit" 
             disabled={isSubmitting} 
-            // 🛠 修正: スマホでは文字サイズを少し落とし(text-lg)、パディングを調整
             className="w-full bg-gray-900 text-white font-black text-lg md:text-xl py-4 md:py-5 rounded-2xl md:rounded-[2rem] hover:bg-gray-800 hover:-translate-y-1 shadow-xl transition-all disabled:opacity-50 disabled:hover:translate-y-0"
           >
             {isSubmitting ? "Adding to Library..." : "➕ Add to Library"}
