@@ -33,37 +33,39 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  // 🌟 改良版：重複チェック（言語 + 単語 + 品詞 で判断）
+  // 🌟 重複チェックのロジックを大幅強化！
   useEffect(() => {
     const checkDuplicate = async () => {
-      // 単語が入力されていない、または品詞が選ばれていない時はチェックしない（品詞が空での登録も考慮）
       if (!newWord.trim() || !selectedLang) {
         setExistingWordId(null);
         return;
       }
 
-      let query = supabase
+      // まず、その言語のその単語をすべて取得（maybeSingleはやめて複数対応に）
+      const { data } = await supabase
         .from("vocab")
-        .select("id")
+        .select("id, part_of_speech")
         .eq("language_code", selectedLang)
-        .ilike("word", newWord.trim());
+        .ilike("word", newWord.trim()); // 単語は ilike で曖昧検索
 
-      // 品詞（POS）が入力されている場合は、それも条件に含める
-      // これにより、同じ単語でも「名詞」と「形容詞」が別々に登録可能になります！
-      if (newPos) {
-        query = query.eq("part_of_speech", newPos);
+      if (data && data.length > 0) {
+        // 🌟 JS側で品詞を大文字小文字・空白を無視して比較
+        const normalizedNewPos = newPos.trim().toLowerCase();
+        
+        const duplicate = data.find(item => {
+          const itemPos = (item.part_of_speech || "").trim().toLowerCase();
+          return itemPos === normalizedNewPos;
+        });
+
+        setExistingWordId(duplicate ? duplicate.id : null);
       } else {
-        // 品詞が空のデータと重複していないかチェック
-        query = query.is("part_of_speech", null);
+        setExistingWordId(null);
       }
-
-      const { data } = await query.maybeSingle();
-      setExistingWordId(data ? data.id : null);
     };
 
     const timer = setTimeout(checkDuplicate, 300);
     return () => clearTimeout(timer);
-  }, [newWord, selectedLang, newPos]); // 🌟 newPos も監視対象に追加！
+  }, [newWord, selectedLang, newPos]);
 
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
@@ -90,7 +92,7 @@ export default function CreateCardForm() {
       {
         language_code: selectedLang,
         word: newWord.trim(),
-        translation: newTranslation,
+        translation: newTranslation.trim(),
         part_of_speech: newPos || null,
         example_sentence: newExample || null,
         example_translation: newExampleTranslation || null,
@@ -104,8 +106,6 @@ export default function CreateCardForm() {
       setNewPos("");
       setNewExample("");
       setNewExampleTranslation("");
-      // リロードせずに結果を反映させたい場合は、親からリストを再取得するのがベストですが
-      // 今の仕様に合わせてリロードを残します。
       window.location.reload();
     }
     setIsSubmitting(false);
@@ -137,26 +137,14 @@ export default function CreateCardForm() {
             <div className="flex justify-between items-end mb-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
               {existingWordId && (
-                <Link href={`/word/${existingWordId}`} className="text-[9px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-tighter animate-bounce">
-                  ⚠️ Already exists!
+                <Link href={`/word/${existingWordId}`} className="text-[9px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-tighter animate-bounce hover:bg-red-200">
+                  ⚠️ Already in Library!
                 </Link>
               )}
             </div>
             <div className="flex flex-col md:flex-row gap-3">
-              <input 
-                type="text" 
-                value={newWord} 
-                onChange={(e) => setNewWord(e.target.value)} 
-                required 
-                placeholder="e.g. mangiare" 
-                className={`flex-1 p-4 md:p-5 border-2 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl outline-none transition-all w-full ${existingWordId ? "bg-red-50 border-red-200 text-red-900" : "bg-gray-50 border-gray-100 focus:border-blue-500"}`} 
-              />
-              <button 
-                type="button" 
-                onClick={handleAIGenerate} 
-                disabled={isGenerating || !newWord.trim()} // 🌟 AI生成は既存があっても一応できるように残します（上書きコピー用）
-                className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 md:py-0 rounded-2xl md:rounded-3xl hover:-translate-y-1 transition-all shadow-lg shadow-purple-200 disabled:opacity-50"
-              >
+              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mangiare" className={`flex-1 p-4 md:p-5 border-2 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl outline-none transition-all w-full ${existingWordId ? "bg-red-50 border-red-200 text-red-900" : "bg-gray-50 border-gray-100 focus:border-blue-500"}`} />
+              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 md:py-0 rounded-2xl md:rounded-3xl hover:-translate-y-1 transition-all shadow-lg shadow-purple-200 disabled:opacity-50">
                 {isGenerating ? "✨ Thinking..." : "✨ Auto-Fill"}
               </button>
             </div>
@@ -198,7 +186,7 @@ export default function CreateCardForm() {
             disabled={isSubmitting || !!existingWordId} 
             className="w-full bg-gray-900 text-white font-black text-lg md:text-xl py-4 md:py-5 rounded-2xl md:rounded-[2rem] hover:bg-gray-800 hover:-translate-y-1 shadow-xl transition-all disabled:opacity-50 disabled:bg-gray-400"
           >
-            {isSubmitting ? "Adding..." : existingWordId ? "⚠️ Already in Library" : "➕ Add to Library"}
+            {isSubmitting ? "Adding..." : existingWordId ? "⚠️ Duplicate Entry Found" : "➕ Add to Library"}
           </button>
         </div>
       </form>
