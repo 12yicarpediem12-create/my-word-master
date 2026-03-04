@@ -13,7 +13,7 @@ export default function CreateCardForm() {
   const [languages, setLanguages] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   const [newWord, setNewWord] = useState("");
-  const [newHint, setNewHint] = useState(""); // 🌟 ヒント用のState
+  const [newHint, setNewHint] = useState("");
   const [newTranslation, setNewTranslation] = useState("");
   const [newPos, setNewPos] = useState("");
   const [newGender, setNewGender] = useState("");
@@ -25,7 +25,6 @@ export default function CreateCardForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [existingWordId, setExistingWordId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchLangs() {
@@ -42,9 +41,7 @@ export default function CreateCardForm() {
     if (!newWord.trim()) return;
     setIsGenerating(true);
     try {
-      // 🌟 ヒントを渡すように変更
       const aiData = await generateWordDetails(newWord, selectedLang, newHint);
-      
       if (aiData && !aiData.error) {
         if (aiData.word_with_article) setNewWord(aiData.word_with_article);
         setNewTranslation(String(aiData.translation || ""));
@@ -55,7 +52,6 @@ export default function CreateCardForm() {
         setNewExample(String(aiData.example_sentence || ""));
         setNewExampleTranslation(String(aiData.example_translation || ""));
         
-        // 活用形のフォーマット（以前のロジック）
         if (aiData.conjugation && typeof aiData.conjugation === "object") {
           const formatted = Object.entries(aiData.conjugation).map(([tense, forms]) => {
             const cleanTense = tense.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
@@ -103,64 +99,81 @@ export default function CreateCardForm() {
         Add New Word
       </div>
 
-      <form onSubmit={handleAddWord} className="space-y-6 mt-6 md:mt-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Language</label>
-            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold appearance-none">
+      <form onSubmit={handleAddWord} className="space-y-8 mt-10 md:mt-4">
+        {/* Row 1: Language & Word */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Language</label>
+            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold appearance-none focus:border-blue-500 outline-none transition-all">
               {languages.map((l) => (
                 <option key={l.code} value={l.code}>{l.emoji} {l.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="relative">
-             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Word</label>
+          <div className="flex flex-col gap-2">
+             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
              <div className="flex flex-col md:flex-row gap-2">
-               <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-black text-lg bg-gray-50 border-gray-100 focus:border-blue-500 outline-none" />
-               <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+               <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-3xl font-black text-lg bg-gray-50 border-gray-100 focus:border-blue-500 outline-none transition-all" />
+               <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 rounded-3xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
                 {isGenerating ? "✨" : "✨ Auto-Fill"}
                </button>
              </div>
-             {/* 🌟 追加：ヒント入力欄 */}
-             <input 
-               type="text" 
-               value={newHint} 
-               onChange={(e) => setNewHint(e.target.value)} 
-               placeholder="Hint: noun, verb, or specific meaning..." 
-               className="w-full mt-2 p-2 bg-blue-50/50 border border-blue-100 rounded-xl text-[10px] font-bold text-blue-600 outline-none placeholder:text-blue-300" 
-             />
+             <input type="text" value={newHint} onChange={(e) => setNewHint(e.target.value)} placeholder="Hint: noun, verb, or specific meaning..." className="w-full p-2 bg-blue-50/50 border border-blue-100 rounded-xl text-[10px] font-bold text-blue-600 outline-none placeholder:text-blue-300" />
           </div>
         </div>
 
-        {/* 以降、既存の入力フィールド（Translation, POS, Genderなど）はそのまま */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Meaning (English)</label>
-            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold" />
+        {/* Row 2: Meaning & POS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning (English)</label>
+            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="e.g. Apple" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold focus:border-blue-500 outline-none transition-all" />
           </div>
-          <div>
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Part of Speech</label>
-            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold" />
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Part of Speech</label>
+            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Noun" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-3xl font-bold focus:border-blue-500 outline-none transition-all" />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Gender" className="p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold" />
-          <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Verb Type" className="p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold" />
-          <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Category" className="p-4 bg-purple-50/50 border-2 border-purple-100 rounded-2xl font-bold" />
+        {/* Row 3: Gender, Verb Type, Category */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2">Gender</label>
+            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Feminine" className="w-full p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-3xl font-bold focus:border-emerald-400 outline-none transition-all" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2">Verb Type</label>
+            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Transitive" className="w-full p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-3xl font-bold focus:border-emerald-400 outline-none transition-all" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-purple-500 uppercase tracking-widest ml-2">Category</label>
+            <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Food" className="w-full p-4 bg-purple-50/50 border-2 border-purple-100 rounded-3xl font-bold focus:border-purple-400 outline-none transition-all" />
+          </div>
         </div>
 
+        {/* Row 4: Conjugation */}
         {newConjugation && (
-          <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-100 text-sm font-bold text-amber-900 whitespace-pre-wrap">{newConjugation}</div>
+          <div className="flex flex-col gap-2">
+             <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest ml-2">Conjugation</label>
+             <div className="bg-amber-50 p-6 rounded-[2rem] border-2 border-amber-100 text-sm font-bold text-amber-900 whitespace-pre-wrap leading-relaxed shadow-inner">
+               {newConjugation}
+             </div>
+          </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} placeholder="Example Sentence" className="p-4 bg-blue-50/50 border-2 border-blue-100 rounded-2xl font-medium outline-none" />
-          <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} placeholder="Example Translation" className="p-4 bg-blue-50/50 border-2 border-blue-100 rounded-2xl font-medium outline-none" />
+        {/* Row 5: Examples */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Sentence</label>
+            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} placeholder="Sentence in target language..." className="w-full p-4 bg-blue-50/50 border-2 border-blue-100 rounded-3xl font-medium focus:border-blue-400 outline-none transition-all resize-none" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Translation</label>
+            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} placeholder="Translation in English..." className="w-full p-4 bg-blue-50/50 border-2 border-blue-100 rounded-3xl font-medium focus:border-blue-400 outline-none transition-all resize-none" />
+          </div>
         </div>
 
-        <button type="submit" disabled={isSubmitting} className="w-full bg-gray-900 text-white font-black text-xl py-5 rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl disabled:bg-gray-400">
+        <button type="submit" disabled={isSubmitting} className="w-full bg-gray-900 text-white font-black text-xl py-6 rounded-[2.5rem] hover:bg-gray-800 hover:-translate-y-1 transition-all shadow-xl disabled:bg-gray-400 disabled:translate-y-0">
           {isSubmitting ? "Adding..." : "➕ Add to Library"}
         </button>
       </form>
