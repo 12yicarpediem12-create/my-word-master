@@ -37,7 +37,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
       3. For nouns, include the definite article (e.g. "la mela").
       4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
       5. CONJUGATION: For verbs, provide Present Tense with line breaks (\\n). Include "Past Participle".
-      6. NOTES FIELD: For verbs, ALWAYS specify the conjugation pattern (e.g., "Regular -are verb system" for Italian, "-er group" for French). Also include essential grammar tips. Keep it concise.
+      6. NOTES FIELD: For verbs, YOU MUST specify the conjugation group (e.g., "-are verb", "-ere verb", "-ire verb" for Italian, or group 1/2/3 for French). Include essential grammar tips.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -53,12 +53,13 @@ export async function generateVocabInfo(word: string, langCode: string) {
         "example_sentence": "Sentence in target language",
         "example_translation": "English translation",
         "category_id": "Selected UUID or null",
-        "notes": "Grammar notes (MUST include conjugation system for verbs)"
+        "notes": "Grammar notes (Include conjugation group for verbs)"
       }
     `;
 
+    // 🌟 モデルを最新の gemini-3-flash に更新
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash", 
+      model: "gemini-3-flash", 
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -84,7 +85,8 @@ export async function getWordNuance(word: string, langCode: string, translation:
     if (!apiKey) throw new Error("API Key missing");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    // 🌟 モデルを最新の gemini-3-flash に更新
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
 
     const prompt = `
       You are a native language tutor. Explain the nuanced meaning and natural usage for "${word}" in ${langCode}.

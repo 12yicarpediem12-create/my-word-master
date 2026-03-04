@@ -38,31 +38,12 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  const checkDuplicate = async (wordToCheck: string, lang: string) => {
-    const cleanWord = wordToCheck.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
-    const { data } = await supabase.from("vocab").select("word").eq("language_code", lang);
-    if (data) {
-      return data.some(item => {
-        const itemClean = item.word.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
-        return itemClean === cleanWord;
-      });
-    }
-    return false;
-  };
-
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setErrorMsg(null);
     setIsGenerating(true);
 
     try {
-      const isDup = await checkDuplicate(newWord, selectedLang);
-      if (isDup) {
-        setErrorMsg(`"${newWord}" is already in your library!`);
-        setIsGenerating(false);
-        return;
-      }
-
       const aiData = await generateVocabInfo(newWord + (newHint ? ` (Hint: ${newHint})` : ""), selectedLang);
       
       if (aiData?.error) {
@@ -71,21 +52,6 @@ export default function CreateCardForm() {
       }
 
       if (aiData) {
-        // 同じ意味（English translation）なら、絶対に100%同じトピックに入るように強制同期
-        if (aiData.translation) {
-          const cleanTranslation = String(aiData.translation).toLowerCase().trim();
-          const { data: existingWords } = await supabase
-            .from("vocab")
-            .select("category_id")
-            .ilike("translation", cleanTranslation)
-            .not("category_id", "is", null)
-            .limit(1);
-
-          if (existingWords && existingWords.length > 0) {
-            aiData.category_id = existingWords[0].category_id;
-          }
-        }
-
         setNewWord(aiData.word || newWord);
         setNewTranslation(String(aiData.translation || ""));
         setNewPos(String(aiData.part_of_speech || ""));
@@ -142,6 +108,8 @@ export default function CreateCardForm() {
       )}
 
       <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 mt-10">
+        
+        {/* Language & Word */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Language</label>
@@ -154,10 +122,24 @@ export default function CreateCardForm() {
 
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
-            {/* 🌟 修正: モバイルでボタンが適切に配置されるように調整 */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold text-base bg-gray-50 border-gray-100 focus:border-blue-500 outline-none" />
-              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-sm hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 min-w-[120px]">
+            {/* 🌟 修正: 右端を揃えるために flex と min-w-0 を使用 */}
+            <div className="flex gap-2 w-full">
+              <div className="flex-1 min-w-0">
+                <input 
+                  type="text" 
+                  value={newWord} 
+                  onChange={(e) => setNewWord(e.target.value)} 
+                  required 
+                  placeholder="e.g. mela" 
+                  className="w-full p-4 border-2 rounded-2xl font-bold text-base bg-gray-50 border-gray-100 focus:border-blue-500 outline-none" 
+                />
+              </div>
+              <button 
+                type="button" 
+                onClick={handleAIGenerate} 
+                disabled={isGenerating || !newWord.trim()} 
+                className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-sm hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 shrink-0"
+              >
                 {isGenerating ? "..." : "Auto-Fill"}
               </button>
             </div>
@@ -165,17 +147,19 @@ export default function CreateCardForm() {
           </div>
         </div>
 
+        {/* Meaning & Part of Speech */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning</label>
-            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="English translation" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
+            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="e.g. to speak" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Part of Speech</label>
-            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Noun" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
+            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Verb" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
           </div>
         </div>
 
+        {/* Gender, Verb Type, Category ID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2">Gender</label>
@@ -199,17 +183,6 @@ export default function CreateCardForm() {
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Notes / Grammar Pattern</label>
             <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} rows={4} placeholder="e.g. Regular -are verb" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-sm text-gray-700 outline-none" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Sentence</label>
-            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm outline-none" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Translation</label>
-            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm outline-none" />
           </div>
         </div>
 
