@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
@@ -10,11 +10,17 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+type ViewRange = "7days" | "30days" | "month";
+
 export default function HistoryPage() {
   const router = useRouter();
   const [results, setResults] = useState<any[]>([]);
   const [languages, setLanguages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // ハイブリッド・コントロール用のState
+  const [range, setRange] = useState<ViewRange>("7days");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
 
   useEffect(() => {
     async function fetchHistory() {
@@ -23,38 +29,48 @@ export default function HistoryPage() {
       const { data: langData } = await supabase.from("languages").select("*");
       if (langData) setLanguages(langData);
 
-      // 全履歴を取得（最新順）
-      const { data: vocabData } = await supabase
-        .from("vocab")
-        .select("*")
-        .not("last_reviewed", "is", null) // 復習したことがあるものだけ
-        .order("last_reviewed", { ascending: false })
-        .limit(50); // 直近50件
+      let query = supabase.from("vocab").select("*").not("last_reviewed", "is", null);
 
+      if (range === "month") {
+        // 特定の月の初めと終わりを計算
+        const startOfMonth = `${selectedMonth}-01T00:00:00Z`;
+        const date = new Date(selectedMonth);
+        const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        query = query.gte("last_reviewed", startOfMonth).lte("last_reviewed", endOfMonth);
+      } else {
+        // 直近 7日 or 30日
+        const days = range === "7days" ? 7 : 30;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        query = query.gte("last_reviewed", startDate.toISOString());
+      }
+
+      const { data: vocabData } = await query.order("last_reviewed", { ascending: false });
       setResults(vocabData || []);
       setIsLoading(false);
     }
 
     fetchHistory();
-  }, []);
+  }, [range, selectedMonth]);
 
-  // 日付ごとにグループ化
-  const groupedByDate = results.reduce((acc: Record<string, any[]>, vocab: any) => {
-    const date = new Date(vocab.last_reviewed).toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-    });
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(vocab);
-    return acc;
-  }, {} as Record<string, any[]>);
+  // 日付グループ化
+  const groupedByDate = useMemo(() => {
+    return results.reduce((acc: Record<string, any[]>, vocab: any) => {
+      const date = new Date(vocab.last_reviewed).toLocaleDateString("ja-JP", {
+        month: "short", day: "numeric", weekday: "short",
+      });
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(vocab);
+      return acc;
+    }, {});
+  }, [results]);
 
-  // 今日の統計
-  const todayStr = new Date().toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "short" });
-  const todayWords = groupedByDate[todayStr] || [];
-  const masteredToday = todayWords.filter(w => w.is_remembered).length;
+  // 統計計算
+  const stats = useMemo(() => {
+    const total = results.length;
+    const mastered = results.filter(v => v.is_remembered).length;
+    return { total, mastered, rate: total === 0 ? 0 : Math.round((mastered / total) * 100) };
+  }, [results]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
@@ -65,68 +81,68 @@ export default function HistoryPage() {
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* 今日のサマリー */}
-        <div className="mb-16 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-blue-100">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70 mb-2">Daily Achievements</p>
-            <h1 className="text-4xl font-black mb-1">Learning History</h1>
-            <p className="text-sm opacity-90 font-medium">Your progress is being etched into memory.</p>
-          </div>
+        <header className="mb-10">
+          <h1 className="text-5xl font-black tracking-tight mb-4">Learning History</h1>
           
-          <div className="bg-white rounded-[2.5rem] p-8 border-2 border-gray-200 flex items-center justify-around">
-            <div className="text-center">
-              <p className="text-3xl font-black text-blue-600">{results.length}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Reviews</p>
+          {/* 🌟 ハイブリッド・ナビゲーション（タブ ＆ 月選択） */}
+          <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-3xl border-2 border-gray-100 shadow-sm">
+            <div className="flex bg-gray-100 p-1 rounded-2xl">
+              <button onClick={() => setRange("7days")} className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${range === "7days" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}>7 Days</button>
+              <button onClick={() => setRange("30days")} className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${range === "30days" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}>30 Days</button>
+              <button onClick={() => setRange("month")} className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${range === "month" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}>Archive</button>
             </div>
-            <div className="w-px h-12 bg-gray-100"></div>
-            <div className="text-center">
-              <p className="text-3xl font-black text-green-500">{masteredToday}</p>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mastered Today</p>
+            
+            {range === "month" && (
+              <input 
+                type="month" 
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-gray-50 border-2 border-gray-100 px-4 py-2 rounded-xl font-bold text-sm text-blue-600 outline-none"
+              />
+            )}
+
+            <div className="ml-auto pr-4 hidden sm:block">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mastery Rate: </span>
+              <span className="text-sm font-black text-green-500">{stats.rate}%</span>
             </div>
           </div>
-        </div>
+        </header>
 
         {isLoading ? (
-          <div className="text-center py-20 font-bold text-gray-400 animate-pulse uppercase tracking-widest">Loading Your Journey...</div>
+          <div className="text-center py-20 font-bold text-gray-400 animate-pulse tracking-widest uppercase">Fetching Records...</div>
         ) : Object.keys(groupedByDate).length > 0 ? (
-          <div className="space-y-16">
+          <div className="space-y-12">
             {Object.keys(groupedByDate).map((date) => (
-              <section key={date}>
-                <div className="flex items-center gap-4 mb-8">
-                  <h2 className="text-xl font-black text-gray-900 whitespace-nowrap">{date}</h2>
+              <div key={date}>
+                <div className="flex items-center gap-4 mb-6">
+                  <h3 className="font-black text-gray-400 uppercase text-xs tracking-[0.2em] whitespace-nowrap">{date}</h3>
                   <div className="h-px bg-gray-200 w-full"></div>
-                  <span className="bg-gray-100 text-gray-400 text-[10px] font-black px-3 py-1 rounded-full uppercase">{groupedByDate[date].length} Words</span>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {groupedByDate[date].map((vocab: any) => {
                     const langInfo = languages.find((l: any) => l.code === vocab.language_code);
                     return (
-                      <Link href={`/word/${vocab.id}`} key={vocab.id} className="bg-white border-2 border-gray-100 p-5 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group flex items-center justify-between">
+                      <Link href={`/word/${vocab.id}`} key={vocab.id} className="bg-white border-2 border-gray-100 p-5 rounded-[2rem] hover:border-blue-500 hover:shadow-xl transition-all flex items-center justify-between group">
                         <div className="flex items-center gap-4">
-                          <span className="text-2xl">{langInfo?.emoji || "🌍"}</span>
+                          <span className="text-2xl">{langInfo?.emoji}</span>
                           <div>
                             <p className="font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
                             <p className="text-xs text-gray-400 font-bold">{vocab.translation}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[9px] font-black bg-gray-50 text-gray-400 px-2 py-1 rounded-md uppercase">{vocab.part_of_speech}</span>
-                          <span className="text-xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
-                        </div>
+                        <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
                       </Link>
                     );
                   })}
                 </div>
-              </section>
+              </div>
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[3rem] p-16 border-2 border-gray-200 text-center shadow-sm">
-            <div className="text-7xl mb-6 opacity-30">🏜️</div>
-            <h2 className="text-2xl font-black text-gray-400">The history is blank.</h2>
-            <p className="text-gray-500 mb-8 mt-2">Time to write your first chapter.</p>
-            <Link href="/" className="inline-block bg-blue-600 text-white font-black px-10 py-4 rounded-2xl hover:bg-blue-700 transition-all shadow-lg">Back to Dashboard</Link>
+          <div className="bg-white rounded-[3rem] p-20 border-2 border-gray-200 text-center">
+            <div className="text-6xl mb-6">🏜️</div>
+            <h2 className="text-2xl font-black text-gray-300 uppercase">No Activity Found</h2>
+            <p className="text-gray-400 mt-2 font-medium">Try selecting a different period.</p>
           </div>
         )}
       </main>
