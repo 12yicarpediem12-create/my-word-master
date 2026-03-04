@@ -36,7 +36,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
       2. Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below.
       3. For nouns, include the definite article (e.g. "la mela").
       4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
-      5. CONJUGATION: For verbs, provide Present Tense with line breaks (\\n). Include "Past Participle".
+      5. CONJUGATION: For verbs, ALWAYS start with the header "Present:" followed by the conjugation list. Then include "Past Participle:". Use line breaks (\\n) for each person.
       6. NOTES FIELD: For verbs, YOU MUST specify the conjugation group (e.g., "-are verb", "-ere verb", "-ire verb" for Italian). Include essential grammar tips.
 
       ### AVAILABLE CATEGORY LIST:
