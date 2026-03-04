@@ -5,30 +5,26 @@ export async function generateWordDetails(word: string, langCode: string) {
   const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY?.trim();
   if (!apiKey) throw new Error("API Key is missing.");
 
+  // 最新のSDKでは初期化時にAPIバージョンを内部で最適化します
   const genAI = new GoogleGenerativeAI(apiKey);
 
   /**
-   * 🌟 2026年3月現在の有効なモデルリスト
-   * 2.0は廃止されたため、3系を優先します。
+   * 🌟 2026年3月現在、最も「確実」に動くモデルID
    */
   const candidates = [
-    "gemini-3-flash",     // 本格運用のメインモデル
-    "gemini-3.1-pro",     // 高精度モデル
-    "gemini-1.5-flash",   // 安定版のバックアップ
+    "gemini-1.5-flash",        // 安定版の王道（まず間違いなく動く）
+    "gemini-1.5-flash-latest", // 1.5系の最新
+    "gemini-3.0-flash",        // 3系の標準
   ];
 
   let lastError = "";
 
   for (const modelId of candidates) {
     try {
-      // 🌟 重要: デバッグメッセージで今の設定を確認
-      console.log(`DEBUG: Trying ${modelId} FORCE v1...`);
+      console.log(`DEBUG: Trying ${modelId} with updated SDK...`);
       
-      // 🌟 APIバージョンを "v1" に強制固定します
-      const model = genAI.getGenerativeModel(
-        { model: modelId },
-        { apiVersion: "v1" }
-      );
+      // 最新のSDKであれば、ここでの指定だけで正しいエンドポイント(v1)へ飛びます
+      const model = genAI.getGenerativeModel({ model: modelId });
 
       const prompt = `Return ONLY JSON for word "${word}" in ${langCode}: {"translation":"...","part_of_speech":"...","category":"...","example_sentence":"...","example_translation":"...","conjugation":"..."}`;
 
@@ -46,5 +42,5 @@ export async function generateWordDetails(word: string, langCode: string) {
     }
   }
 
-  throw new Error(`AI Blackout: v1エンドポイントでもモデルが見つかりません。APIキーの有効性を再確認してください。`);
+  throw new Error(`AI Blackout: ライブラリを更新しましたが、APIキー側に制限があるようです。AI Studioでキーのステータスを確認してください。`);
 }
