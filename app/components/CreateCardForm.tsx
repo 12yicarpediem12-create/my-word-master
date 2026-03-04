@@ -63,7 +63,6 @@ export default function CreateCardForm() {
     return () => clearTimeout(timer);
   }, [newWord, selectedLang, newPos]);
 
-  // 🌟 AIのデータを綺麗に整形する関数（アンダーバー除去版）
   const formatAIData = (val: any): string => {
     if (val === null || val === undefined) return "";
     if (typeof val === "string") return val;
@@ -71,11 +70,9 @@ export default function CreateCardForm() {
     if (typeof val === "object") {
       try {
         return Object.entries(val).map(([tense, forms]) => {
-          
-          // 🌟 ここで「present_indicative」を「Present Indicative」に変換！
           const cleanTense = tense
-            .replace(/_/g, " ") // アンダーバーをスペースに置換
-            .replace(/\b\w/g, (char) => char.toUpperCase()); // 各単語の先頭を大文字に
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (char) => char.toUpperCase());
             
           if (typeof forms === "object" && forms !== null) {
             const conjugations = Object.entries(forms)
@@ -99,13 +96,17 @@ export default function CreateCardForm() {
       const aiData = await generateWordDetails(newWord, selectedLang);
       
       if (aiData && typeof aiData === 'object' && !aiData.error) {
+        
+        // 🌟 新機能：AIが定冠詞付きの単語を返してきたら、入力欄を自動で上書き！
+        if (aiData.word_with_article) {
+          setNewWord(aiData.word_with_article);
+        }
+
         setNewTranslation(typeof aiData.translation === "string" ? aiData.translation : formatAIData(aiData.translation));
         setNewPos(typeof aiData.part_of_speech === "string" ? aiData.part_of_speech : formatAIData(aiData.part_of_speech));
         setNewExample(typeof aiData.example_sentence === "string" ? aiData.example_sentence : formatAIData(aiData.example_sentence));
         setNewExampleTranslation(typeof aiData.example_translation === "string" ? aiData.example_translation : formatAIData(aiData.example_translation));
         setNewCategory(typeof aiData.category === "string" ? aiData.category : formatAIData(aiData.category) || "Other");
-        
-        // 活用形をセット
         setNewConjugation(formatAIData(aiData.conjugation));
       } else {
         alert(aiData?.error || "AI could not generate details. Please fill manually.");

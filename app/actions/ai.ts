@@ -17,9 +17,17 @@ export async function generateWordDetails(word: string, langCode: string) {
     try {
       const model = genAI.getGenerativeModel({ model: modelId }, { apiVersion: "v1" });
       
-      // 🌟 プロンプトを厳格化：「動詞なら必ずこの3つの時制を出すこと。動詞以外はnullにすること」と命令
+      // 🌟 "word_with_article" という新しいキーを要求します
       const prompt = `Return ONLY a valid raw JSON object for the word "${word}" in language "${langCode}".
-      Required keys: "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".
+      Required keys: "word_with_article", "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".
+      
+      CRITICAL INSTRUCTION FOR "word_with_article":
+      - If the word is a noun, return the word with its appropriate definite article prepended (e.g., "la mela", "il problema").
+      - If the word is NOT a noun, return the original word as is (e.g., "mangiare").
+
+      CRITICAL INSTRUCTION FOR "part_of_speech":
+      - For nouns, explicitly state the gender (e.g., "Masculine Noun" or "Feminine Noun").
+      - For verbs, explicitly state the transitivity (e.g., "Transitive Verb" or "Intransitive Verb").
       
       CRITICAL INSTRUCTION FOR "conjugation":
       - If the word is NOT a verb, set "conjugation" to null.
