@@ -33,7 +33,10 @@ export async function generateVocabInfo(word: string, langCode: string) {
 
       ### INSTRUCTIONS:
       1. Meaning over Language: Categorize based on the word's core CONCEPT.
-      2. Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below.
+      2. CATEGORY SELECTION: 
+         - Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below. 
+         - CRITICAL: Always select the MOST SPECIFIC category (the deepest level sub-subtopic).
+         - 🌟 EXCEPTION: If the word does NOT logically fit into any of the available sub-subtopics, do NOT force it. Return null for "category_id".
       3. For nouns, include the definite article (e.g. "la mela").
       4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
       5. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations. 
