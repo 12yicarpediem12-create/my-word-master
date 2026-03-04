@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-// AIアクションをインポート
 import { getWordNuance } from "../../actions/ai";
 
 const supabase = createClient(
@@ -19,9 +18,11 @@ export default function WordDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // 🌟 AI関連のステート（保存せず一時的に表示する用）
   const [isAskingAI, setIsAskingAI] = useState(false);
+  const [tempNuance, setTempNuance] = useState<string | null>(null);
 
-  // 編集用の State
   const [editWord, setEditWord] = useState("");
   const [editTranslation, setEditTranslation] = useState("");
   const [editPos, setEditPos] = useState("");
@@ -36,17 +37,9 @@ export default function WordDetail() {
   useEffect(() => {
     async function fetchWord() {
       if (!wordId) return;
-
       const { data, error } = await supabase
         .from("vocab")
-        .select(`
-          *,
-          categories:category_id (
-            id,
-            name,
-            full_path
-          )
-        `)
+        .select(`*, categories:category_id ( id, name, full_path )`)
         .eq("id", wordId)
         .single();
 
@@ -85,50 +78,20 @@ export default function WordDetail() {
     window.speechSynthesis.speak(utterance);
   }, [vocab]);
 
-  // 🌟 修正: 既存のノートを保護しつつ追記する
+  // 🌟 修正: AI回答をステートのみに保持（DBには保存しない）
   const handleAskNuance = async () => {
     if (!vocab) return;
     setIsAskingAI(true);
+    setTempNuance(null); // 前回の回答をクリア
     try {
       const nuance = await getWordNuance(vocab.word, vocab.language_code, vocab.translation);
-      
-      if (nuance.startsWith("Sorry") || nuance.startsWith("Could not")) {
-        alert(nuance);
-        return;
-      }
-
-      // 既存のノートがあれば、その下にAIの解説を追記する
-      const updatedNotes = vocab.notes 
-        ? `${vocab.notes}\n\n--- AI Nuance Coaching ---\n${nuance}`
-        : nuance;
-
-      const { error } = await supabase
-        .from("vocab")
-        .update({ notes: updatedNotes })
-        .eq("id", wordId);
-
-      if (!error) {
-        setVocab({ ...vocab, notes: updatedNotes });
-        setEditNotes(updatedNotes);
-      }
+      // アスタリスクを除去してステートにセット
+      const cleanNuance = nuance.replace(/\*\*/g, '');
+      setTempNuance(cleanNuance);
     } catch (err) {
       console.error("Failed to fetch nuance:", err);
     } finally {
       setIsAskingAI(false);
-    }
-  };
-
-  const handleClearNotes = async () => {
-    if (!window.confirm("Are you sure you want to clear these notes?")) return;
-    
-    const { error } = await supabase
-      .from("vocab")
-      .update({ notes: null })
-      .eq("id", wordId);
-
-    if (!error) {
-      setVocab({ ...vocab, notes: null });
-      setEditNotes("");
     }
   };
 
@@ -192,14 +155,6 @@ export default function WordDetail() {
             <div className="bg-blue-50 text-blue-600 font-black uppercase tracking-widest px-6 py-3 border-b-2 border-l-2 border-blue-100 text-xs sm:text-sm">
               {vocab.language_code}
             </div>
-            {vocab.categories && (
-              <Link
-                href={`/study/${vocab.language_code}/topics/${vocab.category_id}`}
-                className="bg-indigo-600 text-white font-black uppercase tracking-widest px-4 py-3 rounded-bl-[1.5rem] text-[10px] sm:text-xs hover:bg-indigo-700 transition-colors shadow-sm"
-              >
-                {getMainTopicName()}
-              </Link>
-            )}
           </div>
 
           {!isEditing ? (
@@ -247,81 +202,73 @@ export default function WordDetail() {
                 </div>
               )}
 
-              {/* 🌟 ニュアンス/ノートセクション */}
+              {/* 🌟 セクション1: Notes / Grammar Pattern (常に表示) */}
               <div className="border-t-2 border-gray-50 pt-8">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">Usage & Nuance</p>
-                  <div className="flex gap-2">
-                    {vocab.notes && (
-                      <button 
-                        onClick={handleClearNotes}
-                        className="text-[10px] font-black bg-red-50 text-red-500 px-4 py-2 rounded-full hover:bg-red-100 transition-all"
-                      >
-                        🗑️ CLEAR
-                      </button>
-                    )}
-                    <button 
-                      onClick={handleAskNuance}
-                      disabled={isAskingAI}
-                      className="text-[10px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {isAskingAI ? "✨ ANALYZING..." : (vocab.notes ? "🪄 APPEND NUANCE" : "🪄 ASK AI FOR NUANCE")}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50/50 rounded-3xl p-6 border-2 border-dashed border-gray-100 min-h-[100px] flex flex-col justify-center">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-4">Notes / Grammar Pattern</p>
+                <div className="bg-gray-50 rounded-3xl p-6 border-2 border-gray-100">
                   {vocab.notes ? (
                     <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">
-                      {/* Stringに変換してからreplaceを実行し、安全に表示 */}
-                      {String(vocab.notes).replace(/\*\*/g, '')}
+                      {vocab.notes}
                     </p>
                   ) : (
-                    <p className="text-xs font-bold text-gray-300 text-center py-4 uppercase tracking-widest">
-                      No notes yet. Click the wand to ask AI!
-                    </p>
+                    <p className="text-xs font-bold text-gray-300 text-center py-2 uppercase tracking-widest">No grammar notes added.</p>
                   )}
                 </div>
               </div>
 
-              {/* 詳細グリッド */}
+              {/* 🌟 セクション2: Usage & Nuance (AI呼び出し) */}
+              <div className="border-t-2 border-gray-50 pt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">Usage & Nuance</p>
+                  <button 
+                    onClick={handleAskNuance}
+                    disabled={isAskingAI}
+                    className="text-[10px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isAskingAI ? "✨ ANALYZING..." : "🪄 ASK AI FOR NUANCE"}
+                  </button>
+                </div>
+                
+                {tempNuance && (
+                  <div className="bg-indigo-50/50 rounded-3xl p-6 border-2 border-dashed border-indigo-100 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed italic">
+                      {tempNuance}
+                    </p>
+                    <p className="text-[9px] font-bold text-indigo-300 mt-4 uppercase tracking-tighter">※ This insight is temporary and will not be saved.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 🌟 修正: グリッドカード（Topic / POS / Verb Type）の文字溢れ対策 */}
               <div className="flex flex-wrap gap-4 border-t-2 border-gray-50 pt-8">
                 {vocab.categories && (
                   <Link
                     href={`/study/${vocab.language_code}/topics/${vocab.category_id}`}
-                    className="flex-1 min-w-[140px] bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex flex-col items-center sm:items-start group hover:border-indigo-400 transition-all"
+                    className="flex-1 min-w-0 bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex flex-col items-center sm:items-start group hover:border-indigo-400 transition-all"
                   >
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Topic</p>
-                    <p className="font-bold text-indigo-900 text-lg group-hover:text-indigo-600 transition-colors">
+                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 whitespace-nowrap">Topic</p>
+                    <p className="font-bold text-indigo-900 text-sm sm:text-base break-words w-full leading-tight group-hover:text-indigo-600">
                       {getMainTopicName()}
                     </p>
-                    <p className="text-[9px] font-bold text-indigo-300 uppercase mt-1">View {vocab.categories.name} List →</p>
                   </Link>
                 )}
 
-                <div className="flex-1 min-w-[120px] bg-gray-50 p-5 rounded-3xl border border-gray-100 flex flex-col items-center sm:items-start">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Part of Speech</p>
-                  <p className="font-bold text-gray-800 text-lg">{vocab.part_of_speech || "---"}</p>
+                <div className="flex-1 min-w-0 bg-gray-50 p-5 rounded-3xl border border-gray-100 flex flex-col items-center sm:items-start">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 whitespace-nowrap">Part of Speech</p>
+                  <p className="font-bold text-gray-800 text-sm sm:text-base break-words w-full leading-tight">{vocab.part_of_speech || "---"}</p>
                 </div>
 
-                {vocab.gender && (
-                  <div className="flex-1 min-w-[120px] bg-emerald-50 p-5 rounded-3xl border border-emerald-100 flex flex-col items-center sm:items-start">
-                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Gender</p>
-                    <p className="font-bold text-emerald-800 text-lg">{vocab.gender}</p>
-                  </div>
-                )}
-
-                {vocab.verb_type && (
-                  <div className="flex-1 min-w-[120px] bg-emerald-50 p-5 rounded-3xl border border-emerald-100 flex flex-col items-center sm:items-start">
-                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Verb Type</p>
-                    <p className="font-bold text-emerald-800 text-lg">{vocab.verb_type}</p>
-                  </div>
-                )}
+                <div className="flex-1 min-w-0 bg-emerald-50 p-5 rounded-3xl border border-emerald-100 flex flex-col items-center sm:items-start">
+                  <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2 whitespace-nowrap">Verb Type</p>
+                  <p className="font-bold text-emerald-800 text-[11px] sm:text-sm break-words w-full leading-tight">
+                    {vocab.verb_type || "---"}
+                  </p>
+                </div>
 
                 <div className="flex-1 min-w-[120px] bg-gray-50 p-5 rounded-3xl border border-gray-100 flex flex-col items-center justify-center">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mastery</p>
-                  <button onClick={handleToggleRemembered} className={`w-full py-2 px-3 rounded-2xl font-black text-xs transition-all uppercase tracking-widest ${vocab.is_remembered ? "bg-green-500 text-white shadow-lg shadow-green-100" : "bg-orange-100 text-orange-600"}`}>
-                    {vocab.is_remembered ? " ✅ Mastered" : " 🔥 Learning"}
+                  <button onClick={handleToggleRemembered} className={`w-full py-2 px-3 rounded-2xl font-black text-[10px] transition-all uppercase tracking-widest ${vocab.is_remembered ? "bg-green-500 text-white shadow-lg" : "bg-orange-100 text-orange-600"}`}>
+                    {vocab.is_remembered ? "Mastered" : "Learning"}
                   </button>
                 </div>
               </div>
@@ -369,7 +316,7 @@ export default function WordDetail() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Notes / AI Nuance</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Notes / Grammar Pattern</label>
                   <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={5} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-medium" />
                 </div>
 
