@@ -3,37 +3,47 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateWordDetails(word: string, langCode: string) {
   const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY?.trim();
-  const genAI = new GoogleGenerativeAI(apiKey!);
+  if (!apiKey) throw new Error("API Key is missing.");
 
-  try {
-    // 🌟 診断フェーズ：利用可能なモデルをすべて取得してログに出す
-    console.log("--- DIAGNOSTIC: LISTING MODELS ---");
-    const result = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`);
-    const data = await result.json();
-    console.log("Available Models:", JSON.stringify(data.models?.map((m: any) => m.name)));
-    
-    // 🌟 推測フェーズ：2026年の命名規則に基づいた候補
-    const candidates = [
-      "models/gemini-3-flash-latest", 
-      "models/gemini-3.1-pro-latest",
-      "models/gemini-3-flash-001",
-      "models/gemini-3.1-flash"
-    ];
+  const genAI = new GoogleGenerativeAI(apiKey);
 
-    for (const modelId of candidates) {
-      try {
-        console.log(`DEBUG: Trying ${modelId}...`);
-        const model = genAI.getGenerativeModel({ model: modelId }, { apiVersion: "v1" });
-        const prompt = `Return ONLY JSON for word "${word}" in ${langCode}: {"translation":"..."}`;
-        const res = await model.generateContent(prompt);
-        console.log(`✅ SUCCESS: ${modelId}`);
-        return JSON.parse(res.response.text().replace(/```json|```/g, ""));
-      } catch (e) {
-        console.warn(`❌ ${modelId} failed.`);
-      }
+  /**
+   * 🌟 ログで確認できた「今すぐ使える」モデルリスト
+   * models/ プレフィックスを外したIDを指定します
+   */
+  const candidates = [
+    "gemini-2.5-flash",      // 2.5系のメイン
+    "gemini-2.5-flash-lite", // 2.5系の軽量版（より高速）
+    "gemini-2.0-flash",      // 2.0系の安定版
+  ];
+
+  let lastError = "";
+
+  for (const modelId of candidates) {
+    try {
+      console.log(`DEBUG: [2026 Verified] Trying ${modelId} via v1...`);
+      
+      const model = genAI.getGenerativeModel(
+        { model: modelId },
+        { apiVersion: "v1" }
+      );
+
+      const prompt = `Return ONLY JSON for word "${word}" in ${langCode}: {"translation":"...","part_of_speech":"...","category":"...","example_sentence":"...","example_translation":"...","conjugation":"..."}`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      
+      console.log(`✅ SUCCESS: ${modelId}`);
+      // JSONの整形
+      const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
+      return JSON.parse(cleanJson);
+      
+    } catch (e: any) {
+      console.warn(`❌ FAILED ${modelId}: ${e.message}`);
+      lastError = e.message;
+      continue; 
     }
-  } catch (err) {
-    console.error("Diagnostic failed", err);
   }
-  throw new Error("Check logs for 'Available Models' list.");
+
+  throw new Error(`AI Blackout: 利用可能なモデルでもエラーが発生しました: ${lastError}`);
 }
