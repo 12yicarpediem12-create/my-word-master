@@ -87,6 +87,23 @@ export default function CreateCardForm() {
            }
         }
 
+        // 🌟 追加: 100%トピック同期システム (Translation Sync)
+        // 過去に同じ英訳(Meaning)で登録された単語がないかチェックし、あればそのカテゴリIDを強制適用する
+        if (aiData.translation) {
+          const cleanTranslation = String(aiData.translation).toLowerCase().trim();
+          const { data: existingWords } = await supabase
+            .from("vocab")
+            .select("category_id")
+            .ilike("translation", cleanTranslation) // 大文字小文字を無視して一致検索
+            .not("category_id", "is", null)
+            .limit(1);
+
+          if (existingWords && existingWords.length > 0) {
+            aiData.category_id = existingWords[0].category_id;
+            console.log("Translation Sync: 強制的に既存のカテゴリIDに同期させました！");
+          }
+        }
+
         setNewWord(finalWord);
         setNewTranslation(String(aiData.translation || ""));
         setNewPos(String(aiData.part_of_speech || ""));
