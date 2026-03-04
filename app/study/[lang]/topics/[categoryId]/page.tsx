@@ -65,6 +65,9 @@ export default function TopicDetailPage() {
 
   const topicsPath = langCode ? `/study/${langCode}/topics` : "#";
 
+  // 🌟 追加: 一番親のID（大フォルダ）を取得
+  const rootId = breadcrumbs.length > 0 ? breadcrumbs[0].id : category?.id;
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
@@ -90,12 +93,12 @@ export default function TopicDetailPage() {
         ) : (
           <>
             <header className="mb-12">
-              {/* 🌟 修正: 単なる文字列ではなく、Linkコンポーネントのリストに変更 */}
               <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 flex flex-wrap items-center gap-2">
                 {breadcrumbs.map((crumb) => (
                   <span key={crumb.id} className="flex items-center gap-2">
+                    {/* 🌟 修正: 一覧画面のURLに、開くフォルダ(?open)とスクロール位置(#topic)の目印を付ける */}
                     <Link 
-                      href={`/study/${langCode}/topics/${crumb.id}`}
+                      href={`/study/${langCode}/topics?open=${rootId}#topic-${crumb.id}`}
                       className="hover:text-blue-700 hover:underline transition-all opacity-70 hover:opacity-100"
                     >
                       {crumb.name}
