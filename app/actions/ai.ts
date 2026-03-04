@@ -36,8 +36,11 @@ export async function generateVocabInfo(word: string, langCode: string) {
       2. Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below.
       3. For nouns, include the definite article (e.g. "la mela").
       4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
-      5. CONJUGATION: For verbs, ALWAYS start with the header "Present:" followed by the conjugation list. Provide ONLY the target language pronouns and forms (e.g., "io parlo"). DO NOT include English translations like "(I speak)". Then include "Past Participle:".
-      6. NOTES FIELD: For verbs, YOU MUST specify the conjugation group (e.g., "-are verb", "-ere verb", "-ire verb" for Italian). Include essential grammar tips.
+      5. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations. 
+         🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:".
+      6. NOTES FIELD (Strict Consistency): For verbs, provide exactly two lines:
+         Line 1: Conjugation group (e.g., "Regular -are verb").
+         Line 2: One essential grammar or usage tip.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -49,15 +52,15 @@ export async function generateVocabInfo(word: string, langCode: string) {
         "part_of_speech": "Noun/Verb/Adjective/Adverb/Phrase",
         "gender": "Masculine/Feminine/Neuter or null",
         "verb_type": "Transitive/Intransitive or null",
-        "conjugation": "Formatted guide with \\n",
+        "conjugation": "Present:\\nio parlo...\\n\\nPast Participle: parlato",
         "example_sentence": "Sentence in target language",
         "example_translation": "English translation",
         "category_id": "Selected UUID or null",
-        "notes": "Grammar notes (Include conjugation group for verbs)"
+        "notes": "Group: [Pattern]\\nTip: [Grammar tip]"
       }
     `;
 
-    // 🌟 モデル名を gemini-2.5-flash に設定
+    // 🌟 Gemini 2.5 Flash を使用
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash", 
       generationConfig: { responseMimeType: "application/json" }
@@ -85,7 +88,6 @@ export async function getWordNuance(word: string, langCode: string, translation:
     if (!apiKey) throw new Error("API Key missing");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // 🌟 モデル名を gemini-2.5-flash に設定
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
