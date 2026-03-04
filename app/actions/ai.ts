@@ -36,10 +36,11 @@ export async function generateVocabInfo(word: string, langCode: string) {
       2. CATEGORY SELECTION: 
          - Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below. 
          - CRITICAL: Always select the MOST SPECIFIC category (the deepest level sub-subtopic).
-         - 🌟 EXCEPTION: If the word does NOT logically fit into any of the available sub-subtopics, do NOT force it. Return null for "category_id".
+         - 🌟 EXCEPTION: If the word does NOT logically fit into any sub-subtopics, return null for "category_id".
       3. For nouns, include the definite article (e.g. "la mela").
       4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
-      5. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations. 
+      5. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). 
+         DO NOT include English translations.
          🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:".
       6. NOTES FIELD (Strict Consistency): For verbs, provide exactly two lines:
          Line 1: Conjugation group (e.g., "Regular -are verb").
@@ -54,7 +55,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
         "translation": "English translation",
         "part_of_speech": "Noun/Verb/Adjective/Adverb/Phrase",
         "gender": "Masculine/Feminine/Neuter or null",
-        "verb_type": "Transitive/Intransitive or null",
+        "verb_type": "Transitive/Intransitive or Transitive/Intransitive",
         "conjugation": "Present:\\nio parlo...\\n\\nPast Participle: parlato",
         "example_sentence": "Sentence in target language",
         "example_translation": "English translation",
@@ -63,7 +64,6 @@ export async function generateVocabInfo(word: string, langCode: string) {
       }
     `;
 
-    // 🌟 Gemini 2.5 Flash を使用
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash", 
       generationConfig: { responseMimeType: "application/json" }
@@ -83,7 +83,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
 }
 
 /**
- * 2. 単語のニュアンスや文化的背景を詳しく解説する関数 (AI Coach)
+ * 2. 単語のニュアンス解説 (AI Coach)
  */
 export async function getWordNuance(word: string, langCode: string, translation: string) {
   try {
@@ -97,8 +97,10 @@ export async function getWordNuance(word: string, langCode: string, translation:
       You are a native language tutor. Explain the nuanced meaning and natural usage for "${word}" in ${langCode}.
       Core meaning: "${translation}". 
       
-      IMPORTANT: DO NOT use Markdown symbols like ** or #.
-      Use plain text and clear line breaks (\\n).
+      ### CRITICAL RULES:
+      1. 🌟 LANGUAGE: ALWAYS provide the explanation in ENGLISH.
+      2. FORMAT: Use plain text only. DO NOT use Markdown symbols like ** or #.
+      3. SPACING: Use clear line breaks (\\n).
     `;
 
     const result = await model.generateContent(prompt);
