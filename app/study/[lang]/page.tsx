@@ -12,6 +12,82 @@ const supabase = createClient(
 
 const POS_LIST = ["Noun", "Verb", "Adjective", "Adverb", "Phrase"];
 
+const NavCard = ({ href, icon, subtitle, title, iconBg }: { href: string; icon: string; subtitle: string; title: string; iconBg: string }) => (
+  <Link href={href} className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
+    <div className="flex items-center gap-5">
+      <div className={`w-14 h-14 ${iconBg} rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform`}>{icon}</div>
+      <div>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{subtitle}</p>
+        <h2 className="text-xl font-black text-gray-900">{title}</h2>
+      </div>
+    </div>
+    <span className="text-gray-300 font-black group-hover:text-blue-500 transition-colors mr-2">→</span>
+  </Link>
+);
+
+const StatCircle = ({ percentage, mastered, total }: { percentage: number; mastered: number; total: number }) => (
+  <div className="lg:col-span-1 bg-white rounded-3xl p-8 border-2 border-gray-200 flex flex-col items-center justify-center shadow-sm h-full">
+    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 text-center">Overall Mastery</h3>
+    <div className="relative w-40 h-40 flex items-center justify-center">
+      <svg className="transform -rotate-90 w-40 h-40">
+        <circle cx="80" cy="80" r="65" stroke="#f3f4f6" strokeWidth="14" fill="none" />
+        <circle cx="80" cy="80" r="65" stroke="#2563eb" strokeWidth="14" fill="none" strokeDasharray={408} strokeDashoffset={408 - (percentage / 100) * 408} className="transition-all duration-1000 ease-out" strokeLinecap="round" />
+      </svg>
+      <div className="absolute flex flex-col items-center justify-center mt-1">
+        <span className="text-3xl font-black leading-none">{percentage}%</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase mt-1">{mastered} / {total}</span>
+      </div>
+    </div>
+  </div>
+);
+
+const ProgressBar = ({ stat }: { stat: any }) => (
+  <div className="space-y-2">
+    <div className="flex justify-between items-end">
+      <span className="text-sm font-bold text-gray-700">{stat.name}</span>
+      <span className="text-xs font-black text-gray-400">{stat.mastered} / {stat.total}</span>
+    </div>
+    <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-gray-100 relative">
+      <div className={`h-full transition-all duration-1000 ease-in-out ${stat.percentage === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${stat.percentage}%` }} />
+    </div>
+  </div>
+);
+
+const FilterButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button 
+    onClick={onClick} 
+    className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${active ? "bg-blue-600 border-blue-600 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-blue-600 hover:text-blue-600"}`}
+  >
+    {children}
+  </button>
+);
+
+const VocabItem = ({ vocab, isWeak, onSpeak }: { vocab: any; isWeak: boolean; onSpeak: (text: string) => void }) => (
+  <div className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
+    <div className="flex items-start sm:items-center gap-4 sm:gap-6">
+      <span className={`w-3 h-3 rounded-full mt-2 sm:mt-0 shrink-0 ${vocab.is_remembered ? "bg-green-400" : "bg-orange-400"}`}></span>
+      <div>
+        <Link href={`/word/${vocab.id}`} className="block">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
+            {isWeak && !vocab.is_remembered && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Weak</span>}
+          </div>
+          <p className="text-sm font-medium text-gray-500 mt-1">{vocab.translation}</p>
+        </Link>
+        <div className="flex flex-wrap gap-2 mt-3 sm:mt-2">
+          {vocab.gender && <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-100">{vocab.gender}</span>}
+          {vocab.verb_type && <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-100">{vocab.verb_type}</span>}
+        </div>
+      </div>
+    </div>
+    <div className="flex items-center gap-4 self-end sm:self-auto">
+      <button onClick={() => onSpeak(vocab.word)} className="p-3 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition-all active:scale-90">🔊</button>
+      <span className="hidden sm:inline-block text-[10px] font-bold bg-gray-100 text-gray-400 px-3 py-1 rounded-full uppercase tracking-widest">{vocab.part_of_speech || "N/A"}</span>
+      <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
+    </div>
+  </div>
+);
+
 export default function LanguageHub() {
   const params = useParams();
   const router = useRouter();
@@ -98,12 +174,11 @@ export default function LanguageHub() {
           <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80">WordMaster.</Link>
         </div>
         <div className="w-full md:flex-1 md:max-w-2xl md:mx-8"><SearchBar forcedLang={langCode} /></div>
-        <button onClick={() => router.push("/")} className="text-sm font-bold text-gray-500 hover:text-blue-600 uppercase tracking-widest flex items-center gap-2"><span>←</span> Dashboard</button>
+        <button onClick={() => router.push("/")} className="text-sm font-bold text-gray-500 hover:text-blue-600 uppercase tracking-widest flex items-center gap-2 shrink-0"><span>←</span> Dashboard</button>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* 言語ヘッダー */}
-        <div className="bg-white rounded-[2.5rem] p-8 md:p-10 border-2 border-gray-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8 mb-8 relative overflow-hidden">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 md:p-10 border-2 border-gray-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-8 mb-8 relative overflow-hidden">
           <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4 sm:gap-6 z-10">
             <div className="text-7xl md:text-8xl">{language?.emoji}</div>
             <div>
@@ -112,7 +187,7 @@ export default function LanguageHub() {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 z-10 w-full lg:w-auto shrink-0 mt-4 lg:mt-0">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 z-10 w-full lg:w-auto shrink-0">
             {weakWordsCount > 0 && (
               <button onClick={() => router.push(`/study/${langCode}/session`)} className="w-full sm:w-auto h-[80px] px-6 bg-red-50 text-red-600 font-black rounded-2xl border-2 border-red-200 hover:bg-red-100 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 shadow-sm shrink-0">
                 <span className="text-3xl animate-pulse">🚨</span> 
@@ -128,128 +203,65 @@ export default function LanguageHub() {
           </div>
         </div>
 
-        {/* 🌟 Navigation Cards: Topics & History */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          {/* ✅ パスを /study/${langCode}/topics に修正 */}
-          <Link href={`/study/${langCode}/topics`} className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🗂️</div>
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Taxonomy</p>
-                <h2 className="text-xl font-black text-gray-900">Browse by Topic</h2>
-              </div>
-            </div>
-            <span className="text-gray-300 font-black group-hover:text-blue-500 transition-colors mr-2">→</span>
-          </Link>
-
-          <Link href="/history" className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">⏳</div>
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Activity</p>
-                <h2 className="text-xl font-black text-gray-900">Review History</h2>
-              </div>
-            </div>
-            <span className="text-gray-300 font-black group-hover:text-blue-500 transition-colors mr-2">→</span>
-          </Link>
+          <NavCard href={`/study/${langCode}/topics`} icon="🗂️" subtitle="Taxonomy" title="Browse by Topic" iconBg="bg-blue-50" />
+          <NavCard href="/history" icon="⏳" subtitle="Activity" title="Review History" iconBg="bg-gray-50" />
         </div>
 
-        {/* 統計セクション */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          <div className="lg:col-span-1 bg-white rounded-3xl p-8 border-2 border-gray-200 flex flex-col items-center justify-center shadow-sm">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Overall Mastery</h3>
-            <div className="relative w-40 h-40 flex items-center justify-center">
-              <svg className="transform -rotate-90 w-40 h-40">
-                <circle cx="80" cy="80" r="65" stroke="#f3f4f6" strokeWidth="14" fill="none" />
-                <circle cx="80" cy="80" r="65" stroke="#2563eb" strokeWidth="14" fill="none" strokeDasharray={408} strokeDashoffset={408 - (globalPercentage / 100) * 408} className="transition-all duration-1000 ease-out" strokeLinecap="round" />
-              </svg>
-              <div className="absolute text-center">
-                <span className="text-3xl font-black block">{globalPercentage}%</span>
-                <span className="text-[10px] font-bold text-gray-400 uppercase">{masteredWords} / {totalWords}</span>
-              </div>
-            </div>
-          </div>
-          <div className="lg:col-span-2 bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Mastery by Category</h3>
+          <StatCircle percentage={globalPercentage} mastered={masteredWords} total={totalWords} />
+          <div className="lg:col-span-2 bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm h-full flex flex-col justify-center">
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 text-center sm:text-left">Mastery by Category</h3>
             <div className="space-y-5">
               {posStats.map((stat) => (
-                <div key={stat.name} className="space-y-2">
-                  <div className="flex justify-between items-end">
-                    <span className="text-sm font-bold text-gray-700">{stat.name}</span>
-                    <span className="text-xs font-black text-gray-400">{stat.mastered} / {stat.total}</span>
-                  </div>
-                  <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-gray-100 relative">
-                    <div className={`h-full transition-all duration-1000 ease-in-out ${stat.percentage === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${stat.percentage}%` }} />
-                  </div>
-                </div>
+                <ProgressBar key={stat.name} stat={stat} />
               ))}
             </div>
           </div>
         </div>
 
-        {/* Random Flashback */}
         {randomWord && (
-          <div className="mb-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
-            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
-              <div className="flex items-center gap-6">
-                <button onClick={() => speak(randomWord.word)} className="w-16 h-16 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center text-3xl transition-all active:scale-90">🔊</button>
-                <div>
+          <div className="mb-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden group">
+            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
+              <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
+                <button onClick={() => speak(randomWord.word)} className="w-16 h-16 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center text-3xl transition-all active:scale-90 shrink-0">🔊</button>
+                <div className="flex-1 min-w-0">
                   <p className="text-xs font-black uppercase tracking-widest opacity-70 mb-2">Random Flashback</p>
-                  <h3 className="text-4xl font-black mb-1">{randomWord.word}</h3>
-                  <p className="text-xl opacity-90 font-medium">{randomWord.translation}</p>
+                  <h3 className="text-3xl sm:text-4xl font-black mb-1 truncate">{randomWord.word}</h3>
+                  <p className="text-lg sm:text-xl opacity-90 font-medium truncate">{randomWord.translation}</p>
                 </div>
               </div>
-              <Link href={`/word/${randomWord.id}`} className="bg-white text-indigo-600 px-8 py-3 rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg active:scale-95">Review Now</Link>
+              <Link href={`/word/${randomWord.id}`} className="w-full md:w-auto bg-white text-indigo-600 px-8 py-4 rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg active:scale-95 whitespace-nowrap text-center">Review Now</Link>
             </div>
             <div className="absolute -bottom-10 -right-10 text-[200px] font-black opacity-10 select-none group-hover:scale-110 transition-transform pointer-events-none">?</div>
           </div>
         )}
 
-        {/* フィルタ */}
-        <div className="mb-8 overflow-x-auto pb-2">
+        <div className="mb-8 overflow-x-auto pb-4 scrollbar-hide">
           <div className="flex gap-3">
-            <button onClick={() => setActiveFilter("All")} className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === "All" ? "bg-gray-900 border-gray-900 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-gray-900"}`}>All</button>
+            <button 
+              onClick={() => setActiveFilter("All")} 
+              className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === "All" ? "bg-gray-900 border-gray-900 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-gray-900"}`}
+            >
+              All
+            </button>
             {POS_LIST.map((pos) => (
-              <button key={pos} onClick={() => setActiveFilter(pos)} className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === pos ? "bg-blue-600 border-blue-600 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-blue-600 hover:text-blue-600"}`}>{pos}</button>
+              <FilterButton key={pos} active={activeFilter === pos} onClick={() => setActiveFilter(pos)}>
+                {pos}
+              </FilterButton>
             ))}
           </div>
         </div>
 
-        {/* 単語リスト */}
         <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm overflow-hidden mb-12">
           {filteredList.length > 0 ? (
             <div className="divide-y-2 divide-gray-100">
-              {filteredList.map((vocab) => {
-                const isWeak = (vocab.mistake_count || 0) > 0;
-                return (
-                  <div key={vocab.id} className="p-6 hover:bg-gray-50 transition-colors flex items-center justify-between group">
-                    <div className="flex items-center gap-6">
-                      <span className={`w-3 h-3 rounded-full ${vocab.is_remembered ? "bg-green-400" : "bg-orange-400"}`}></span>
-                      <div>
-                        <Link href={`/word/${vocab.id}`} className="block">
-                          <div className="flex items-center gap-2">
-                            <p className="text-xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
-                            {isWeak && !vocab.is_remembered && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">Weak</span>}
-                          </div>
-                          <p className="text-sm font-medium text-gray-500 mt-1">{vocab.translation}</p>
-                        </Link>
-                        <div className="flex gap-2 mt-2">
-                          {vocab.gender && <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-100">{vocab.gender}</span>}
-                          {vocab.verb_type && <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-100">{vocab.verb_type}</span>}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => speak(vocab.word)} className="p-3 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition-all active:scale-90">🔊</button>
-                      <span className="hidden sm:inline-block text-[10px] font-bold bg-gray-100 text-gray-400 px-3 py-1 rounded-full uppercase tracking-widest">{vocab.part_of_speech || "N/A"}</span>
-                      <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
-                    </div>
-                  </div>
-                );
-              })}
+              {filteredList.map((vocab) => (
+                <VocabItem key={vocab.id} vocab={vocab} isWeak={(vocab.mistake_count || 0) > 0} onSpeak={speak} />
+              ))}
             </div>
           ) : (
-            <div className="p-20 text-center text-gray-400 font-bold">No {activeFilter}s found.</div>
+            <div className="p-20 text-center text-gray-400 font-bold uppercase tracking-widest">No {activeFilter}s found.</div>
           )}
         </div>
       </main>
