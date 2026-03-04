@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // 🌟 画面移動の魔法を追加！
+import { useRouter } from "next/navigation";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,7 +10,7 @@ const supabase = createClient(
 );
 
 export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
-  const router = useRouter(); // 🌟 これも追加！
+  const router = useRouter();
   const [languages, setLanguages] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState(forcedLang || "all");
   const [query, setQuery] = useState("");
@@ -56,7 +56,6 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     setIsOpen(true);
   };
 
-  // 🌟 文字を打った時の自動検索（そのまま維持！）
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.trim()) executeSearch(query);
@@ -65,12 +64,10 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     return () => clearTimeout(timer);
   }, [query, selectedLang]);
 
-  // 🌟 ここを変更！：Enterや虫眼鏡を押したら、検索ページへジャンプ！
   const handleManualSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!query.trim()) return;
     
-    // サジェストの小窓を閉じて、検索結果ページへ飛ぶ
     setIsOpen(false);
     router.push(`/search?q=${encodeURIComponent(query)}&lang=${selectedLang}`);
   };
