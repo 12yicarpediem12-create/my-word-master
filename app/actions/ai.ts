@@ -3,15 +3,21 @@
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+/**
+ * 1. 単語の基本情報を生成するメイン関数
+ */
 export async function generateVocabInfo(word: string, langCode: string) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("API Key is missing in environment variables.");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+
     const { data: categories, error: dbError } = await supabase
       .from("categories")
       .select("id, full_path");
@@ -66,6 +72,45 @@ export async function generateVocabInfo(word: string, langCode: string) {
   } catch (error: any) {
     console.error("Gemini AI Generation Error:", error);
     return { error: error.message || "Unknown Gemini API error occurred." };
+  }
+}
+
+/**
+ * 2. 単語のニュアンスや文化的背景を詳しく解説する関数 (AI Coach)
+ */
+export async function getWordNuance(word: string, langCode: string, translation: string) {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("API Key missing");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    
+    // ニュアンス解説でも最新の 2.5-flash を使用
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `
+      You are a native language tutor. Explain the nuanced meaning, social context (casual/formal), and natural usage for the word "${word}" in ${langCode}. 
+      The core meaning is "${translation}". 
+      
+      Please cover:
+      - Is it formal, casual, or neutral?
+      - Are there specific social situations where this word is preferred or avoided?
+      - Provide 1-2 natural "collocations" (words it is commonly used with).
+      
+      Keep the explanation insightful, authoritative, but concise. Use line breaks (\\n) for readability.
+      Your entire response must be in ENGLISH.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+
+    if (!responseText) throw new Error("AI Coach returned no nuance data.");
+    
+    return responseText;
+
+  } catch (error: any) {
+    console.error("Nuance AI Error:", error);
+    return "Sorry, I couldn't analyze the nuance of this word right now. Please try again later.";
   }
 }
 

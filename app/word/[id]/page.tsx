@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+// AIアクションをインポート
+import { getWordNuance } from "../../actions/ai";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +19,7 @@ export default function WordDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAskingAI, setIsAskingAI] = useState(false); // AI問い合わせ中ステート
 
   // 編集用の State
   const [editWord, setEditWord] = useState("");
@@ -82,6 +85,31 @@ export default function WordDetail() {
     window.speechSynthesis.speak(utterance);
   }, [vocab]);
 
+  // 🌟 AIにニュアンスを尋ねる関数
+  const handleAskNuance = async () => {
+    if (!vocab) return;
+    setIsAskingAI(true);
+    try {
+      // AIからニュアンス解説を取得
+      const nuance = await getWordNuance(vocab.word, vocab.language_code, vocab.translation);
+      
+      // データベースを更新して保存
+      const { error } = await supabase
+        .from("vocab")
+        .update({ notes: nuance })
+        .eq("id", wordId);
+
+      if (!error) {
+        setVocab({ ...vocab, notes: nuance });
+        setEditNotes(nuance);
+      }
+    } catch (err) {
+      console.error("Failed to fetch nuance:", err);
+    } finally {
+      setIsAskingAI(false);
+    }
+  };
+
   const handleUpdate = async () => {
     const { error } = await supabase
       .from("vocab")
@@ -138,7 +166,6 @@ export default function WordDetail() {
       <main className="max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
         <div className="bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 border-2 border-gray-200 shadow-lg relative overflow-hidden">
           
-          {/* 右上のバッジエリア */}
           <div className="absolute top-0 right-0 flex items-center z-20">
             <div className="bg-blue-50 text-blue-600 font-black uppercase tracking-widest px-6 py-3 border-b-2 border-l-2 border-blue-100 text-xs sm:text-sm">
               {vocab.language_code}
@@ -197,6 +224,32 @@ export default function WordDetail() {
                   {vocab.example_translation && <p className="text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
                 </div>
               )}
+
+              {/* 🌟 ニュアンス/ノートセクション (AI Coach) */}
+              <div className="border-t-2 border-gray-50 pt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">Usage & Nuance</p>
+                  <button 
+                    onClick={handleAskNuance}
+                    disabled={isAskingAI}
+                    className="text-[10px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isAskingAI ? "✨ ANALYZING..." : "🪄 ASK AI FOR NUANCE"}
+                  </button>
+                </div>
+                
+                <div className="bg-gray-50/50 rounded-3xl p-6 border-2 border-dashed border-gray-100">
+                  {vocab.notes ? (
+                    <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">
+                      {vocab.notes}
+                    </p>
+                  ) : (
+                    <p className="text-xs font-bold text-gray-300 text-center py-4 uppercase tracking-widest">
+                      No notes yet. Click the wand to ask AI!
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {/* 詳細グリッド */}
               <div className="flex flex-wrap gap-4 border-t-2 border-gray-50 pt-8">
