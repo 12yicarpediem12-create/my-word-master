@@ -38,24 +38,16 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  // 🌟 重複チェックロジック（言語・品詞・スペルの3つを検証）
   const checkDuplicate = async (wordToCheck: string, lang: string, posToCheck: string) => {
-    if (!posToCheck) return false; // 品詞が未入力の場合はチェックをスキップ
-
+    if (!posToCheck) return false;
     const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
     const cleanInputWord = wordToCheck.toLowerCase().replace(articlesRegex, "").trim();
 
-    // 指定された言語の単語をすべて取得
-    const { data } = await supabase
-      .from("vocab")
-      .select("word, part_of_speech")
-      .eq("language_code", lang);
-    
+    const { data } = await supabase.from("vocab").select("word, part_of_speech").eq("language_code", lang);
     if (data) {
       return data.some(item => {
         const itemClean = item.word.toLowerCase().replace(articlesRegex, "").trim();
         const posMatch = (item.part_of_speech || "").toLowerCase() === posToCheck.toLowerCase();
-        // スペル（冠詞抜き）と品詞が両方一致するか
         return itemClean === cleanInputWord && posMatch;
       });
     }
@@ -69,21 +61,15 @@ export default function CreateCardForm() {
 
     try {
       const aiData = await generateVocabInfo(newWord + (newHint ? ` (Hint: ${newHint})` : ""), selectedLang);
-      
-      if (aiData?.error) {
-        setErrorMsg("AI Error: " + aiData.error);
-        return;
-      }
+      if (aiData?.error) { setErrorMsg("AI Error: " + aiData.error); return; }
 
       if (aiData) {
-        // AIが返してきた品詞を使って重複チェック
         const isDup = await checkDuplicate(aiData.word || newWord, selectedLang, aiData.part_of_speech);
         if (isDup) {
-          setErrorMsg(`"${aiData.word || newWord}" as ${aiData.part_of_speech} is already in your library.`);
+          setErrorMsg(`"${aiData.word || newWord}" as ${aiData.part_of_speech} is already in library.`);
           setIsGenerating(false);
           return;
         }
-
         setNewWord(aiData.word || newWord);
         setNewTranslation(String(aiData.translation || ""));
         setNewPos(String(aiData.part_of_speech || ""));
@@ -106,36 +92,23 @@ export default function CreateCardForm() {
     e.preventDefault();
     if (!newWord || !newTranslation || !selectedLang) return;
     setIsSubmitting(true);
-    setErrorMsg(null);
-
-    // 保存前に「品詞・言語・スペル」の3つで最終チェック
     const isDup = await checkDuplicate(newWord, selectedLang, newPos);
     if (isDup) {
-      setErrorMsg("This word with the same Part of Speech already exists.");
+      setErrorMsg("Word + Part of Speech already exists.");
       setIsSubmitting(false);
       return;
     }
     
     const { error } = await supabase.from("vocab").insert([{
-      language_code: selectedLang,
-      word: newWord.trim(),
-      translation: newTranslation.trim(),
-      part_of_speech: newPos || null,
-      gender: newGender || null,
-      verb_type: newVerbType || null,
-      category_id: newCategoryId, 
-      example_sentence: newExample || null,
-      example_translation: newExampleTranslation || null,
-      conjugation: newConjugation || null,
-      notes: newNotes || null,
-      is_remembered: false,
+      language_code: selectedLang, word: newWord.trim(), translation: newTranslation.trim(),
+      part_of_speech: newPos || null, gender: newGender || null, verb_type: newVerbType || null,
+      category_id: newCategoryId, example_sentence: newExample || null,
+      example_translation: newExampleTranslation || null, conjugation: newConjugation || null,
+      notes: newNotes || null, is_remembered: false,
     }]);
 
     if (!error) window.location.reload();
-    else {
-      setErrorMsg("Database Error: " + error.message);
-      setIsSubmitting(false);
-    }
+    else setIsSubmitting(false);
   };
 
   return (
@@ -152,7 +125,6 @@ export default function CreateCardForm() {
       )}
 
       <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 mt-10">
-        
         {/* Row 1: Language & Word */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="flex flex-col gap-2">
@@ -163,19 +135,19 @@ export default function CreateCardForm() {
               ))}
             </select>
           </div>
-
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Word</label>
             <div className="flex gap-2 w-full">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold bg-gray-50 border-gray-100 focus:border-blue-500 outline-none min-w-0" />
-              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-5 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-xs hover:opacity-90 transition-all shadow-md disabled:opacity-50 shrink-0">
+              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold bg-gray-50 border-gray-100 focus:border-blue-500 min-w-0" />
+              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-5 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-xs shadow-md disabled:opacity-50 shrink-0">
                 {isGenerating ? "..." : "Auto-Fill"}
               </button>
             </div>
+            <input type="text" value={newHint} onChange={(e) => setNewHint(e.target.value)} placeholder="Hint: specific meaning..." className="w-full p-2 bg-blue-50/30 border border-blue-100 rounded-xl text-[9px] font-bold text-blue-500 outline-none" />
           </div>
         </div>
 
-        {/* Row 2: Meaning & POS (Label fix applied) */}
+        {/* Row 2: Meaning & POS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Meaning</label>
@@ -191,15 +163,39 @@ export default function CreateCardForm() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-emerald-500 uppercase tracking-tight ml-2">Gender</label>
-            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Feminine" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800" />
+            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Feminine" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800 outline-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-emerald-500 uppercase tracking-tight ml-2">Verb Type</label>
-            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Transitive" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800" />
+            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Transitive" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800 outline-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-purple-500 uppercase tracking-tight ml-2">Category ID</label>
             <input type="text" value={newCategoryId || ""} onChange={(e) => setNewCategoryId(e.target.value || null)} placeholder="Auto" className="w-full p-4 bg-purple-50/30 border-2 border-purple-100 rounded-2xl font-bold text-[10px] text-purple-800 truncate" />
+          </div>
+        </div>
+
+        {/* Row 4: Example Sentence & Translation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-blue-400 uppercase tracking-tight ml-2">Example Sentence</label>
+            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={3} placeholder="Example sentence in target language" className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm text-blue-900 outline-none" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-blue-400 uppercase tracking-tight ml-2">Example Translation</label>
+            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={3} placeholder="Translation of example" className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm text-blue-900 outline-none" />
+          </div>
+        </div>
+
+        {/* Row 5: Conjugation & Notes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-amber-500 uppercase tracking-tight ml-2">Conjugation Guide</label>
+            <textarea value={newConjugation} onChange={(e) => setNewConjugation(e.target.value)} rows={4} className="w-full p-4 bg-amber-50/50 border-2 border-amber-100 rounded-2xl font-bold text-sm text-amber-900 outline-none" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Notes / Grammar Pattern</label>
+            <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} rows={4} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-sm text-gray-700 outline-none" />
           </div>
         </div>
 
