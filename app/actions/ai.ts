@@ -37,7 +37,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
       3. For nouns, include the definite article (e.g. "la mela").
       4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
       5. CONJUGATION: For verbs, provide Present Tense with line breaks (\\n). Include "Past Participle".
-      6. NOTES FIELD: For verbs, YOU MUST specify the conjugation group (e.g., "-are verb", "-ere verb", "-ire verb" for Italian, or group 1/2/3 for French). Include essential grammar tips.
+      6. NOTES FIELD: For verbs, YOU MUST specify the conjugation group (e.g., "-are verb", "-ere verb", "-ire verb" for Italian). Include essential grammar tips.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -57,9 +57,9 @@ export async function generateVocabInfo(word: string, langCode: string) {
       }
     `;
 
-    // 🌟 モデルを最新の gemini-3-flash に更新
+    // 🌟 モデル名を gemini-2.5-flash に更新
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash", 
+      model: "gemini-2.5-flash", 
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -85,8 +85,8 @@ export async function getWordNuance(word: string, langCode: string, translation:
     if (!apiKey) throw new Error("API Key missing");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // 🌟 モデルを最新の gemini-3-flash に更新
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash" });
+    // 🌟 モデル名を gemini-2.5-flash に更新
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
       You are a native language tutor. Explain the nuanced meaning and natural usage for "${word}" in ${langCode}.
@@ -104,3 +104,5 @@ export async function getWordNuance(word: string, langCode: string, translation:
     return "Could not fetch nuance details.";
   }
 }
+
+export const generateWordDetails = generateVocabInfo;
