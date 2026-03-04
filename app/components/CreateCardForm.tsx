@@ -40,18 +40,12 @@ export default function CreateCardForm() {
 
   const checkDuplicate = async (wordToCheck: string, lang: string) => {
     const cleanWord = wordToCheck.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
-
-    const { data } = await supabase
-      .from("vocab")
-      .select("word")
-      .eq("language_code", lang);
-
+    const { data } = await supabase.from("vocab").select("word").eq("language_code", lang);
     if (data) {
-      const isDuplicate = data.some(item => {
+      return data.some(item => {
         const itemClean = item.word.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
         return itemClean === cleanWord;
       });
-      return isDuplicate;
     }
     return false;
   };
@@ -64,7 +58,7 @@ export default function CreateCardForm() {
     try {
       const isDup = await checkDuplicate(newWord, selectedLang);
       if (isDup) {
-        setErrorMsg(`"${newWord}" is already in your library for this language!`);
+        setErrorMsg(`"${newWord}" is already in your library!`);
         setIsGenerating(false);
         return;
       }
@@ -77,34 +71,22 @@ export default function CreateCardForm() {
       }
 
       if (aiData) {
-        const finalWord = aiData.word || newWord;
-        if (finalWord !== newWord) {
-           const isFinalDup = await checkDuplicate(finalWord, selectedLang);
-           if (isFinalDup) {
-             setErrorMsg(`"${finalWord}" is already in your library!`);
-             setIsGenerating(false);
-             return;
-           }
-        }
-
-        // 🌟 追加: 100%トピック同期システム (Translation Sync)
-        // 過去に同じ英訳(Meaning)で登録された単語がないかチェックし、あればそのカテゴリIDを強制適用する
+        // 同じ意味（English translation）なら、絶対に100%同じトピックに入るように強制同期
         if (aiData.translation) {
           const cleanTranslation = String(aiData.translation).toLowerCase().trim();
           const { data: existingWords } = await supabase
             .from("vocab")
             .select("category_id")
-            .ilike("translation", cleanTranslation) // 大文字小文字を無視して一致検索
+            .ilike("translation", cleanTranslation)
             .not("category_id", "is", null)
             .limit(1);
 
           if (existingWords && existingWords.length > 0) {
             aiData.category_id = existingWords[0].category_id;
-            console.log("Translation Sync: 強制的に既存のカテゴリIDに同期させました！");
           }
         }
 
-        setNewWord(finalWord);
+        setNewWord(aiData.word || newWord);
         setNewTranslation(String(aiData.translation || ""));
         setNewPos(String(aiData.part_of_speech || ""));
         setNewGender(String(aiData.gender || ""));
@@ -116,7 +98,6 @@ export default function CreateCardForm() {
         setNewNotes(String(aiData.notes || ""));
       }
     } catch (error: any) {
-      console.error(error);
       setErrorMsg("System Error: " + error.message);
     } finally {
       setIsGenerating(false);
@@ -126,16 +107,8 @@ export default function CreateCardForm() {
   const handleAddWord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWord || !newTranslation || !selectedLang) return;
-    setErrorMsg(null);
     setIsSubmitting(true);
     
-    const isDup = await checkDuplicate(newWord, selectedLang);
-    if (isDup) {
-      setErrorMsg(`"${newWord}" is already in your library!`);
-      setIsSubmitting(false);
-      return;
-    }
-
     const { error } = await supabase.from("vocab").insert([{
       language_code: selectedLang,
       word: newWord.trim(),
@@ -151,16 +124,9 @@ export default function CreateCardForm() {
       is_remembered: false,
     }]);
 
-    if (!error) {
-      window.location.reload();
-    } else {
-      console.error("Supabase Insert Error:", error);
-      setErrorMsg("Failed to save the word.");
-      setIsSubmitting(false);
-    }
+    if (!error) window.location.reload();
+    else setIsSubmitting(false);
   };
-
-  if (languages.length === 0) return null;
 
   return (
     <div className="bg-white rounded-[2rem] p-6 md:p-10 border-2 border-gray-200 shadow-sm relative overflow-hidden">
@@ -171,17 +137,15 @@ export default function CreateCardForm() {
       {errorMsg && (
         <div className="mt-10 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl flex items-center justify-between">
           <span>⚠️ {errorMsg}</span>
-          <button onClick={() => setErrorMsg(null)} className="text-xl hover:scale-110 active:scale-95 transition-transform">×</button>
+          <button onClick={() => setErrorMsg(null)} className="text-xl">×</button>
         </div>
       )}
 
-      <form onSubmit={handleAddWord} className={`flex flex-col gap-y-8 ${errorMsg ? 'mt-6' : 'mt-10'}`}>
-        
-        {/* ROW 1: Language & Word */}
+      <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 mt-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Language</label>
-            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base outline-none focus:border-blue-500 transition-all cursor-pointer">
+            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none">
               {languages.map((l) => (
                 <option key={l.code} value={l.code}>{l.emoji} {l.name}</option>
               ))}
@@ -190,21 +154,21 @@ export default function CreateCardForm() {
 
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
-            <div className="flex gap-2">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold text-base bg-gray-50 border-gray-100 focus:border-blue-500 outline-none transition-all" />
-              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-sm hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 whitespace-nowrap">
+            {/* 🌟 修正: モバイルでボタンが適切に配置されるように調整 */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold text-base bg-gray-50 border-gray-100 focus:border-blue-500 outline-none" />
+              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-sm hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 min-w-[120px]">
                 {isGenerating ? "..." : "Auto-Fill"}
               </button>
             </div>
-            <input type="text" value={newHint} onChange={(e) => setNewHint(e.target.value)} placeholder="Hint: noun, verb, specific meaning..." className="w-full p-2 bg-blue-50/30 border border-blue-100 rounded-xl text-[10px] font-bold text-blue-500 outline-none placeholder:text-blue-300" />
+            <input type="text" value={newHint} onChange={(e) => setNewHint(e.target.value)} placeholder="Hint: noun, verb, specific meaning..." className="w-full p-2 bg-blue-50/30 border border-blue-100 rounded-xl text-[10px] font-bold text-blue-500 outline-none" />
           </div>
         </div>
 
-        {/* ROW 2: Meaning & POS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning</label>
-            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="e.g. Apple" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
+            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="English translation" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Part of Speech</label>
@@ -212,7 +176,6 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* ROW 3: Tags & Category ID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2">Gender</label>
@@ -224,43 +187,33 @@ export default function CreateCardForm() {
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-purple-500 uppercase tracking-widest ml-2">Category ID (Auto)</label>
-            <input type="text" value={newCategoryId || ""} onChange={(e) => setNewCategoryId(e.target.value || null)} placeholder="UUID or blank" className="w-full p-4 bg-purple-50/30 border-2 border-purple-100 rounded-2xl font-bold text-[10px] text-purple-800 outline-none truncate" />
+            <input type="text" value={newCategoryId || ""} onChange={(e) => setNewCategoryId(e.target.value || null)} placeholder="Auto-selected" className="w-full p-4 bg-purple-50/30 border-2 border-purple-100 rounded-2xl font-bold text-[10px] text-purple-800 outline-none truncate" />
           </div>
         </div>
 
-        {/* Conjugation & Notes */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {newConjugation && (
-            <div className="flex flex-col gap-2">
-               <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest ml-2">Conjugation</label>
-               <div className="bg-amber-50/50 p-6 rounded-2xl border-2 border-amber-100 text-sm font-bold text-amber-900 whitespace-pre-wrap leading-relaxed shadow-inner">
-                 {newConjugation}
-               </div>
-            </div>
-          )}
-          {newNotes && (
-             <div className="flex flex-col gap-2">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Notes</label>
-               <div className="bg-gray-50 p-6 rounded-2xl border-2 border-gray-100 text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">
-                 {newNotes}
-               </div>
-            </div>
-          )}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest ml-2">Conjugation</label>
+            <textarea value={newConjugation} onChange={(e) => setNewConjugation(e.target.value)} rows={4} className="w-full p-4 bg-amber-50/50 border-2 border-amber-100 rounded-2xl font-bold text-sm text-amber-900 outline-none" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Notes / Grammar Pattern</label>
+            <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} rows={4} placeholder="e.g. Regular -are verb" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-sm text-gray-700 outline-none" />
+          </div>
         </div>
 
-        {/* Examples */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Sentence</label>
-            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} placeholder="Sentence..." className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm focus:border-blue-400 outline-none resize-none" />
+            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm outline-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2">Example Translation</label>
-            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} placeholder="Translation..." className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm focus:border-blue-400 outline-none resize-none" />
+            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm outline-none" />
           </div>
         </div>
 
-        <button type="submit" disabled={isSubmitting} className="w-full bg-gray-900 text-white font-black text-lg py-5 rounded-[2rem] hover:bg-black hover:-translate-y-1 transition-all shadow-lg disabled:bg-gray-400 mt-2">
+        <button type="submit" disabled={isSubmitting} className="w-full bg-gray-900 text-white font-black text-lg py-5 rounded-[2rem] hover:bg-black hover:-translate-y-1 transition-all shadow-lg disabled:bg-gray-400">
           {isSubmitting ? "ADDING..." : "+ ADD TO LIBRARY"}
         </button>
       </form>

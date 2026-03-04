@@ -32,19 +32,19 @@ export async function generateVocabInfo(word: string, langCode: string) {
       You are a linguistic expert. Analyze the word "${word}" in "${langCode}".
 
       ### INSTRUCTIONS:
-      1. Meaning over Language: Categorize based on the word's core CONCEPT. (e.g. "Apple" and "Mela" must have the SAME Category ID).
+      1. Meaning over Language: Categorize based on the word's core CONCEPT.
       2. Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below.
-      3. If no category fits, return null for "category_id".
-      4. For nouns, include the definite article in the "word" field (e.g. "la mela").
-      5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
-      6. CONJUGATION FORMAT: For verbs, provide the Present Tense with line breaks (\\n). THEN, add a line for "Past Participle". Note major irregularities briefly.
+      3. For nouns, include the definite article (e.g. "la mela").
+      4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
+      5. CONJUGATION: For verbs, provide Present Tense with line breaks (\\n). Include "Past Participle".
+      6. NOTES FIELD: For verbs, ALWAYS specify the conjugation pattern (e.g., "Regular -are verb system" for Italian, "-er group" for French). Also include essential grammar tips. Keep it concise.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
 
       ### OUTPUT FORMAT (JSON ONLY):
       {
-        "word": "word with article if applicable",
+        "word": "word with article",
         "translation": "English translation",
         "part_of_speech": "Noun/Verb/Adjective/Adverb/Phrase",
         "gender": "Masculine/Feminine/Neuter or null",
@@ -53,12 +53,12 @@ export async function generateVocabInfo(word: string, langCode: string) {
         "example_sentence": "Sentence in target language",
         "example_translation": "English translation",
         "category_id": "Selected UUID or null",
-        "notes": "Grammar notes or null"
+        "notes": "Grammar notes (MUST include conjugation system for verbs)"
       }
     `;
 
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash", 
       generationConfig: { responseMimeType: "application/json" }
     });
 
@@ -84,33 +84,21 @@ export async function getWordNuance(word: string, langCode: string, translation:
     if (!apiKey) throw new Error("API Key missing");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `
-      You are a native language tutor. Explain the nuanced meaning, social context (casual/formal), and natural usage for the word "${word}" in ${langCode}.
-      The core meaning is "${translation}". 
+      You are a native language tutor. Explain the nuanced meaning and natural usage for "${word}" in ${langCode}.
+      Core meaning: "${translation}". 
       
-      Please cover:
-      - Is it formal, casual, or neutral?
-      - Social situations where it is used.
-      - 1-2 natural "collocations" (common word pairings).
-      
-      Keep it concise and entirely in ENGLISH. 
-      IMPORTANT: DO NOT use Markdown symbols like ** or #. 
-      Use clear plain text with simple line breaks (\\n) for sections.
+      IMPORTANT: DO NOT use Markdown symbols like ** or #.
+      Use plain text and clear line breaks (\\n).
     `;
 
     const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
-
-    if (!responseText) throw new Error("AI Coach returned no data.");
-    
-    return responseText;
+    return result.response.text();
 
   } catch (error: any) {
     console.error("Nuance AI Error:", error);
-    return "Sorry, I couldn't analyze the nuance right now.";
+    return "Could not fetch nuance details.";
   }
 }
-
-export const generateWordDetails = generateVocabInfo;
