@@ -36,8 +36,8 @@ export async function generateVocabInfo(word: string, langCode: string) {
       2. Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below.
       3. If no category fits, return null for "category_id".
       4. For nouns, include the definite article in the "word" field (e.g. "la mela").
-      5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH (Not Japanese).
-      6. CONJUGATION FORMAT: For verbs, provide the Present Tense cleanly formatted with line breaks (\\n) for each person (e.g., "Present:\\nio parlo\\ntu parli..."). THEN, add a line for the "Past Participle" (e.g., "\\nPast Participle: parlato"). If the verb has highly irregular Past or Future forms, briefly note them at the end. Keep it concise to avoid cognitive overload.
+      5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
+      6. CONJUGATION FORMAT: For verbs, provide the Present Tense with line breaks (\\n). THEN, add a line for "Past Participle". Note major irregularities briefly.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -45,13 +45,13 @@ export async function generateVocabInfo(word: string, langCode: string) {
       ### OUTPUT FORMAT (JSON ONLY):
       {
         "word": "word with article if applicable",
-        "translation": "English translation (e.g., 'to speak, to talk')",
+        "translation": "English translation",
         "part_of_speech": "Noun/Verb/Adjective/Adverb/Phrase",
         "gender": "Masculine/Feminine/Neuter or null",
         "verb_type": "Transitive/Intransitive or null",
-        "conjugation": "Formatted conjugation guide with \\n line breaks, or null",
-        "example_sentence": "Example sentence in target language",
-        "example_translation": "English translation of the example",
+        "conjugation": "Formatted guide with \\n",
+        "example_sentence": "Sentence in target language",
+        "example_translation": "English translation",
         "category_id": "Selected UUID or null",
         "notes": "Grammar notes or null"
       }
@@ -84,33 +84,32 @@ export async function getWordNuance(word: string, langCode: string, translation:
     if (!apiKey) throw new Error("API Key missing");
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // ニュアンス解説でも最新の 2.5-flash を使用
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
-      You are a native language tutor. Explain the nuanced meaning, social context (casual/formal), and natural usage for the word "${word}" in ${langCode}. 
+      You are a native language tutor. Explain the nuanced meaning, social context (casual/formal), and natural usage for the word "${word}" in ${langCode}.
       The core meaning is "${translation}". 
       
       Please cover:
       - Is it formal, casual, or neutral?
-      - Are there specific social situations where this word is preferred or avoided?
-      - Provide 1-2 natural "collocations" (words it is commonly used with).
+      - Social situations where it is used.
+      - 1-2 natural "collocations" (common word pairings).
       
-      Keep the explanation insightful, authoritative, but concise. Use line breaks (\\n) for readability.
-      Your entire response must be in ENGLISH.
+      Keep it concise and entirely in ENGLISH. 
+      IMPORTANT: DO NOT use Markdown symbols like ** or #. 
+      Use clear plain text with simple line breaks (\\n) for sections.
     `;
 
     const result = await model.generateContent(prompt);
     const responseText = result.response.text();
 
-    if (!responseText) throw new Error("AI Coach returned no nuance data.");
+    if (!responseText) throw new Error("AI Coach returned no data.");
     
     return responseText;
 
   } catch (error: any) {
     console.error("Nuance AI Error:", error);
-    return "Sorry, I couldn't analyze the nuance of this word right now. Please try again later.";
+    return "Sorry, I couldn't analyze the nuance right now.";
   }
 }
 

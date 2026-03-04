@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-// AIアクションをインポート
 import { getWordNuance } from "../../actions/ai";
 
 const supabase = createClient(
@@ -19,7 +18,7 @@ export default function WordDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isAskingAI, setIsAskingAI] = useState(false); // AI問い合わせ中ステート
+  const [isAskingAI, setIsAskingAI] = useState(false);
 
   // 編集用の State
   const [editWord, setEditWord] = useState("");
@@ -85,15 +84,19 @@ export default function WordDetail() {
     window.speechSynthesis.speak(utterance);
   }, [vocab]);
 
-  // 🌟 AIにニュアンスを尋ねる関数
+  // 🌟 AIにニュアンスを尋ねる関数 (Gemini 2.5 Flash使用)
   const handleAskNuance = async () => {
     if (!vocab) return;
     setIsAskingAI(true);
     try {
-      // AIからニュアンス解説を取得
       const nuance = await getWordNuance(vocab.word, vocab.language_code, vocab.translation);
       
-      // データベースを更新して保存
+      // エラー文字列が返ってきた場合はDB更新をスキップ
+      if (nuance.startsWith("Sorry") || nuance.startsWith("Could not")) {
+        alert(nuance);
+        return;
+      }
+
       const { error } = await supabase
         .from("vocab")
         .update({ notes: nuance })
@@ -107,6 +110,21 @@ export default function WordDetail() {
       console.error("Failed to fetch nuance:", err);
     } finally {
       setIsAskingAI(false);
+    }
+  };
+
+  // 🌟 ノートを消去して「元の状態」に戻す関数
+  const handleClearNotes = async () => {
+    if (!window.confirm("Are you sure you want to clear these notes?")) return;
+    
+    const { error } = await supabase
+      .from("vocab")
+      .update({ notes: null })
+      .eq("id", wordId);
+
+    if (!error) {
+      setVocab({ ...vocab, notes: null });
+      setEditNotes("");
     }
   };
 
@@ -225,23 +243,34 @@ export default function WordDetail() {
                 </div>
               )}
 
-              {/* 🌟 ニュアンス/ノートセクション (AI Coach) */}
+              {/* 🌟 ニュアンス/ノートセクション (改善版) */}
               <div className="border-t-2 border-gray-50 pt-8">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">Usage & Nuance</p>
-                  <button 
-                    onClick={handleAskNuance}
-                    disabled={isAskingAI}
-                    className="text-[10px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {isAskingAI ? "✨ ANALYZING..." : "🪄 ASK AI FOR NUANCE"}
-                  </button>
+                  <div className="flex gap-2">
+                    {/* ノートがある時だけ表示される消去ボタン */}
+                    {vocab.notes && (
+                      <button 
+                        onClick={handleClearNotes}
+                        className="text-[10px] font-black bg-red-50 text-red-500 px-4 py-2 rounded-full hover:bg-red-100 transition-all"
+                      >
+                        🗑️ CLEAR
+                      </button>
+                    )}
+                    <button 
+                      onClick={handleAskNuance}
+                      disabled={isAskingAI}
+                      className="text-[10px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {isAskingAI ? "✨ ANALYZING..." : (vocab.notes ? "🪄 REFRESH NUANCE" : "🪄 ASK AI FOR NUANCE")}
+                    </button>
+                  </div>
                 </div>
                 
-                <div className="bg-gray-50/50 rounded-3xl p-6 border-2 border-dashed border-gray-100">
+                <div className="bg-gray-50/50 rounded-3xl p-6 border-2 border-dashed border-gray-100 min-h-[100px] flex flex-col justify-center">
                   {vocab.notes ? (
                     <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">
-                      {vocab.notes}
+                      {vocab.notes.replace(/\*\*/g, '')}
                     </p>
                   ) : (
                     <p className="text-xs font-bold text-gray-300 text-center py-4 uppercase tracking-widest">
@@ -300,10 +329,9 @@ export default function WordDetail() {
               </div>
             </div>
           ) : (
-            /* 編集モード */
+            /* 編集モードはそのまま */
             <div className="space-y-6 mt-10">
               <h2 className="text-2xl font-black mb-6 tracking-tight">Edit Word Details</h2>
-              
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -337,8 +365,8 @@ export default function WordDetail() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Conjugation Guide</label>
-                  <textarea value={editConjugation} onChange={(e) => setEditConjugation(e.target.value)} rows={3} className="w-full p-4 bg-amber-50 border-2 border-amber-100 rounded-2xl font-bold text-amber-900" />
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Notes / AI Nuance</label>
+                  <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={5} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-medium" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
