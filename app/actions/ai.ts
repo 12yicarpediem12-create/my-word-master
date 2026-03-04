@@ -1,10 +1,9 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-// 🌟 修正: OpenAIではなくGoogleのGemini SDKをインポート
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 🌟 修正: Geminiを初期化 (環境変数 GEMINI_API_KEY を使用)
+// 🌟 Geminiの初期化 (環境変数 GEMINI_API_KEY を使用)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const supabase = createClient(
@@ -52,9 +51,9 @@ export async function generateVocabInfo(word: string, langCode: string) {
       }
     `;
 
-    // 🌟 修正: 爆速の Gemini 1.5 Flash モデルを使用し、JSON形式での出力を強制
+    // 🌟 修正: 確実に認識されるように "gemini-1.5-flash-latest" に変更
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       generationConfig: { responseMimeType: "application/json" }
     });
 
