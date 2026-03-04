@@ -10,28 +10,17 @@ const supabase = createClient(
 );
 
 const LANGUAGE_AUTO_MAP: Record<string, { code: string; emoji: string }> = {
-  english: { code: "en", emoji: "🇺🇸" },
-  spanish: { code: "es", emoji: "🇪🇸" },
-  french: { code: "fr", emoji: "🇫🇷" },
-  german: { code: "de", emoji: "🇩🇪" },
-  japanese: { code: "ja", emoji: "🇯🇵" },
-  korean: { code: "ko", emoji: "🇰🇷" },
-  chinese: { code: "zh", emoji: "🇨🇳" },
-  italian: { code: "it", emoji: "🇮🇹" },
-  portuguese: { code: "pt", emoji: "🇵🇹" },
-  russian: { code: "ru", emoji: "🇷🇺" },
-  arabic: { code: "ar", emoji: "🇸🇦" },
-  hindi: { code: "hi", emoji: "🇮🇳" },
-  turkish: { code: "tr", emoji: "🇹🇷" },
-  dutch: { code: "nl", emoji: "🇳🇱" },
-  polish: { code: "pl", emoji: "🇵🇱" },
-  vietnamese: { code: "vi", emoji: "🇻🇳" },
-  thai: { code: "th", emoji: "🇹🇭" },
-  indonesian: { code: "id", emoji: "🇮🇩" },
-  swedish: { code: "sv", emoji: "🇸🇪" },
-  danish: { code: "da", emoji: "🇩🇰" },
-  finnish: { code: "fi", emoji: "🇫🇮" },
-  greek: { code: "el", emoji: "🇬🇷" },
+  english: { code: "en", emoji: "🇺🇸" }, spanish: { code: "es", emoji: "🇪🇸" },
+  french: { code: "fr", emoji: "🇫🇷" }, german: { code: "de", emoji: "🇩🇪" },
+  japanese: { code: "ja", emoji: "🇯🇵" }, korean: { code: "ko", emoji: "🇰🇷" },
+  chinese: { code: "zh", emoji: "🇨🇳" }, italian: { code: "it", emoji: "🇮🇹" },
+  portuguese: { code: "pt", emoji: "🇵🇹" }, russian: { code: "ru", emoji: "🇷🇺" },
+  arabic: { code: "ar", emoji: "🇸🇦" }, hindi: { code: "hi", emoji: "🇮🇳" },
+  turkish: { code: "tr", emoji: "🇹🇷" }, dutch: { code: "nl", emoji: "🇳🇱" },
+  polish: { code: "pl", emoji: "🇵🇱" }, vietnamese: { code: "vi", emoji: "🇻🇳" },
+  thai: { code: "th", emoji: "🇹🇭" }, indonesian: { code: "id", emoji: "🇮🇩" },
+  swedish: { code: "sv", emoji: "🇸🇪" }, danish: { code: "da", emoji: "🇩🇰" },
+  finnish: { code: "fi", emoji: "🇫🇮" }, greek: { code: "el", emoji: "🇬🇷" },
 };
 
 export default function ManageLibrary() {
@@ -72,7 +61,6 @@ export default function ManageLibrary() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      {/* ナビゲーションバー */}
       <nav className="bg-white border-b-2 border-gray-200 px-4 md:px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <Link href="/" className="text-2xl md:text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
           WordMaster.
@@ -82,10 +70,7 @@ export default function ManageLibrary() {
         </Link>
       </nav>
 
-      {/* 🛠 修正: スマホ用に px-4 / pt-12 を設定。md以上では px-8 / pt-16 に広げる */}
       <main className="max-w-4xl mx-auto px-4 md:px-8 pt-12 md:pt-16 flex flex-col gap-10">
-        
-        {/* ヘッダーセクション */}
         <header className="flex flex-col gap-2">
           <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
             Manage Library
@@ -95,12 +80,10 @@ export default function ManageLibrary() {
           </p>
         </header>
 
-        {/* 1. 単語追加フォーム (CreateCardForm 内のレスポンシブ対応はこの部品側で行う必要があります) */}
         <section className="w-full">
           <CreateCardForm />
         </section>
 
-        {/* 2. 言語追加フォーム */}
         <section className="w-full">
           <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-200 shadow-sm transition-all hover:shadow-md">
             <h2 className="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mb-6 flex items-center gap-2">
@@ -108,7 +91,6 @@ export default function ManageLibrary() {
             </h2>
 
             <form onSubmit={handleAddLanguage} className="space-y-4">
-              {/* 🛠 修正: 入力欄とボタンを縦並び(flex-col)にし、タブレット以上で横並び(md:flex-row)にする */}
               <div className="flex flex-col md:flex-row gap-4">
                 <input
                   type="text"
@@ -133,7 +115,6 @@ export default function ManageLibrary() {
             </form>
           </div>
         </section>
-
       </main>
     </div>
   );
