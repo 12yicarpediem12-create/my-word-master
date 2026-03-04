@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
@@ -11,72 +11,105 @@ const supabase = createClient(
 
 export default function LanguageTopicsPage() {
   const params = useParams();
-  const langCode = params.lang as string;
+  const langCode = params?.lang as string; // URLから 'it' や 'en' を取得
+  
   const [categories, setCategories] = useState<any[]>([]);
   const [expandedTopic, setExpandedTopic] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCategories() {
-      const { data } = await supabase.from("categories").select("*").order("id", { ascending: true });
+      const { data } = await supabase
+        .from("categories")
+        .select("*")
+        .order("id", { ascending: true });
       if (data) setCategories(data);
       setIsLoading(false);
     }
     fetchCategories();
   }, []);
 
-  const mainTopics = categories.filter(c => c.level === 1);
-  const getChildren = (parentId: number) => categories.filter(c => c.parent_id === parentId);
+  const mainTopics = categories.filter((c) => c.level === 1);
+  const getChildren = (parentId: number) =>
+    categories.filter((c) => c.parent_id === parentId);
+
+  // langCode が取れるまでリンクを無効化、またはローディング表示
+  const hubPath = langCode ? `/study/${langCode}` : "#";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-        <Link href={`/language/${langCode}`} className="text-2xl font-black tracking-tighter text-blue-600">WordMaster.</Link>
-        <Link href={`/language/${langCode}`} className="text-xs font-black text-gray-400 hover:text-blue-600 uppercase tracking-widest">← Back to Hub</Link>
+      {/* Navigation */}
+      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
+          WordMaster.
+        </Link>
+        
+        <Link 
+          href={hubPath} 
+          className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${
+            !langCode ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:text-blue-600"
+          }`}
+        >
+          <span>←</span> BACK TO HUB
+        </Link>
       </nav>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <header className="mb-12">
+          {/* OALD Taxonomy ラベルを削除しました */}
           <h1 className="text-5xl font-black text-gray-900 tracking-tight">Topics</h1>
-          <p className="text-gray-500 mt-2 font-medium">Explore vocabulary by OALD categories.</p>
+          <p className="text-gray-500 mt-4 font-medium text-lg">Explore your vocabulary by themes.</p>
         </header>
 
-        <div className="grid grid-cols-1 gap-4">
-          {mainTopics.map((topic) => (
-            <div key={topic.id} className="bg-white border-2 border-gray-200 rounded-[2rem] overflow-hidden shadow-sm">
-              <button 
-                onClick={() => setExpandedTopic(expandedTopic === topic.id ? null : topic.id)}
-                className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
-              >
-                <h2 className="text-xl font-black text-gray-900">{topic.name}</h2>
-                <span className={`transform transition-transform ${expandedTopic === topic.id ? "rotate-180" : ""}`}>▼</span>
-              </button>
-
-              {expandedTopic === topic.id && (
-                <div className="px-6 pb-6 bg-gray-50/50 border-t-2 border-gray-100">
-                  <div className="mt-6 space-y-8">
-                    {getChildren(topic.id).map((sub) => (
-                      <div key={sub.id}>
-                        <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-3 ml-1">{sub.name}</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {getChildren(sub.id).map((ssub) => (
-                            <Link 
-                              href={`/language/${langCode}/topics/${ssub.id}`} 
-                              key={ssub.id}
-                              className="bg-white border-2 border-gray-100 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm"
-                            >
-                              {ssub.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+        {isLoading ? (
+          <div className="text-center py-20 font-black text-gray-300 animate-pulse uppercase tracking-widest">
+            Loading Taxonomy...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {mainTopics.map((topic) => (
+              <div key={topic.id} className="bg-white border-2 border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm transition-all hover:shadow-md">
+                <button 
+                  onClick={() => setExpandedTopic(expandedTopic === topic.id ? null : topic.id)}
+                  className="w-full flex items-center justify-between p-8 hover:bg-gray-50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-6">
+                    <span className="text-4xl filter drop-shadow-sm">📁</span>
+                    <h2 className="text-2xl font-black text-gray-900">{topic.name}</h2>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                  <span className={`text-xl font-black text-gray-300 transform transition-transform duration-300 ${expandedTopic === topic.id ? "rotate-180 text-blue-500" : ""}`}>
+                    ↓
+                  </span>
+                </button>
+
+                {expandedTopic === topic.id && (
+                  <div className="px-8 pb-10 bg-gray-50/50 border-t-2 border-gray-100">
+                    <div className="mt-8 space-y-10">
+                      {getChildren(topic.id).map((sub) => (
+                        <div key={sub.id} className="animate-in fade-in slide-in-from-top-2 duration-300">
+                          <h3 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-4 ml-2 border-l-4 border-blue-200 pl-3">
+                            {sub.name}
+                          </h3>
+                          <div className="flex flex-wrap gap-2">
+                            {getChildren(sub.id).map((ssub) => (
+                              <Link 
+                                href={`/study/${langCode}/topics/${ssub.id}`} 
+                                key={ssub.id}
+                                className="bg-white border-2 border-gray-100 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:shadow-md transition-all active:scale-95"
+                              >
+                                {ssub.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
