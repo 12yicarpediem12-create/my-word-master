@@ -13,20 +13,19 @@ export default function WordDetail() {
   const params = useParams();
   const router = useRouter();
   const wordId = params.id as string;
-
   const [vocab, setVocab] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // 編集用のState
+  // 編集用の State
   const [editWord, setEditWord] = useState("");
   const [editTranslation, setEditTranslation] = useState("");
   const [editPos, setEditPos] = useState("");
   const [editNotes, setEditNotes] = useState("");
-  const [editExample, setEditExample] = useState(""); 
-  const [editExampleTranslation, setEditExampleTranslation] = useState(""); 
-  const [editCategory, setEditCategory] = useState(""); 
+  const [editExample, setEditExample] = useState("");
+  const [editExampleTranslation, setEditExampleTranslation] = useState("");
+  const [editCategory, setEditCategory] = useState("");
   const [editConjugation, setEditConjugation] = useState("");
   const [editGender, setEditGender] = useState("");
   const [editVerbType, setEditVerbType] = useState("");
@@ -34,7 +33,7 @@ export default function WordDetail() {
   useEffect(() => {
     async function fetchWord() {
       if (!wordId) return;
-      
+
       const { data, error } = await supabase
         .from("vocab")
         .select(`
@@ -54,10 +53,10 @@ export default function WordDetail() {
         setEditTranslation(data.translation);
         setEditPos(data.part_of_speech || "");
         setEditNotes(data.notes || "");
-        setEditExample(data.example_sentence || ""); 
-        setEditExampleTranslation(data.example_translation || ""); 
-        setEditCategory(data.category_id || ""); 
-        setEditConjugation(data.conjugation || ""); 
+        setEditExample(data.example_sentence || "");
+        setEditExampleTranslation(data.example_translation || "");
+        setEditCategory(data.category_id || "");
+        setEditConjugation(data.conjugation || "");
         setEditGender(data.gender || "");
         setEditVerbType(data.verb_type || "");
       }
@@ -69,7 +68,7 @@ export default function WordDetail() {
   const speak = useCallback((text: string, isEnglish: boolean = false) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.resume(); 
+    window.speechSynthesis.resume();
     const utterance = new SpeechSynthesisUtterance(text);
     if (isEnglish) {
       utterance.lang = "en-US";
@@ -91,10 +90,10 @@ export default function WordDetail() {
         translation: editTranslation,
         part_of_speech: editPos || null,
         notes: editNotes || null,
-        example_sentence: editExample || null, 
-        example_translation: editExampleTranslation || null, 
-        category_id: editCategory || null, 
-        conjugation: editConjugation || null, 
+        example_sentence: editExample || null,
+        example_translation: editExampleTranslation || null,
+        category_id: editCategory || null,
+        conjugation: editConjugation || null,
         gender: editGender || null,
         verb_type: editVerbType || null,
       })
@@ -103,7 +102,7 @@ export default function WordDetail() {
     if (!error) {
       router.refresh();
       setIsEditing(false);
-      window.location.reload(); // データの再読み込みを確実にするため
+      window.location.reload(); 
     }
   };
 
@@ -124,7 +123,6 @@ export default function WordDetail() {
   if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400">Loading...</div>;
   if (!vocab) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-900 underline"><Link href="/">Word Not Found.</Link></div>;
 
-  // Main Topic名を取得する関数 (Animals > Birds -> Animals)
   const getMainTopicName = () => {
     if (!vocab.categories?.full_path) return "General";
     return vocab.categories.full_path.split(" > ")[0];
@@ -162,7 +160,7 @@ export default function WordDetail() {
                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3">Word</p>
                 <div className="flex items-center justify-center gap-3 sm:gap-4 flex-wrap">
                   <h1 className="text-5xl sm:text-6xl font-black text-gray-900 tracking-tight break-all">{vocab.word}</h1>
-                  <button onClick={() => speak(vocab.word)} className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-full flex items-center justify-center text-lg sm:text-xl hover:bg-blue-50 transition-all shadow-sm shrink-0">🔊</button>
+                  <button onClick={() => speak(vocab.word)} className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-full flex items-center justify-center text-lg sm:text-xl hover:bg-blue-50 transition-all shadow-sm shrink-0"> 🔊 </button>
                 </div>
               </div>
 
@@ -173,7 +171,7 @@ export default function WordDetail() {
                     <span>⚡</span> Conjugation Guide
                   </p>
                   <div className="bg-white/60 rounded-2xl p-4 sm:p-5 border border-amber-200">
-                    <p className="text-lg sm:text-xl font-bold text-amber-900 text-center italic tracking-wide">
+                    <p className="text-lg sm:text-xl font-bold text-amber-900 text-left italic tracking-wide whitespace-pre-wrap leading-relaxed">
                       {vocab.conjugation}
                     </p>
                   </div>
@@ -193,18 +191,17 @@ export default function WordDetail() {
                   {vocab.example_sentence && (
                     <div className="flex flex-col items-center gap-4">
                       <p className="text-lg sm:text-xl font-bold text-gray-900 text-center leading-relaxed italic">"{vocab.example_sentence}"</p>
-                      <button onClick={() => speak(vocab.example_sentence)} className="bg-white/80 px-4 py-2 rounded-2xl shadow-sm hover:bg-white transition-all text-xs font-bold text-blue-600">🔊 Play Example</button>
+                      <button onClick={() => speak(vocab.example_sentence)} className="bg-white/80 px-4 py-2 rounded-2xl shadow-sm hover:bg-white transition-all text-xs font-bold text-blue-600"> 🔊 Play Example</button>
                     </div>
                   )}
                   {vocab.example_translation && <p className="text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
                 </div>
               )}
 
-              {/* 詳細グリッド (Topic, POS, Gender, etc.) */}
+              {/* 詳細グリッド */}
               <div className="flex flex-wrap gap-4 border-t-2 border-gray-50 pt-8">
-                {/* 🌟 Topicカード */}
                 {vocab.categories && (
-                  <Link 
+                  <Link
                     href={`/study/${vocab.language_code}/topics/${vocab.category_id}`}
                     className="flex-1 min-w-[140px] bg-indigo-50 p-5 rounded-3xl border border-indigo-100 flex flex-col items-center sm:items-start group hover:border-indigo-400 transition-all"
                   >
@@ -220,14 +217,14 @@ export default function WordDetail() {
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Part of Speech</p>
                   <p className="font-bold text-gray-800 text-lg">{vocab.part_of_speech || "---"}</p>
                 </div>
-                
+
                 {vocab.gender && (
                   <div className="flex-1 min-w-[120px] bg-emerald-50 p-5 rounded-3xl border border-emerald-100 flex flex-col items-center sm:items-start">
                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Gender</p>
                     <p className="font-bold text-emerald-800 text-lg">{vocab.gender}</p>
                   </div>
                 )}
-                
+
                 {vocab.verb_type && (
                   <div className="flex-1 min-w-[120px] bg-emerald-50 p-5 rounded-3xl border border-emerald-100 flex flex-col items-center sm:items-start">
                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Verb Type</p>
@@ -238,7 +235,7 @@ export default function WordDetail() {
                 <div className="flex-1 min-w-[120px] bg-gray-50 p-5 rounded-3xl border border-gray-100 flex flex-col items-center justify-center">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Mastery</p>
                   <button onClick={handleToggleRemembered} className={`w-full py-2 px-3 rounded-2xl font-black text-xs transition-all uppercase tracking-widest ${vocab.is_remembered ? "bg-green-500 text-white shadow-lg shadow-green-100" : "bg-orange-100 text-orange-600"}`}>
-                    {vocab.is_remembered ? "✅ Mastered" : "🔥 Learning"}
+                    {vocab.is_remembered ? " ✅ Mastered" : " 🔥 Learning"}
                   </button>
                 </div>
               </div>
@@ -246,13 +243,14 @@ export default function WordDetail() {
               {/* アクションボタン */}
               <div className="flex flex-col sm:flex-row gap-3 pt-6">
                 <button onClick={() => setIsEditing(true)} className="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl">✏️ Edit Details</button>
-                <button onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto px-8 bg-red-50 text-red-500 font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-red-100 transition-colors">🗑️ Delete</button>
+                <button onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto px-8 bg-red-50 text-red-500 font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-red-100 transition-colors"> 🗑️ Delete</button>
               </div>
             </div>
           ) : (
             /* 編集モード */
             <div className="space-y-6 mt-10">
               <h2 className="text-2xl font-black mb-6 tracking-tight">Edit Word Details</h2>
+              
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -289,7 +287,7 @@ export default function WordDetail() {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Conjugation Guide</label>
                   <textarea value={editConjugation} onChange={(e) => setEditConjugation(e.target.value)} rows={3} className="w-full p-4 bg-amber-50 border-2 border-amber-100 rounded-2xl font-bold text-amber-900" />
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Example Sentence</label>

@@ -3,7 +3,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// 🌟 Geminiの初期化 (環境変数 GEMINI_API_KEY を使用)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const supabase = createClient(
@@ -31,6 +30,8 @@ export async function generateVocabInfo(word: string, langCode: string) {
       2. Choose ONE "Category ID" from the AVAILABLE CATEGORY LIST below.
       3. If no category fits, return null for "category_id".
       4. For nouns, include the definite article in the "word" field (e.g. "la mela").
+      5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH (Not Japanese).
+      6. CONJUGATION FORMAT: For "conjugation", do NOT write a single continuous sentence. Format it cleanly with line breaks (\\n) for each person (e.g., "Present Tense:\\nio parlo\\ntu parli\\nlui/lei parla\\n...").
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -38,19 +39,18 @@ export async function generateVocabInfo(word: string, langCode: string) {
       ### OUTPUT FORMAT (JSON ONLY):
       {
         "word": "word with article if applicable",
-        "translation": "Japanese translation",
+        "translation": "English translation (e.g., 'to speak, to talk')",
         "part_of_speech": "Noun/Verb/Adjective/Adverb/Phrase",
         "gender": "Masculine/Feminine/Neuter or null",
         "verb_type": "Transitive/Intransitive or null",
-        "conjugation": "Brief conjugation guide or null",
+        "conjugation": "Formatted conjugation guide with \\n line breaks, or null",
         "example_sentence": "Example sentence in target language",
-        "example_translation": "Japanese translation of the example",
+        "example_translation": "English translation of the example",
         "category_id": "Selected UUID or null",
         "notes": "Grammar notes or null"
       }
     `;
 
-    // 🌟 修正: 最新モデルの "gemini-2.5-flash" に変更して404エラーを回避！
     const model = genAI.getGenerativeModel({ 
       model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" }

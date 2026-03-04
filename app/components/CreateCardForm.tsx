@@ -25,7 +25,7 @@ export default function CreateCardForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null); // 重複などのエラー表示用
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchLangs() {
@@ -38,9 +38,7 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  // 🌟 追加: 重複チェック関数
   const checkDuplicate = async (wordToCheck: string, lang: string) => {
-    // 冠詞（la, il, le, un, una 等）を削除し、小文字にして比較するための正規表現
     const cleanWord = wordToCheck.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
 
     const { data } = await supabase
@@ -64,7 +62,6 @@ export default function CreateCardForm() {
     setIsGenerating(true);
 
     try {
-      // 1. 生成前に重複チェック
       const isDup = await checkDuplicate(newWord, selectedLang);
       if (isDup) {
         setErrorMsg(`"${newWord}" is already in your library for this language!`);
@@ -72,7 +69,6 @@ export default function CreateCardForm() {
         return;
       }
 
-      // 2. AIデータ生成
       const aiData = await generateVocabInfo(newWord + (newHint ? ` (Hint: ${newHint})` : ""), selectedLang);
       
       if (aiData?.error) {
@@ -81,7 +77,6 @@ export default function CreateCardForm() {
       }
 
       if (aiData) {
-        // AIが返した単語でもう一度重複チェック（AIが冠詞を付けた場合など）
         const finalWord = aiData.word || newWord;
         if (finalWord !== newWord) {
            const isFinalDup = await checkDuplicate(finalWord, selectedLang);
@@ -117,7 +112,6 @@ export default function CreateCardForm() {
     setErrorMsg(null);
     setIsSubmitting(true);
     
-    // 念のため保存時にも重複チェック
     const isDup = await checkDuplicate(newWord, selectedLang);
     if (isDup) {
       setErrorMsg(`"${newWord}" is already in your library!`);
@@ -192,7 +186,7 @@ export default function CreateCardForm() {
         {/* ROW 2: Meaning & POS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning (English/Japanese)</label>
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning</label>
             <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="e.g. Apple" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-base focus:border-blue-500 outline-none" />
           </div>
           <div className="flex flex-col gap-2">
