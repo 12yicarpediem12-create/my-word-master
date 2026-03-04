@@ -17,17 +17,22 @@ export async function generateWordDetails(word: string, langCode: string) {
     try {
       const model = genAI.getGenerativeModel({ model: modelId }, { apiVersion: "v1" });
       
-      // 🌟 "word_with_article" という新しいキーを要求します
+      // 🌟 grammar_detail の代わりに、"gender" と "verb_type" を要求！
       const prompt = `Return ONLY a valid raw JSON object for the word "${word}" in language "${langCode}".
-      Required keys: "word_with_article", "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".
+      Required keys: "word_with_article", "translation", "part_of_speech", "gender", "verb_type", "category", "example_sentence", "example_translation", "conjugation".
       
       CRITICAL INSTRUCTION FOR "word_with_article":
-      - If the word is a noun, return the word with its appropriate definite article prepended (e.g., "la mela", "il problema").
-      - If the word is NOT a noun, return the original word as is (e.g., "mangiare").
+      - If the word is a noun AND the language uses definite articles, include the article naturally (e.g., "la mela" for Italian, "der Apfel" for German, "äpplet" for Swedish).
+      - If the language does NOT use definite articles (e.g., Japanese, Russian), or if the word is NOT a noun, return the original word exactly as is.
 
       CRITICAL INSTRUCTION FOR "part_of_speech":
-      - For nouns, explicitly state the gender (e.g., "Masculine Noun" or "Feminine Noun").
-      - For verbs, explicitly state the transitivity (e.g., "Transitive Verb" or "Intransitive Verb").
+      - State ONLY the basic part of speech (e.g., "Noun", "Verb", "Adjective"). Do NOT include gender or transitivity here.
+
+      CRITICAL INSTRUCTION FOR "gender":
+      - For nouns ONLY, state the gender (e.g., "Feminine", "Masculine"). Otherwise, set to null.
+
+      CRITICAL INSTRUCTION FOR "verb_type":
+      - For verbs ONLY, state the verb type or transitivity (e.g., "Transitive", "Intransitive", "Reflexive"). Otherwise, set to null.
       
       CRITICAL INSTRUCTION FOR "conjugation":
       - If the word is NOT a verb, set "conjugation" to null.

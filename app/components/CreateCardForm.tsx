@@ -15,10 +15,14 @@ export default function CreateCardForm() {
   const [newWord, setNewWord] = useState("");
   const [newTranslation, setNewTranslation] = useState("");
   const [newPos, setNewPos] = useState("");
+  
+  // 🌟 Supabaseの実際のカラム名に合わせたステート
+  const [newGender, setNewGender] = useState("");
+  const [newVerbType, setNewVerbType] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  
   const [newExample, setNewExample] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
-  
-  const [newCategory, setNewCategory] = useState("");
   const [newConjugation, setNewConjugation] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,6 +93,11 @@ export default function CreateCardForm() {
     return String(val);
   };
 
+  const safeString = (val: any) => {
+    if (val === null || val === undefined) return "";
+    return String(val);
+  };
+
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setIsGenerating(true);
@@ -96,22 +105,24 @@ export default function CreateCardForm() {
       const aiData = await generateWordDetails(newWord, selectedLang);
       
       if (aiData && typeof aiData === 'object' && !aiData.error) {
-        
-        // 🌟 新機能：AIが定冠詞付きの単語を返してきたら、入力欄を自動で上書き！
         if (aiData.word_with_article) {
           setNewWord(aiData.word_with_article);
         }
 
-        setNewTranslation(typeof aiData.translation === "string" ? aiData.translation : formatAIData(aiData.translation));
-        setNewPos(typeof aiData.part_of_speech === "string" ? aiData.part_of_speech : formatAIData(aiData.part_of_speech));
-        setNewExample(typeof aiData.example_sentence === "string" ? aiData.example_sentence : formatAIData(aiData.example_sentence));
-        setNewExampleTranslation(typeof aiData.example_translation === "string" ? aiData.example_translation : formatAIData(aiData.example_translation));
-        setNewCategory(typeof aiData.category === "string" ? aiData.category : formatAIData(aiData.category) || "Other");
+        setNewTranslation(safeString(aiData.translation));
+        setNewPos(safeString(aiData.part_of_speech));
+        
+        // 🌟 gender と verb_type をそれぞれのステートにセット
+        setNewGender(safeString(aiData.gender));
+        setNewVerbType(safeString(aiData.verb_type));
+        
+        setNewCategory(safeString(aiData.category) || "Other");
+        setNewExample(safeString(aiData.example_sentence));
+        setNewExampleTranslation(safeString(aiData.example_translation));
         setNewConjugation(formatAIData(aiData.conjugation));
       } else {
         alert(aiData?.error || "AI could not generate details. Please fill manually.");
       }
-      
     } catch (error) {
       console.error("Critical Client Error:", error);
       alert("A system error occurred. Please try again or fill manually.");
@@ -125,15 +136,19 @@ export default function CreateCardForm() {
     if (!newWord || !newTranslation || !selectedLang || existingWordId) return;
 
     setIsSubmitting(true);
+    
+    // 🌟 実際のSupabaseのカラム構成に合わせて保存
     const { error } = await supabase.from("vocab").insert([
       {
         language_code: selectedLang,
         word: newWord.trim(),
         translation: newTranslation.trim(),
         part_of_speech: newPos || null,
+        gender: newGender || null,
+        verb_type: newVerbType || null,
+        category: newCategory || "Other",
         example_sentence: newExample || null,
         example_translation: newExampleTranslation || null,
-        category: newCategory || "Other",
         conjugation: newConjugation || null,
         is_remembered: false,
       },
@@ -143,12 +158,15 @@ export default function CreateCardForm() {
       setNewWord("");
       setNewTranslation("");
       setNewPos("");
+      setNewGender("");
+      setNewVerbType("");
+      setNewCategory("");
       setNewExample("");
       setNewExampleTranslation("");
-      setNewCategory("");
       setNewConjugation("");
       window.location.reload();
     } else {
+      console.error(error);
       alert("Error adding word to database.");
     }
     setIsSubmitting(false);
@@ -203,7 +221,23 @@ export default function CreateCardForm() {
           </div>
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Part of Speech</label>
-            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Verb (-are)" className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all" />
+            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Noun, Verb" className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all" />
+          </div>
+        </div>
+
+        {/* 🌟 実際のカラム構成に合わせた詳細・カテゴリー行 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2 block mb-1">Gender</label>
+            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="e.g. Feminine" className="w-full p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold text-gray-600 outline-none focus:border-emerald-500 transition-all" />
+          </div>
+          <div>
+            <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2 block mb-1">Verb Type</label>
+            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="e.g. Transitive" className="w-full p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold text-gray-600 outline-none focus:border-emerald-500 transition-all" />
+          </div>
+          <div>
+            <label className="text-[10px] font-black text-purple-500 uppercase tracking-widest ml-2 block mb-1">Category</label>
+            <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Food" className="w-full p-4 bg-purple-50/50 border-2 border-purple-100 rounded-2xl font-bold text-gray-600 outline-none focus:border-purple-500 transition-all" />
           </div>
         </div>
 
