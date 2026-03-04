@@ -140,8 +140,10 @@ export default function Dashboard() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
+          {/* 🌟 ここを分割して2つのボタンにしました！ */}
           <div className="flex-1 flex flex-col md:flex-row gap-4">
-            <Link href="/manage" className="px-5 py-4 bg-gray-50 hover:bg-blue-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">📚 Manage Library</Link>
+            <Link href="/library" className="px-5 py-4 bg-gray-50 hover:bg-blue-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">📚 View Library</Link>
+            <Link href="/manage" className="px-5 py-4 bg-gray-50 hover:bg-green-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">🌍 Add Language</Link>
           </div>
         </div>
       </div>
@@ -195,7 +197,6 @@ export default function Dashboard() {
            </div>
 
            <div className="w-full md:w-1/3 flex flex-col gap-4 justify-center">
-              {/* 🛠 修正: Link で囲ってクリックできるようにしました */}
               <Link href="/history" className="block group">
                 <div className="bg-blue-600 rounded-3xl p-8 text-white shadow-xl shadow-blue-100 transition-all group-hover:scale-[1.02] group-hover:bg-blue-700 active:scale-95">
                    <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2 leading-none">Review Today</p>
