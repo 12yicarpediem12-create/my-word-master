@@ -1,11 +1,11 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-import OpenAI from "openai";
+// 🌟 修正: OpenAIではなくGoogleのGemini SDKをインポート
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// 🌟 修正: Geminiを初期化 (環境変数 GEMINI_API_KEY を使用)
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +14,7 @@ const supabase = createClient(
 
 export async function generateVocabInfo(word: string, langCode: string) {
   try {
-    // 1. カテゴリー一覧をフェッチ（エラーハンドリング追加）
+    // 1. カテゴリー一覧をフェッチ（意味の紐付け用）
     const { data: categories, error: dbError } = await supabase
       .from("categories")
       .select("id, full_path");
@@ -52,24 +52,26 @@ export async function generateVocabInfo(word: string, langCode: string) {
       }
     `;
 
-    // 🌟 修正: 高速な gpt-4o-mini に変更（Vercelの10秒タイムアウト対策）
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
+    // 🌟 修正: 爆速の Gemini 1.5 Flash モデルを使用し、JSON形式での出力を強制
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      generationConfig: { responseMimeType: "application/json" }
     });
 
-    const content = response.choices[0].message.content;
-    if (!content) throw new Error("OpenAI returned empty response");
+    // AIにプロンプトを送信
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+    
+    if (!content) throw new Error("Gemini returned an empty response");
 
     return JSON.parse(content);
 
   } catch (error: any) {
-    console.error("AI Generation Error:", error);
-    // エラー内容を画面に返す
-    return { error: error.message || "Unknown AI error occurred." };
+    console.error("Gemini AI Generation Error:", error);
+    // エラー内容を画面の赤いアラートに返す
+    return { error: error.message || "Unknown Gemini API error occurred." };
   }
 }
 
-// エイリアス（念のため残す）
+// 🌟 エイリアス (CreateCardForm が呼び出す関数名と一致させるため)
 export const generateWordDetails = generateVocabInfo;
