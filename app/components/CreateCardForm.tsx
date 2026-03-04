@@ -66,21 +66,30 @@ export default function CreateCardForm() {
     return () => clearTimeout(timer);
   }, [newWord, selectedLang, newPos]);
 
-  // 🌟 Geminiによる自動生成（クラッシュ対策・2026年最新モデル対応版）
+  // 🌟 Geminiによる自動生成（AIの過剰な親切によるクラッシュを完全に防ぐ版）
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setIsGenerating(true);
     try {
       const aiData = await generateWordDetails(newWord, selectedLang);
       
+      // 🌟 安全に文字列化するお助け関数
+      // AIが配列やオブジェクトを返してきても、エラーを起こさず文字にして表示します
+      const safeString = (val: any) => {
+        if (val === null || val === undefined) return "";
+        if (typeof val === "object") return JSON.stringify(val);
+        return String(val);
+      };
+
       // aiData が正常なオブジェクトであり、errorプロパティを持たないことを確認
       if (aiData && typeof aiData === 'object' && !aiData.error) {
-        setNewTranslation(aiData.translation || "");
-        setNewPos(aiData.part_of_speech || "");
-        setNewExample(aiData.example_sentence || "");
-        setNewExampleTranslation(aiData.example_translation || "");
-        setNewCategory(aiData.category || "Other");
-        setNewConjugation(aiData.conjugation || "");
+        // すべての項目を safeString を通してセットすることで Error #31 を防ぐ
+        setNewTranslation(safeString(aiData.translation));
+        setNewPos(safeString(aiData.part_of_speech));
+        setNewExample(safeString(aiData.example_sentence));
+        setNewExampleTranslation(safeString(aiData.example_translation));
+        setNewCategory(safeString(aiData.category) || "Other");
+        setNewConjugation(safeString(aiData.conjugation));
       } else {
         // サーバーアクションから返されたエラーメッセージを表示
         const errorMsg = aiData?.error || "AI could not generate details. Please fill manually.";
