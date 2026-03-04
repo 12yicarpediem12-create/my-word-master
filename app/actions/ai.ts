@@ -7,7 +7,7 @@ export async function generateWordDetails(word: string, langCode: string) {
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // 🌟 2026年3月の診断ログで動作確認済みのモデルID
+  // 2026年3月の診断ログで動作確認済みのモデルID
   const candidates = [
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
@@ -16,7 +16,7 @@ export async function generateWordDetails(word: string, langCode: string) {
 
   for (const modelId of candidates) {
     try {
-      // apiVersion: "v1" を明示的に指定して v1beta を回避
+      // apiVersion: "v1" を明示的に指定して接続を安定化
       const model = genAI.getGenerativeModel({ model: modelId }, { apiVersion: "v1" });
       const prompt = `Return ONLY a valid raw JSON object for the word "${word}" in language "${langCode}".
       Required keys: "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".`;

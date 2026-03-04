@@ -66,15 +66,15 @@ export default function CreateCardForm() {
     return () => clearTimeout(timer);
   }, [newWord, selectedLang, newPos]);
 
-  // 🌟 Geminiによる自動生成（クラッシュ対策版）
+  // 🌟 Geminiによる自動生成（クラッシュ対策・2026年最新モデル対応版）
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setIsGenerating(true);
     try {
       const aiData = await generateWordDetails(newWord, selectedLang);
       
-      // 🌟 返ってきた値がエラーオブジェクトでないかチェック
-      if (aiData && !aiData.error) {
+      // aiData が正常なオブジェクトであり、errorプロパティを持たないことを確認
+      if (aiData && typeof aiData === 'object' && !aiData.error) {
         setNewTranslation(aiData.translation || "");
         setNewPos(aiData.part_of_speech || "");
         setNewExample(aiData.example_sentence || "");
@@ -82,13 +82,14 @@ export default function CreateCardForm() {
         setNewCategory(aiData.category || "Other");
         setNewConjugation(aiData.conjugation || "");
       } else {
-        // エラーメッセージがあれば表示
-        alert(aiData?.error || "AI could not generate details. Please fill manually.");
+        // サーバーアクションから返されたエラーメッセージを表示
+        const errorMsg = aiData?.error || "AI could not generate details. Please fill manually.";
+        alert(errorMsg);
       }
       
     } catch (error) {
       console.error("Critical Client Error:", error);
-      alert("Something went wrong. Please check your connection.");
+      alert("A system error occurred. Please try again or fill manually.");
     } finally {
       setIsGenerating(false);
     }
