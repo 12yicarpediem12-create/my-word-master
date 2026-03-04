@@ -31,7 +31,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
       3. If no category fits, return null for "category_id".
       4. For nouns, include the definite article in the "word" field (e.g. "la mela").
       5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH (Not Japanese).
-      6. CONJUGATION FORMAT: For "conjugation", do NOT write a single continuous sentence. Format it cleanly with line breaks (\\n) for each person (e.g., "Present Tense:\\nio parlo\\ntu parli\\nlui/lei parla\\n...").
+      6. CONJUGATION FORMAT: For verbs, provide the Present Tense cleanly formatted with line breaks (\\n) for each person (e.g., "Present:\\nio parlo\\ntu parli..."). THEN, add a line for the "Past Participle" (e.g., "\\nPast Participle: parlato"). If the verb has highly irregular Past or Future forms, briefly note them at the end. Keep it concise to avoid cognitive overload.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
