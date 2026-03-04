@@ -19,11 +19,11 @@ export default function WordDetail() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // 🌟 AIニュアンス（一時表示用ステート。DB保存なし）
+  // 🌟 AIニュアンス
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [tempNuance, setTempNuance] = useState<string | null>(null);
 
-  // 編集用の State 一覧
+  // 編集用の State
   const [editWord, setEditWord] = useState("");
   const [editTranslation, setEditTranslation] = useState("");
   const [editPos, setEditPos] = useState("");
@@ -79,7 +79,6 @@ export default function WordDetail() {
     setTempNuance(null);
     try {
       const nuance = await getWordNuance(vocab.word, vocab.language_code, vocab.translation);
-      // 🌟 アスタリスクを確実に除去
       setTempNuance(String(nuance).replace(/\*\*/g, ''));
     } catch (err) { 
       console.error(err); 
@@ -139,15 +138,17 @@ export default function WordDetail() {
         <button onClick={() => router.back()} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition-colors">← Back</button>
       </nav>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 border-2 border-gray-200 shadow-lg relative overflow-hidden">
+      {/* 🌟 修正ポイント: max-w-2xl を lg:max-w-4xl に拡張し、PC時の余白(lg:py-12)を調整 */}
+      <main className="max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-8 lg:py-12 transition-all">
+        {/* 🌟 修正ポイント: PC表示時に中のパディングも広げる (lg:p-14) */}
+        <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 lg:p-14 border-2 border-gray-200 shadow-lg relative overflow-hidden transition-all">
           
           <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black uppercase tracking-widest px-6 py-3 border-b-2 border-l-2 border-blue-100 text-[10px]">
             {vocab.language_code}
           </div>
 
           {!isEditing ? (
-            <div className="space-y-10 mt-6">
+            <div className="space-y-10 mt-6 lg:mt-8">
               {/* Word Header */}
               <div className="text-center">
                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">Word</p>
@@ -177,19 +178,19 @@ export default function WordDetail() {
                   <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-4 text-center">Context & Example</p>
                   {vocab.example_sentence && (
                     <div className="flex flex-col items-center gap-4">
-                      <p className="text-base sm:text-lg font-bold text-gray-900 text-center leading-relaxed italic">"{vocab.example_sentence}"</p>
+                      <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 text-center leading-relaxed italic">"{vocab.example_sentence}"</p>
                       <button onClick={() => speak(vocab.example_sentence)} className="bg-white/80 px-4 py-2 rounded-2xl shadow-sm hover:bg-white transition-all text-[10px] font-bold text-blue-600"> 🔊 Play Example</button>
                     </div>
                   )}
-                  {vocab.example_translation && <p className="text-xs font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
+                  {vocab.example_translation && <p className="text-xs lg:text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
                 </div>
               )}
 
               {/* Notes / Grammar Pattern */}
               <div className="border-t-2 border-gray-50 pt-10">
                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">Notes / Grammar Pattern</p>
-                <div className="bg-gray-50 rounded-[2rem] p-6 border-2 border-gray-100">
-                  <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed italic">
+                <div className="bg-gray-50 rounded-[2rem] p-6 sm:p-8 border-2 border-gray-100">
+                  <p className="text-sm lg:text-base font-medium text-gray-700 whitespace-pre-wrap leading-relaxed italic">
                     {vocab.notes || "No grammar notes added."}
                   </p>
                 </div>
@@ -204,14 +205,14 @@ export default function WordDetail() {
                   </button>
                 </div>
                 {tempNuance && (
-                  <div className="bg-indigo-50/50 rounded-[2rem] p-6 border-2 border-dashed border-indigo-100 animate-in fade-in duration-500">
-                    <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{tempNuance}</p>
+                  <div className="bg-indigo-50/50 rounded-[2rem] p-6 sm:p-8 border-2 border-dashed border-indigo-100 animate-in fade-in duration-500">
+                    <p className="text-sm lg:text-base font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{tempNuance}</p>
                     <p className="text-[8px] font-bold text-indigo-300 mt-4 uppercase">※ Insight not saved in library.</p>
                   </div>
                 )}
               </div>
 
-              {/* Grid Cards (修正済み: 文字溢れ対策 & Topicリンク & 条件表示) */}
+              {/* Grid Cards */}
               <div className="flex flex-wrap gap-4 border-t-2 border-gray-50 pt-10">
                 {vocab.categories && (
                   <Link 
@@ -252,15 +253,15 @@ export default function WordDetail() {
                 </div>
               </div>
 
-              {/* 🌟 復活: アクションボタン */}
+              {/* アクションボタン */}
               <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t-2 border-gray-50">
                 <button onClick={() => setIsEditing(true)} className="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl active:scale-[0.98]">✏️ Edit Details</button>
                 <button onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto px-8 bg-red-50 text-red-500 font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-red-100 transition-colors">🗑️ Delete</button>
               </div>
             </div>
           ) : (
-            /* 🌟 復活: 編集モード */
-            <div className="space-y-6 mt-10 animate-in fade-in duration-300">
+            /* 編集モード */
+            <div className="space-y-6 mt-10 lg:mt-12 animate-in fade-in duration-300">
               <h2 className="text-2xl font-black mb-6 tracking-tight">Edit Word Details</h2>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
