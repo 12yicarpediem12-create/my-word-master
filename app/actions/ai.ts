@@ -8,24 +8,27 @@ export async function generateWordDetails(word: string, langCode: string) {
   const genAI = new GoogleGenerativeAI(apiKey);
 
   /**
-   * 🌟 2026年3月現在の有効なモデルリストに更新
-   * gemini-2.0 は廃止されたため削除し、最新の 3.x 系と 1.5 の安定版を指定します
+   * 🌟 2026年3月現在の有効なモデルリスト
+   * 2.0は廃止されたため、3系を優先します。
    */
   const candidates = [
-    "gemini-3.5-flash",        // 2026年現在の最新標準モデル
-    "gemini-3.0-flash-latest", // 3.0系の最新版
-    "gemini-1.5-flash-latest", // 長期サポートの安定版
-    "gemini-1.5-flash",        // 予備
+    "gemini-3-flash",     // 本格運用のメインモデル
+    "gemini-3.1-pro",     // 高精度モデル
+    "gemini-1.5-flash",   // 安定版のバックアップ
   ];
 
   let lastError = "";
 
   for (const modelId of candidates) {
     try {
-      console.log(`DEBUG: Trying current model: ${modelId}...`);
+      // 🌟 重要: デバッグメッセージで今の設定を確認
+      console.log(`DEBUG: Trying ${modelId} FORCE v1...`);
       
-      // apiVersion は指定せず、SDKに最新の安定した口 (v1) を選ばせます
-      const model = genAI.getGenerativeModel({ model: modelId });
+      // 🌟 APIバージョンを "v1" に強制固定します
+      const model = genAI.getGenerativeModel(
+        { model: modelId },
+        { apiVersion: "v1" }
+      );
 
       const prompt = `Return ONLY JSON for word "${word}" in ${langCode}: {"translation":"...","part_of_speech":"...","category":"...","example_sentence":"...","example_translation":"...","conjugation":"..."}`;
 
@@ -43,5 +46,5 @@ export async function generateWordDetails(word: string, langCode: string) {
     }
   }
 
-  throw new Error(`AI Blackout: 利用可能なモデルが見つかりません。最新のSDKへの更新が必要です。 最終エラー: ${lastError}`);
+  throw new Error(`AI Blackout: v1エンドポイントでもモデルが見つかりません。APIキーの有効性を再確認してください。`);
 }
