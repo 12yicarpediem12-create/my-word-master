@@ -66,7 +66,7 @@ export default function CreateCardForm() {
       if (aiData) {
         const isDup = await checkDuplicate(aiData.word || newWord, selectedLang, aiData.part_of_speech);
         if (isDup) {
-          setErrorMsg(`"${aiData.word || newWord}" as ${aiData.part_of_speech} is already in library.`);
+          setErrorMsg(`Already in library as ${aiData.part_of_speech}.`);
           setIsGenerating(false);
           return;
         }
@@ -94,7 +94,7 @@ export default function CreateCardForm() {
     setIsSubmitting(true);
     const isDup = await checkDuplicate(newWord, selectedLang, newPos);
     if (isDup) {
-      setErrorMsg("Word + Part of Speech already exists.");
+      setErrorMsg("Already exists.");
       setIsSubmitting(false);
       return;
     }
@@ -125,7 +125,6 @@ export default function CreateCardForm() {
       )}
 
       <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 mt-10">
-        {/* Row 1: Language & Word */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Language</label>
@@ -138,64 +137,63 @@ export default function CreateCardForm() {
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Word</label>
             <div className="flex gap-2 w-full">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold bg-gray-50 border-gray-100 focus:border-blue-500 min-w-0" />
-              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-5 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-xs shadow-md disabled:opacity-50 shrink-0">
+              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="mela" className="flex-1 p-4 border-2 rounded-2xl font-bold bg-gray-50 border-gray-100 focus:border-blue-500 min-w-0" />
+              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-5 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-[10px] shadow-md disabled:opacity-50 shrink-0">
                 {isGenerating ? "..." : "Auto-Fill"}
               </button>
             </div>
+            {/* Hint 欄 */}
             <input type="text" value={newHint} onChange={(e) => setNewHint(e.target.value)} placeholder="Hint: specific meaning..." className="w-full p-2 bg-blue-50/30 border border-blue-100 rounded-xl text-[9px] font-bold text-blue-500 outline-none" />
           </div>
         </div>
 
-        {/* Row 2: Meaning & POS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Meaning</label>
             <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="English translation" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold outline-none" />
           </div>
           <div className="flex flex-col gap-2">
-            <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2 whitespace-nowrap">Part of Speech</label>
-            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Noun" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold outline-none" />
+            <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Part of Speech</label>
+            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="Verb" className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold outline-none" />
           </div>
         </div>
 
-        {/* Row 3: Gender, Verb Type, Category */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-emerald-500 uppercase tracking-tight ml-2">Gender</label>
-            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Feminine" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800 outline-none" />
+            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Feminine" className="w-full p-4 bg-emerald-50/20 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-emerald-500 uppercase tracking-tight ml-2">Verb Type</label>
-            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Transitive" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800 outline-none" />
+            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Transitive" className="w-full p-4 bg-emerald-50/20 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-purple-500 uppercase tracking-tight ml-2">Category ID</label>
-            <input type="text" value={newCategoryId || ""} onChange={(e) => setNewCategoryId(e.target.value || null)} placeholder="Auto" className="w-full p-4 bg-purple-50/30 border-2 border-purple-100 rounded-2xl font-bold text-[10px] text-purple-800 truncate" />
+            <input type="text" value={newCategoryId || ""} onChange={(e) => setNewCategoryId(e.target.value || null)} placeholder="Auto" className="w-full p-4 bg-purple-50/20 border-2 border-purple-100 rounded-2xl font-bold text-[10px] text-purple-800" />
           </div>
         </div>
 
-        {/* Row 4: Example Sentence & Translation */}
+        {/* Example Sentence & Translation (resize-none 追加) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-blue-400 uppercase tracking-tight ml-2">Example Sentence</label>
-            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={3} placeholder="Example sentence in target language" className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm text-blue-900 outline-none" />
+            <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={3} placeholder="Example..." className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm text-blue-900 outline-none resize-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-blue-400 uppercase tracking-tight ml-2">Example Translation</label>
-            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={3} placeholder="Translation of example" className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm text-blue-900 outline-none" />
+            <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={3} placeholder="Translation..." className="w-full p-4 bg-blue-50/30 border-2 border-blue-100 rounded-2xl font-medium text-sm text-blue-900 outline-none resize-none" />
           </div>
         </div>
 
-        {/* Row 5: Conjugation & Notes */}
+        {/* Conjugation & Notes (resize-none 追加) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-amber-500 uppercase tracking-tight ml-2">Conjugation Guide</label>
-            <textarea value={newConjugation} onChange={(e) => setNewConjugation(e.target.value)} rows={4} className="w-full p-4 bg-amber-50/50 border-2 border-amber-100 rounded-2xl font-bold text-sm text-amber-900 outline-none" />
+            <textarea value={newConjugation} onChange={(e) => setNewConjugation(e.target.value)} rows={4} className="w-full p-4 bg-amber-50/30 border-2 border-amber-100 rounded-2xl font-bold text-sm text-amber-900 outline-none resize-none" />
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-[9px] font-black text-gray-400 uppercase tracking-tight ml-2">Notes / Grammar Pattern</label>
-            <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} rows={4} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-sm text-gray-700 outline-none" />
+            <textarea value={newNotes} onChange={(e) => setNewNotes(e.target.value)} rows={4} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-sm text-gray-700 outline-none resize-none" />
           </div>
         </div>
 
