@@ -13,49 +13,67 @@ export default function TopicDetailPage() {
   const params = useParams();
   const langCode = params?.lang as string;
   const categoryId = params?.categoryId as string;
-  
+
   const [category, setCategory] = useState<any>(null);
   const [words, setWords] = useState<any[]>([]);
+  // 🌟 追加: パンくずリスト用のState
+  const [breadcrumbs, setBreadcrumbs] = useState<{ id: string; name: string }[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       if (!langCode || !categoryId) return;
 
-      // カテゴリ情報の取得
-      const { data: catData } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("id", categoryId)
-        .single();
-      setCategory(catData);
+      // 🌟 修正: 現在のカテゴリ、全カテゴリ（親を辿るため）、単語データを同時に取得
+      const [
+        { data: catData },
+        { data: allCats },
+        { data: wordData }
+      ] = await Promise.all([
+        supabase.from("categories").select("*").eq("id", categoryId).single(),
+        supabase.from("categories").select("id, name, parent_id"),
+        supabase.from("vocab").select("*").eq("language_code", langCode).eq("category_id", categoryId)
+      ]);
 
-      // そのカテゴリに属する単語の取得
-      const { data: wordData } = await supabase
-        .from("vocab")
-        .select("*")
-        .eq("language_code", langCode)
-        .eq("category_id", categoryId);
-      
+      if (catData) {
+        setCategory(catData);
+
+        // 🌟 追加: parent_id を辿って、クリックできるパンくずリストを生成
+        if (allCats) {
+          const crumbs = [];
+          let currentParentId = catData.parent_id;
+          
+          while (currentParentId) {
+            const parent = allCats.find((c: any) => c.id === currentParentId);
+            if (parent) {
+              crumbs.unshift({ id: parent.id, name: parent.name }); // 親を先頭に追加していく
+              currentParentId = parent.parent_id;
+            } else {
+              break;
+            }
+          }
+          setBreadcrumbs(crumbs);
+        }
+      }
+
       if (wordData) setWords(wordData);
       setIsLoading(false);
     }
+
     fetchData();
   }, [langCode, categoryId]);
 
-  // パスのガード
   const topicsPath = langCode ? `/study/${langCode}/topics` : "#";
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Navigation: Topicsページとデザインを統一 */}
       <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
           WordMaster.
         </Link>
-        
-        <Link 
-          href={topicsPath} 
+
+        <Link
+          href={topicsPath}
           className={`text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${
             !langCode ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:text-blue-600"
           }`}
@@ -72,9 +90,21 @@ export default function TopicDetailPage() {
         ) : (
           <>
             <header className="mb-12">
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 opacity-60">
-                {category?.full_path?.split(" > ").slice(0, -1).join(" > ")}
-              </p>
+              {/* 🌟 修正: 単なる文字列ではなく、Linkコンポーネントのリストに変更 */}
+              <div className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-2 flex flex-wrap items-center gap-2">
+                {breadcrumbs.map((crumb) => (
+                  <span key={crumb.id} className="flex items-center gap-2">
+                    <Link 
+                      href={`/study/${langCode}/topics/${crumb.id}`}
+                      className="hover:text-blue-700 hover:underline transition-all opacity-70 hover:opacity-100"
+                    >
+                      {crumb.name}
+                    </Link>
+                    <span className="opacity-40 text-blue-300"> &gt; </span>
+                  </span>
+                ))}
+              </div>
+
               <h1 className="text-5xl font-black text-gray-900 tracking-tight">
                 {category?.name || "Topic"}
               </h1>
@@ -86,9 +116,9 @@ export default function TopicDetailPage() {
             <div className="bg-white rounded-[2.5rem] border-2 border-gray-200 shadow-sm divide-y-2 divide-gray-100 overflow-hidden">
               {words.length > 0 ? (
                 words.map((w) => (
-                  <Link 
-                    href={`/word/${w.id}`} 
-                    key={w.id} 
+                  <Link
+                    href={`/word/${w.id}`}
+                    key={w.id}
                     className="p-8 flex items-center justify-between hover:bg-gray-50 transition-all group"
                   >
                     <div>
@@ -103,13 +133,13 @@ export default function TopicDetailPage() {
                       <span className="text-[10px] font-black bg-gray-50 text-gray-400 px-3 py-1 rounded-lg uppercase tracking-widest">
                         {w.part_of_speech}
                       </span>
-                      <span className="text-2xl">{w.is_remembered ? "✅" : "🔥"}</span>
+                      <span className="text-2xl">{w.is_remembered ? " ✅ " : " 🔥 "}</span>
                     </div>
                   </Link>
                 ))
               ) : (
                 <div className="p-32 text-center">
-                  <span className="text-6xl opacity-20">🔍</span>
+                  <span className="text-6xl opacity-20"> 🔍 </span>
                   <p className="mt-6 font-black text-gray-300 uppercase tracking-widest">
                     No words in this topic yet
                   </p>
