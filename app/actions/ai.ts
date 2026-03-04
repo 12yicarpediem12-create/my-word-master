@@ -5,27 +5,26 @@ export async function generateWordDetails(word: string, langCode: string) {
   const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY?.trim();
   if (!apiKey) throw new Error("API Key is missing.");
 
-  // ライブラリの初期化
   const genAI = new GoogleGenerativeAI(apiKey);
 
   /**
-   * 🌟 2026年3月現在、最も確実に動くモデル名のリスト
+   * 🌟 2026年3月現在の「正規ラインナップ」
+   * 1.5や2.0は廃止されたため、現在の標準モデルのみを指定します。
    */
   const candidates = [
-    "gemini-1.5-flash",        // 安定版の筆頭
-    "gemini-1.5-flash-latest", // 最新エイリアス
-    "gemini-2.0-flash-lite",   // もし2.0系を使うなら現在はこのIDの可能性があります
+    "gemini-3-flash",     // 2026年現在の標準・高速モデル
+    "gemini-3.1-pro",     // 2026年現在の高精度モデル
   ];
 
   let lastError = "";
 
   for (const modelId of candidates) {
     try {
-      // 🌟 ここが最重要：apiVersion: "v1" を明示的に指定して v1beta を回避します
-      console.log(`DEBUG: [FORCE v1] Trying ${modelId}...`);
+      console.log(`DEBUG: [2026 Standard] Trying ${modelId} via v1...`);
+      
       const model = genAI.getGenerativeModel(
         { model: modelId },
-        { apiVersion: "v1" } // ← これを絶対に入れてください
+        { apiVersion: "v1" }
       );
 
       const prompt = `Return ONLY JSON for word "${word}" in ${langCode}: {"translation":"...","part_of_speech":"...","category":"...","example_sentence":"...","example_translation":"...","conjugation":"..."}`;
@@ -33,7 +32,7 @@ export async function generateWordDetails(word: string, langCode: string) {
       const result = await model.generateContent(prompt);
       const text = result.response.text();
       
-      console.log(`✅ SUCCESS with ${modelId}`);
+      console.log(`✅ SUCCESS: ${modelId}`);
       const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
       return JSON.parse(cleanJson);
       
@@ -44,5 +43,5 @@ export async function generateWordDetails(word: string, langCode: string) {
     }
   }
 
-  throw new Error(`AI Blackout: v1エンドポイントでも失敗しました。エラー: ${lastError}`);
+  throw new Error(`AI Blackout: モデルIDが変更された可能性があります。最新の公式ドキュメントを確認してください。 最終エラー: ${lastError}`);
 }
