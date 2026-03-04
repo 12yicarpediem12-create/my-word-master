@@ -100,7 +100,7 @@ export default function CreateCardForm() {
 
       <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 mt-10">
         
-        {/* ROW 1: Language & Word (厚みを抑えたバージョン) */}
+        {/* ROW 1: Language & Word (ここを完全に統一) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Language</label>
@@ -114,8 +114,10 @@ export default function CreateCardForm() {
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
             <div className="flex gap-2">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-black text-lg bg-gray-50 border-gray-100 focus:border-blue-500 outline-none transition-all" />
-              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-6 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-sm hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50">
+              {/* 🌟 変更: font-bold / text-base にしてMeaningと合わせました */}
+              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-bold text-base bg-gray-50 border-gray-100 focus:border-blue-500 outline-none transition-all" />
+              {/* 🌟 変更: py-4 を追加して入力欄と高さをピクセル単位で合わせました */}
+              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black rounded-2xl text-sm hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 whitespace-nowrap">
                 {isGenerating ? "..." : "Auto-Fill"}
               </button>
             </div>
@@ -123,7 +125,7 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* ROW 2: Meaning & POS (高さを統一) */}
+        {/* ROW 2: Meaning & POS (ここが基準のサイズ) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Meaning (English)</label>
@@ -135,7 +137,7 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* ROW 3: Tags (スリム化) */}
+        {/* ROW 3: Tags */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2">Gender</label>
@@ -151,7 +153,7 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* Conjugation (必要な時だけ表示) */}
+        {/* Conjugation */}
         {newConjugation && (
           <div className="flex flex-col gap-2">
              <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest ml-2">Conjugation</label>
