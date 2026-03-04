@@ -2,6 +2,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateWordDetails(word: string, langCode: string) {
+  // 環境変数からAPIキーを取得
   const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY?.trim();
   
   if (!apiKey) {
@@ -9,23 +10,33 @@ export async function generateWordDetails(word: string, langCode: string) {
     throw new Error("API Key is missing.");
   }
 
-  // 🌟 2026年現在の最新SDK仕様で初期化
+  // SDKの初期化
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // 🌟 候補となるモデルID（2026年の最新順）
+  /**
+   * 🌟 修正ポイント1: モデルの優先順位を変更
+   * 2026年現在、最も安定しているモデルを先頭に配置しています。
+   */
   const candidates = [
-    "gemini-3-flash",
-    "gemini-3.1-pro",
-    "gemini-3.0-flash",
-    "gemini-1.5-flash"
+    "gemini-2.0-flash", // 非常に高速で安定している推奨モデル
+    "gemini-1.5-flash", // 互換性が高く、まず間違いなく動くモデル
+    "gemini-3-flash",   // 新しいモデル（v1で使用可能）
   ];
 
   let lastError = "";
 
   for (const modelId of candidates) {
     try {
-      console.log(`DEBUG: Trying model ${modelId}...`);
-      const model = genAI.getGenerativeModel({ model: modelId });
+      console.log(`DEBUG: Trying model ${modelId} via v1 API...`);
+
+      /**
+       * 🌟 修正ポイント2: apiVersion を "v1" に固定
+       * これにより、エラーの原因だった "v1beta" への自動接続を強制的に回避します。
+       */
+      const model = genAI.getGenerativeModel(
+        { model: modelId },
+        { apiVersion: "v1" } 
+      );
 
       const prompt = `Return ONLY JSON for word "${word}" in ${langCode}: {"translation":"...","part_of_speech":"...","category":"...","example_sentence":"...","example_translation":"...","conjugation":"..."}`;
 
@@ -34,20 +45,21 @@ export async function generateWordDetails(word: string, langCode: string) {
       
       console.log(`✅ SUCCESS with model: ${modelId}`);
       
+      // JSONの整形（マークダウンの除去）
       const cleanJson = text.replace(/```json/g, "").replace(/```/g, "").trim();
       return JSON.parse(cleanJson);
       
     } catch (e: any) {
       console.warn(`❌ FAILED with ${modelId}: ${e.message}`);
       lastError = e.message;
-      continue; // 次のモデルを試す
+      // 404やエラーが出た場合は、次の候補モデルへ移動
+      continue; 
     }
   }
 
-  // 全滅した場合、ログに具体的な理由を出して停止
+  // すべてのモデルが失敗した場合
   console.error("--- ALL MODELS FAILED ---");
-  console.error("Last Error:", lastError);
+  console.error("Last Error Details:", lastError);
   
-  // 💡 ここが 404 なら、Google Cloud ConsoleでAPIを有効化する必要があります
-  throw new Error(`AI Blackout: All models returned 404. Please check if 'Generative Language API' is ENABLED in Google Cloud Console.`);
+  throw new Error(`AI Blackout: 全てのモデルでエラーが発生しました。最新のライブラリへの更新も検討してください。 最終エラー: ${lastError}`);
 }
