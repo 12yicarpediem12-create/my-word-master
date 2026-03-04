@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-// 🌟 修正: 新しい関数名をインポート
 import { generateVocabInfo } from "../actions/ai";
 
 const supabase = createClient(
@@ -13,22 +12,20 @@ export default function CreateCardForm() {
   const [languages, setLanguages] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   const [newWord, setNewWord] = useState("");
-  const [newHint, setNewHint] = useState(""); // 補足入力用（必要なら）
+  const [newHint, setNewHint] = useState("");
   const [newTranslation, setNewTranslation] = useState("");
   const [newPos, setNewPos] = useState("");
   const [newGender, setNewGender] = useState("");
   const [newVerbType, setNewVerbType] = useState("");
-  
-  // 🌟 修正: UUIDが入るように State を調整（見た目上の表示は別途必要なら調整しますが、今回は直接保存）
   const [newCategoryId, setNewCategoryId] = useState<string | null>(null); 
-  
   const [newExample, setNewExample] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
   const [newConjugation, setNewConjugation] = useState("");
-  const [newNotes, setNewNotes] = useState(""); // 追加: AIのnotesを受け取る用
+  const [newNotes, setNewNotes] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null); // 重複などのエラー表示用
 
   useEffect(() => {
     async function fetchLangs() {
@@ -41,32 +38,74 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
+  // 🌟 追加: 重複チェック関数
+  const checkDuplicate = async (wordToCheck: string, lang: string) => {
+    // 冠詞（la, il, le, un, una 等）を削除し、小文字にして比較するための正規表現
+    const cleanWord = wordToCheck.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
+
+    const { data } = await supabase
+      .from("vocab")
+      .select("word")
+      .eq("language_code", lang);
+
+    if (data) {
+      const isDuplicate = data.some(item => {
+        const itemClean = item.word.toLowerCase().replace(/^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i, "").trim();
+        return itemClean === cleanWord;
+      });
+      return isDuplicate;
+    }
+    return false;
+  };
+
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
+    setErrorMsg(null);
     setIsGenerating(true);
+
     try {
-      // 🌟 修正: generateVocabInfo を呼び出し。※ hint はプロンプト改修が必要なため、今回は一旦 word のみにするか、word に混ぜて送ります。
-      // もし hint を活用したい場合は `generateVocabInfo(newWord + (newHint ? ` (Hint: ${newHint})` : ""), selectedLang)` のように送ると良いです。
+      // 1. 生成前に重複チェック
+      const isDup = await checkDuplicate(newWord, selectedLang);
+      if (isDup) {
+        setErrorMsg(`"${newWord}" is already in your library for this language!`);
+        setIsGenerating(false);
+        return;
+      }
+
+      // 2. AIデータ生成
       const aiData = await generateVocabInfo(newWord + (newHint ? ` (Hint: ${newHint})` : ""), selectedLang);
       
+      if (aiData?.error) {
+        setErrorMsg("AI Error: " + aiData.error);
+        return;
+      }
+
       if (aiData) {
-        setNewWord(aiData.word || newWord); // AIが冠詞付き等に修正した場合を考慮
+        // AIが返した単語でもう一度重複チェック（AIが冠詞を付けた場合など）
+        const finalWord = aiData.word || newWord;
+        if (finalWord !== newWord) {
+           const isFinalDup = await checkDuplicate(finalWord, selectedLang);
+           if (isFinalDup) {
+             setErrorMsg(`"${finalWord}" is already in your library!`);
+             setIsGenerating(false);
+             return;
+           }
+        }
+
+        setNewWord(finalWord);
         setNewTranslation(String(aiData.translation || ""));
         setNewPos(String(aiData.part_of_speech || ""));
         setNewGender(String(aiData.gender || ""));
         setNewVerbType(String(aiData.verb_type || ""));
-        
-        // 🌟 修正: AIが選んだカテゴリIDをセット（null許容）
         setNewCategoryId(aiData.category_id || null);
-        
         setNewExample(String(aiData.example_sentence || ""));
         setNewExampleTranslation(String(aiData.example_translation || ""));
         setNewConjugation(String(aiData.conjugation || ""));
         setNewNotes(String(aiData.notes || ""));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Failed to generate word details. Please try again.");
+      setErrorMsg("System Error: " + error.message);
     } finally {
       setIsGenerating(false);
     }
@@ -75,8 +114,17 @@ export default function CreateCardForm() {
   const handleAddWord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWord || !newTranslation || !selectedLang) return;
+    setErrorMsg(null);
     setIsSubmitting(true);
     
+    // 念のため保存時にも重複チェック
+    const isDup = await checkDuplicate(newWord, selectedLang);
+    if (isDup) {
+      setErrorMsg(`"${newWord}" is already in your library!`);
+      setIsSubmitting(false);
+      return;
+    }
+
     const { error } = await supabase.from("vocab").insert([{
       language_code: selectedLang,
       word: newWord.trim(),
@@ -84,10 +132,7 @@ export default function CreateCardForm() {
       part_of_speech: newPos || null,
       gender: newGender || null,
       verb_type: newVerbType || null,
-      
-      // 🌟 修正: category (文字列) ではなく category_id (UUID) を保存
       category_id: newCategoryId, 
-      
       example_sentence: newExample || null,
       example_translation: newExampleTranslation || null,
       conjugation: newConjugation || null,
@@ -99,7 +144,7 @@ export default function CreateCardForm() {
       window.location.reload();
     } else {
       console.error("Supabase Insert Error:", error);
-      alert("Failed to save the word.");
+      setErrorMsg("Failed to save the word.");
       setIsSubmitting(false);
     }
   };
@@ -112,7 +157,14 @@ export default function CreateCardForm() {
         ADD NEW WORD
       </div>
 
-      <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 mt-10">
+      {errorMsg && (
+        <div className="mt-10 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl flex items-center justify-between">
+          <span>⚠️ {errorMsg}</span>
+          <button onClick={() => setErrorMsg(null)} className="text-xl hover:scale-110 active:scale-95 transition-transform">×</button>
+        </div>
+      )}
+
+      <form onSubmit={handleAddWord} className={`flex flex-col gap-y-8 ${errorMsg ? 'mt-6' : 'mt-10'}`}>
         
         {/* ROW 1: Language & Word */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
@@ -160,7 +212,6 @@ export default function CreateCardForm() {
             <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Transitive" className="w-full p-4 bg-emerald-50/30 border-2 border-emerald-100 rounded-2xl font-bold text-sm text-emerald-800 outline-none" />
           </div>
           <div className="flex flex-col gap-2">
-            {/* 🌟 変更: UUIDを表示・編集する欄に変更 */}
             <label className="text-[10px] font-black text-purple-500 uppercase tracking-widest ml-2">Category ID (Auto)</label>
             <input type="text" value={newCategoryId || ""} onChange={(e) => setNewCategoryId(e.target.value || null)} placeholder="UUID or blank" className="w-full p-4 bg-purple-50/30 border-2 border-purple-100 rounded-2xl font-bold text-[10px] text-purple-800 outline-none truncate" />
           </div>
