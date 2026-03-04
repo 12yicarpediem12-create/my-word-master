@@ -3,23 +3,23 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function generateWordDetails(word: string, langCode: string) {
   const apiKey = process.env.GOOGLE_GENERIC_AI_API_KEY?.trim();
+  
   if (!apiKey) {
     console.error("DEBUG: API Key is missing!");
-    throw new Error("API Key is missing.");
+    return { error: "API Key is missing. Check your environment variables." };
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
   /**
-   * 🌟 診断ログで動作確認が取れた「Gemini 2.5」シリーズを優先
+   * 🌟 2026年3月4日の診断ログで動作が確認されたモデルID
+   * 2.5系があなたの環境での最新かつ安定したモデルです。
    */
   const candidates = [
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
-    "gemini-2.0-flash",
+    "gemini-2.5-pro",
   ];
-
-  let lastError = "";
 
   for (const modelId of candidates) {
     try {
@@ -27,12 +27,12 @@ export async function generateWordDetails(word: string, langCode: string) {
       
       const model = genAI.getGenerativeModel(
         { model: modelId },
-        { apiVersion: "v1" }
+        { apiVersion: "v1" } // 正式版エンドポイントを使用
       );
 
-      const prompt = `Return ONLY a valid JSON object for the word "${word}" in language "${langCode}". 
+      const prompt = `Return ONLY a valid raw JSON object for the word "${word}" in language "${langCode}".
       Required keys: "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".
-      No prose, no markdown code blocks.`;
+      No explanations, no markdown code blocks.`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();
@@ -40,31 +40,33 @@ export async function generateWordDetails(word: string, langCode: string) {
       if (!text) throw new Error("AI returned empty text");
 
       /**
-       * 🌟 JSONを安全に抽出する処理
-       * AIが「Here is the JSON: ...」のように余計な文をつけても、{ } の中身だけを抜き出します。
+       * 🌟 JSON抽出ガード
+       * AIが余計な文章を混ぜても { } の部分だけを抽出します。
        */
       const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("No JSON object found in response");
+      if (!jsonMatch) throw new Error("Valid JSON object not found");
       
-      const cleanJson = jsonMatch[0];
-      const parsedData = JSON.parse(cleanJson);
+      const parsedData = JSON.parse(jsonMatch[0]);
 
-      // フロントエンドで壊れないよう、最低限必要な項目をチェック
-      if (!parsedData.translation) {
-        throw new Error("Parsed data is missing required fields");
-      }
+      // 最低限必要なフィールドの有無をチェック
+      if (!parsedData.translation) throw new Error("Invalid data format");
 
-      console.log(`✅ SUCCESS with model: ${modelId}`);
+      console.log(`✅ SUCCESS: ${modelId}`);
       return parsedData;
 
     } catch (e: any) {
-      console.warn(`❌ FAILED with ${modelId}: ${e.message}`);
-      lastError = e.message;
-      // 次のモデルでリトライ
+      console.warn(`❌ FAILED ${modelId}: ${e.message}`);
+      // 次の候補モデルへ
       continue; 
     }
   }
 
-  console.error("--- ALL MODELS FAILED TO PROVIDE VALID JSON ---");
-  throw new Error(`AI Blackout: 全モデルで失敗またはデータ破損。最終エラー: ${lastError}`);
+  /**
+   * 🌟 フロントエンドをクラッシュさせないための工夫
+   * throwせず、エラー内容をオブジェクトとして返します。
+   */
+  return { 
+    error: "AI Generation failed. Please try again later.",
+    details: "All available models (2.5 series) returned errors." 
+  };
 }
