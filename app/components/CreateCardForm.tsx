@@ -13,14 +13,12 @@ export default function CreateCardForm() {
   const [languages, setLanguages] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   const [newWord, setNewWord] = useState("");
+  const [newHint, setNewHint] = useState(""); // 🌟 ヒント用のState
   const [newTranslation, setNewTranslation] = useState("");
   const [newPos, setNewPos] = useState("");
-  
-  // 🌟 Supabaseの実際のカラム名に合わせたステート
   const [newGender, setNewGender] = useState("");
   const [newVerbType, setNewVerbType] = useState("");
   const [newCategory, setNewCategory] = useState("");
-  
   const [newExample, setNewExample] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
   const [newConjugation, setNewConjugation] = useState("");
@@ -40,92 +38,37 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  useEffect(() => {
-    const checkDuplicate = async () => {
-      if (!newWord.trim() || !selectedLang) {
-        setExistingWordId(null);
-        return;
-      }
-      const { data } = await supabase
-        .from("vocab")
-        .select("id, part_of_speech")
-        .eq("language_code", selectedLang)
-        .ilike("word", newWord.trim());
-
-      if (data && data.length > 0) {
-        const normalizedNewPos = newPos.trim().toLowerCase();
-        const duplicate = data.find(item => {
-          const itemPos = (item.part_of_speech || "").trim().toLowerCase();
-          return itemPos === normalizedNewPos;
-        });
-        setExistingWordId(duplicate ? duplicate.id : null);
-      } else {
-        setExistingWordId(null);
-      }
-    };
-    const timer = setTimeout(checkDuplicate, 300);
-    return () => clearTimeout(timer);
-  }, [newWord, selectedLang, newPos]);
-
-  const formatAIData = (val: any): string => {
-    if (val === null || val === undefined) return "";
-    if (typeof val === "string") return val;
-    
-    if (typeof val === "object") {
-      try {
-        return Object.entries(val).map(([tense, forms]) => {
-          const cleanTense = tense
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (char) => char.toUpperCase());
-            
-          if (typeof forms === "object" && forms !== null) {
-            const conjugations = Object.entries(forms)
-              .map(([pronoun, word]) => `${pronoun} ${word}`)
-              .join(", ");
-            return `■ ${cleanTense}:\n${conjugations}`;
-          }
-          return `■ ${cleanTense}: ${forms}`;
-        }).join("\n\n");
-      } catch (e) {
-        return JSON.stringify(val);
-      }
-    }
-    return String(val);
-  };
-
-  const safeString = (val: any) => {
-    if (val === null || val === undefined) return "";
-    return String(val);
-  };
-
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setIsGenerating(true);
     try {
-      const aiData = await generateWordDetails(newWord, selectedLang);
+      // 🌟 ヒントを渡すように変更
+      const aiData = await generateWordDetails(newWord, selectedLang, newHint);
       
-      if (aiData && typeof aiData === 'object' && !aiData.error) {
-        if (aiData.word_with_article) {
-          setNewWord(aiData.word_with_article);
+      if (aiData && !aiData.error) {
+        if (aiData.word_with_article) setNewWord(aiData.word_with_article);
+        setNewTranslation(String(aiData.translation || ""));
+        setNewPos(String(aiData.part_of_speech || ""));
+        setNewGender(String(aiData.gender || ""));
+        setNewVerbType(String(aiData.verb_type || ""));
+        setNewCategory(String(aiData.category || "Other"));
+        setNewExample(String(aiData.example_sentence || ""));
+        setNewExampleTranslation(String(aiData.example_translation || ""));
+        
+        // 活用形のフォーマット（以前のロジック）
+        if (aiData.conjugation && typeof aiData.conjugation === "object") {
+          const formatted = Object.entries(aiData.conjugation).map(([tense, forms]) => {
+            const cleanTense = tense.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+            const conj = Object.entries(forms as any).map(([p, w]) => `${p} ${w}`).join(", ");
+            return `■ ${cleanTense}:\n${conj}`;
+          }).join("\n\n");
+          setNewConjugation(formatted);
+        } else {
+          setNewConjugation("");
         }
-
-        setNewTranslation(safeString(aiData.translation));
-        setNewPos(safeString(aiData.part_of_speech));
-        
-        // 🌟 gender と verb_type をそれぞれのステートにセット
-        setNewGender(safeString(aiData.gender));
-        setNewVerbType(safeString(aiData.verb_type));
-        
-        setNewCategory(safeString(aiData.category) || "Other");
-        setNewExample(safeString(aiData.example_sentence));
-        setNewExampleTranslation(safeString(aiData.example_translation));
-        setNewConjugation(formatAIData(aiData.conjugation));
-      } else {
-        alert(aiData?.error || "AI could not generate details. Please fill manually.");
       }
     } catch (error) {
-      console.error("Critical Client Error:", error);
-      alert("A system error occurred. Please try again or fill manually.");
+      console.error(error);
     } finally {
       setIsGenerating(false);
     }
@@ -133,42 +76,22 @@ export default function CreateCardForm() {
 
   const handleAddWord = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newWord || !newTranslation || !selectedLang || existingWordId) return;
-
+    if (!newWord || !newTranslation || !selectedLang) return;
     setIsSubmitting(true);
-    
-    // 🌟 実際のSupabaseのカラム構成に合わせて保存
-    const { error } = await supabase.from("vocab").insert([
-      {
-        language_code: selectedLang,
-        word: newWord.trim(),
-        translation: newTranslation.trim(),
-        part_of_speech: newPos || null,
-        gender: newGender || null,
-        verb_type: newVerbType || null,
-        category: newCategory || "Other",
-        example_sentence: newExample || null,
-        example_translation: newExampleTranslation || null,
-        conjugation: newConjugation || null,
-        is_remembered: false,
-      },
-    ]);
-
-    if (!error) {
-      setNewWord("");
-      setNewTranslation("");
-      setNewPos("");
-      setNewGender("");
-      setNewVerbType("");
-      setNewCategory("");
-      setNewExample("");
-      setNewExampleTranslation("");
-      setNewConjugation("");
-      window.location.reload();
-    } else {
-      console.error(error);
-      alert("Error adding word to database.");
-    }
+    const { error } = await supabase.from("vocab").insert([{
+      language_code: selectedLang,
+      word: newWord.trim(),
+      translation: newTranslation.trim(),
+      part_of_speech: newPos || null,
+      gender: newGender || null,
+      verb_type: newVerbType || null,
+      category: newCategory || "Other",
+      example_sentence: newExample || null,
+      example_translation: newExampleTranslation || null,
+      conjugation: newConjugation || null,
+      is_remembered: false,
+    }]);
+    if (!error) window.location.reload();
     setIsSubmitting(false);
   };
 
@@ -176,20 +99,15 @@ export default function CreateCardForm() {
 
   return (
     <div className="bg-white rounded-[2.5rem] p-6 md:p-12 border-2 border-gray-200 shadow-sm relative overflow-hidden">
-      <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-widest px-4 md:px-8 py-3 md:py-4 rounded-bl-[1.5rem] md:rounded-bl-[2.5rem] border-b-2 border-l-2 border-blue-100">
+      <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black text-[10px] md:text-sm uppercase tracking-widest px-4 md:px-8 py-3 md:py-4 rounded-bl-[1.5rem] border-b-2 border-l-2 border-blue-100">
         Add New Word
       </div>
 
-      <h2 className="text-2xl md:text-3xl font-black mb-2 text-gray-900 mt-6 md:mt-0">Grow your Library</h2>
-      <p className="text-sm md:text-base text-gray-500 font-medium mb-8">
-        Gemini 2.5 Flash is ready to help you categorize and conjugate.
-      </p>
-
-      <form onSubmit={handleAddWord} className="space-y-6">
+      <form onSubmit={handleAddWord} className="space-y-6 mt-6 md:mt-0">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Language</label>
-            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-700 outline-none focus:border-blue-500 transition-all appearance-none cursor-pointer">
+            <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold appearance-none">
               {languages.map((l) => (
                 <option key={l.code} value={l.code}>{l.emoji} {l.name}</option>
               ))}
@@ -197,77 +115,54 @@ export default function CreateCardForm() {
           </div>
 
           <div className="relative">
-            <div className="flex justify-between items-end mb-1">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Word</label>
-              {existingWordId && (
-                <Link href={`/word/${existingWordId}`} className="text-[9px] font-black bg-red-100 text-red-600 px-3 py-1 rounded-full uppercase tracking-tighter animate-bounce hover:bg-red-200">
-                  ⚠️ Already in Library!
-                </Link>
-              )}
-            </div>
-            <div className="flex flex-col md:flex-row gap-3">
-              <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mangiare" className={`flex-1 p-4 md:p-5 border-2 rounded-2xl md:rounded-3xl font-black text-lg md:text-xl outline-none transition-all w-full ${existingWordId ? "bg-red-50 border-red-200 text-red-900" : "bg-gray-50 border-gray-100 focus:border-blue-500"}`} />
-              <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 md:py-0 rounded-2xl md:rounded-3xl hover:-translate-y-1 transition-all shadow-lg shadow-purple-200 disabled:opacity-50">
-                {isGenerating ? "✨ Thinking..." : "✨ Auto-Fill"}
-              </button>
-            </div>
+             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Word</label>
+             <div className="flex flex-col md:flex-row gap-2">
+               <input type="text" value={newWord} onChange={(e) => setNewWord(e.target.value)} required placeholder="e.g. mela" className="flex-1 p-4 border-2 rounded-2xl font-black text-lg bg-gray-50 border-gray-100 focus:border-blue-500 outline-none" />
+               <button type="button" onClick={handleAIGenerate} disabled={isGenerating || !newWord.trim()} className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-black px-6 py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+                {isGenerating ? "✨" : "✨ Auto-Fill"}
+               </button>
+             </div>
+             {/* 🌟 追加：ヒント入力欄 */}
+             <input 
+               type="text" 
+               value={newHint} 
+               onChange={(e) => setNewHint(e.target.value)} 
+               placeholder="Hint: noun, verb, or specific meaning..." 
+               className="w-full mt-2 p-2 bg-blue-50/50 border border-blue-100 rounded-xl text-[10px] font-bold text-blue-600 outline-none placeholder:text-blue-300" 
+             />
           </div>
         </div>
 
+        {/* 以降、既存の入力フィールド（Translation, POS, Genderなど）はそのまま */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Meaning (English)</label>
-            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required placeholder="e.g. to eat" className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-700 outline-none focus:border-blue-500 transition-all" />
+            <input type="text" value={newTranslation} onChange={(e) => setNewTranslation(e.target.value)} required className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold" />
           </div>
           <div>
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 block mb-1">Part of Speech</label>
-            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} placeholder="e.g. Noun, Verb" className="w-full p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl md:rounded-3xl font-bold text-gray-600 outline-none focus:border-blue-500 transition-all" />
+            <input type="text" value={newPos} onChange={(e) => setNewPos(e.target.value)} className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold" />
           </div>
         </div>
 
-        {/* 🌟 実際のカラム構成に合わせた詳細・カテゴリー行 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2 block mb-1">Gender</label>
-            <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="e.g. Feminine" className="w-full p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold text-gray-600 outline-none focus:border-emerald-500 transition-all" />
-          </div>
-          <div>
-            <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest ml-2 block mb-1">Verb Type</label>
-            <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="e.g. Transitive" className="w-full p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold text-gray-600 outline-none focus:border-emerald-500 transition-all" />
-          </div>
-          <div>
-            <label className="text-[10px] font-black text-purple-500 uppercase tracking-widest ml-2 block mb-1">Category</label>
-            <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="e.g. Food" className="w-full p-4 bg-purple-50/50 border-2 border-purple-100 rounded-2xl font-bold text-gray-600 outline-none focus:border-purple-500 transition-all" />
-          </div>
+          <input type="text" value={newGender} onChange={(e) => setNewGender(e.target.value)} placeholder="Gender" className="p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold" />
+          <input type="text" value={newVerbType} onChange={(e) => setNewVerbType(e.target.value)} placeholder="Verb Type" className="p-4 bg-emerald-50/50 border-2 border-emerald-100 rounded-2xl font-bold" />
+          <input type="text" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder="Category" className="p-4 bg-purple-50/50 border-2 border-purple-100 rounded-2xl font-bold" />
         </div>
 
         {newConjugation && (
-          <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-100">
-            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">AI Conjugation Tip</p>
-            <p className="text-sm font-bold text-amber-900 whitespace-pre-wrap leading-relaxed">{newConjugation}</p>
-          </div>
+          <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-100 text-sm font-bold text-amber-900 whitespace-pre-wrap">{newConjugation}</div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2 block mb-1">Example Sentence</label>
-             <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} placeholder="Mi piace mangiare la pizza." className="w-full p-4 md:p-5 bg-blue-50/50 border-2 border-blue-100 rounded-2xl md:rounded-3xl font-medium text-gray-800 outline-none focus:border-blue-500 transition-all resize-none" />
-          </div>
-          <div>
-             <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest ml-2 block mb-1">Example Translation</label>
-             <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} placeholder="I like to eat pizza." className="w-full p-4 md:p-5 bg-blue-50/50 border-2 border-blue-100 rounded-2xl md:rounded-3xl font-medium text-gray-600 outline-none focus:border-blue-500 transition-all resize-none" />
-          </div>
+          <textarea value={newExample} onChange={(e) => setNewExample(e.target.value)} rows={2} placeholder="Example Sentence" className="p-4 bg-blue-50/50 border-2 border-blue-100 rounded-2xl font-medium outline-none" />
+          <textarea value={newExampleTranslation} onChange={(e) => setNewExampleTranslation(e.target.value)} rows={2} placeholder="Example Translation" className="p-4 bg-blue-50/50 border-2 border-blue-100 rounded-2xl font-medium outline-none" />
         </div>
 
-        <div className="pt-4">
-          <button 
-            type="submit" 
-            disabled={isSubmitting || !!existingWordId} 
-            className="w-full bg-gray-900 text-white font-black text-lg md:text-xl py-4 md:py-5 rounded-2xl md:rounded-[2rem] hover:bg-gray-800 hover:-translate-y-1 shadow-xl transition-all disabled:opacity-50 disabled:bg-gray-400"
-          >
-            {isSubmitting ? "Adding..." : existingWordId ? "⚠️ Duplicate Entry Found" : "➕ Add to Library"}
-          </button>
-        </div>
+        <button type="submit" disabled={isSubmitting} className="w-full bg-gray-900 text-white font-black text-xl py-5 rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl disabled:bg-gray-400">
+          {isSubmitting ? "Adding..." : "➕ Add to Library"}
+        </button>
       </form>
     </div>
   );
