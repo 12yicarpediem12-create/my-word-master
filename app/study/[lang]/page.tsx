@@ -128,7 +128,33 @@ export default function LanguageHub() {
           </div>
         </div>
 
-        {/* 統計 */}
+        {/* 🌟 Navigation Cards: Topics & History */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {/* ✅ パスを /study/${langCode}/topics に修正 */}
+          <Link href={`/study/${langCode}/topics`} className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">🗂️</div>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Taxonomy</p>
+                <h2 className="text-xl font-black text-gray-900">Browse by Topic</h2>
+              </div>
+            </div>
+            <span className="text-gray-300 font-black group-hover:text-blue-500 transition-colors mr-2">→</span>
+          </Link>
+
+          <Link href="/history" className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">⏳</div>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Activity</p>
+                <h2 className="text-xl font-black text-gray-900">Review History</h2>
+              </div>
+            </div>
+            <span className="text-gray-300 font-black group-hover:text-blue-500 transition-colors mr-2">→</span>
+          </Link>
+        </div>
+
+        {/* 統計セクション */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-1 bg-white rounded-3xl p-8 border-2 border-gray-200 flex flex-col items-center justify-center shadow-sm">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6">Overall Mastery</h3>
@@ -161,7 +187,7 @@ export default function LanguageHub() {
           </div>
         </div>
 
-        {/* 🌟 Random Flashback (読み上げ対応) */}
+        {/* Random Flashback */}
         {randomWord && (
           <div className="mb-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6">
@@ -189,7 +215,7 @@ export default function LanguageHub() {
           </div>
         </div>
 
-        {/* 🌟 単語リスト (性別・動詞タイプバッジ追加版) */}
+        {/* 単語リスト */}
         <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm overflow-hidden mb-12">
           {filteredList.length > 0 ? (
             <div className="divide-y-2 divide-gray-100">
@@ -207,7 +233,6 @@ export default function LanguageHub() {
                           </div>
                           <p className="text-sm font-medium text-gray-500 mt-1">{vocab.translation}</p>
                         </Link>
-                        {/* 🌟 ここに詳細バッジを表示 */}
                         <div className="flex gap-2 mt-2">
                           {vocab.gender && <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-100">{vocab.gender}</span>}
                           {vocab.verb_type && <span className="text-[9px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md uppercase tracking-wider border border-emerald-100">{vocab.verb_type}</span>}
