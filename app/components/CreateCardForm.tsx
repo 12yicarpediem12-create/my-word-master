@@ -9,14 +9,12 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// 🌟 1. 状態の初期値を定義（リセットしやすくするため）
 const initialForm = {
   word: "", hint: "", translation: "", pos: "", gender: "",
   verbType: "", categoryId: "", example: "", exampleTranslation: "",
   conjugation: "", notes: ""
 };
 
-// 🌟 2. 共通のカラーテーマ定義（Tailwindのクラスを整理）
 const colorTheme = {
   gray: { label: "text-gray-400", input: "bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-400" },
   emerald: { label: "text-emerald-500", input: "bg-emerald-50/20 border-emerald-100 text-emerald-800 focus:border-emerald-400" },
@@ -25,7 +23,6 @@ const colorTheme = {
   amber: { label: "text-amber-500", input: "bg-amber-50/30 border-amber-100 text-amber-900 focus:border-amber-400" }
 };
 
-// 🌟 3. ラベルを包む共通ラッパーコンポーネント（コード量を劇的に削減）
 const FieldWrapper = ({ label, color = "gray", children }: { label: string, color?: keyof typeof colorTheme, children: React.ReactNode }) => (
   <div className="flex flex-col gap-2 w-full">
     <label className={`text-[9px] font-black uppercase tracking-tight ml-2 ${colorTheme[color].label}`}>
@@ -39,8 +36,6 @@ export default function CreateCardForm() {
   const router = useRouter();
   const [languages, setLanguages] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
-  
-  // 🌟 useStateを1つに統合！
   const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -58,7 +53,6 @@ export default function CreateCardForm() {
     fetchLangs();
   }, []);
 
-  // 汎用的な入力ハンドラー
   const handleChange = (field: keyof typeof initialForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -142,17 +136,15 @@ export default function CreateCardForm() {
     setIsSubmitting(false);
 
     if (!error) {
-      // 🌟 強制リロードをやめ、フォームを空にして Next.js のルーティング更新を使用
       setFormData(initialForm);
       setSuccessMsg(true);
       router.refresh(); 
-      setTimeout(() => setSuccessMsg(false), 3000); // 3秒後にサクセスメッセージを消す
+      setTimeout(() => setSuccessMsg(false), 3000);
     } else {
       setErrorMsg("Error: " + error.message);
     }
   };
 
-  // 共通の入力クラス
   const baseInputClass = "w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all";
   const baseTextareaClass = "w-full p-4 border-2 rounded-2xl font-medium outline-none resize-none transition-all";
 
@@ -175,10 +167,7 @@ export default function CreateCardForm() {
         </div>
       )}
 
-      {/* 🌟 PC時にはゆとりを持たせる(lg:gap-y-10) */}
       <form onSubmit={handleAddWord} className="flex flex-col gap-y-8 lg:gap-y-10 mt-10">
-        
-        {/* Row 1: Language & Word */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           <FieldWrapper label="Language">
             <select value={selectedLang} onChange={(e) => setSelectedLang(e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`}>
@@ -199,7 +188,6 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        {/* Row 2: Meaning & POS */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <FieldWrapper label="Meaning">
             <input type="text" value={formData.translation} onChange={(e) => handleChange("translation", e.target.value)} required placeholder="English translation" className={`${baseInputClass} ${colorTheme.gray.input}`} />
@@ -209,7 +197,6 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        {/* Row 3: Gender, Verb Type, Category */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <FieldWrapper label="Gender" color="emerald">
             <input type="text" value={formData.gender} onChange={(e) => handleChange("gender", e.target.value)} placeholder="Feminine" className={`${baseInputClass} ${colorTheme.emerald.input}`} />
@@ -222,7 +209,6 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        {/* Row 4: Example Sentence & Translation */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <FieldWrapper label="Example Sentence" color="blue">
             <textarea value={formData.example} onChange={(e) => handleChange("example", e.target.value)} rows={3} placeholder="Example..." className={`${baseTextareaClass} ${colorTheme.blue.input}`} />
@@ -232,7 +218,6 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        {/* Row 5: Conjugation & Notes */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <FieldWrapper label="Conjugation Guide" color="amber">
             <textarea value={formData.conjugation} onChange={(e) => handleChange("conjugation", e.target.value)} rows={4} className={`${baseTextareaClass} ${colorTheme.amber.input}`} />
