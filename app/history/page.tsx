@@ -12,33 +12,62 @@ const supabase = createClient(
 
 type ViewRange = "7days" | "30days" | "month";
 
+const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+  <button
+    onClick={onClick}
+    className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${
+      active ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"
+    }`}
+  >
+    {children}
+  </button>
+);
+
+const DateDivider = ({ date }: { date: string }) => (
+  <div className="flex items-center gap-4 mb-6">
+    <h3 className="font-black text-gray-400 uppercase text-xs tracking-[0.2em] whitespace-nowrap">{date}</h3>
+    <div className="h-px bg-gray-200 w-full"></div>
+  </div>
+);
+
+const HistoryCard = ({ vocab, langInfo }: { vocab: any; langInfo: any }) => (
+  <Link href={`/word/${vocab.id}`} className="bg-white border-2 border-gray-100 p-5 rounded-[2rem] hover:border-blue-500 hover:shadow-xl transition-all flex items-center justify-between group">
+    <div className="flex items-center gap-4">
+      <span className="text-2xl">{langInfo?.emoji}</span>
+      <div>
+        <p className="font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
+        <p className="text-xs text-gray-400 font-bold">{vocab.translation}</p>
+      </div>
+    </div>
+    <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
+  </Link>
+);
+
 export default function HistoryPage() {
   const router = useRouter();
   const [results, setResults] = useState<any[]>([]);
   const [languages, setLanguages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // ハイブリッド・コントロール用のState
   const [range, setRange] = useState<ViewRange>("7days");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+
+  useEffect(() => {
+    supabase.from("languages").select("*").then(({ data }) => {
+      if (data) setLanguages(data);
+    });
+  }, []);
 
   useEffect(() => {
     async function fetchHistory() {
       setIsLoading(true);
-
-      const { data: langData } = await supabase.from("languages").select("*");
-      if (langData) setLanguages(langData);
-
       let query = supabase.from("vocab").select("*").not("last_reviewed", "is", null);
 
       if (range === "month") {
-        // 特定の月の初めと終わりを計算
         const startOfMonth = `${selectedMonth}-01T00:00:00Z`;
         const date = new Date(selectedMonth);
         const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59).toISOString();
         query = query.gte("last_reviewed", startOfMonth).lte("last_reviewed", endOfMonth);
       } else {
-        // 直近 7日 or 30日
         const days = range === "7days" ? 7 : 30;
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
@@ -49,11 +78,9 @@ export default function HistoryPage() {
       setResults(vocabData || []);
       setIsLoading(false);
     }
-
     fetchHistory();
   }, [range, selectedMonth]);
 
-  // 日付グループ化
   const groupedByDate = useMemo(() => {
     return results.reduce((acc: Record<string, any[]>, vocab: any) => {
       const date = new Date(vocab.last_reviewed).toLocaleDateString("ja-JP", {
@@ -65,7 +92,6 @@ export default function HistoryPage() {
     }, {});
   }, [results]);
 
-  // 統計計算
   const stats = useMemo(() => {
     const total = results.length;
     const mastered = results.filter(v => v.is_remembered).length;
@@ -83,13 +109,11 @@ export default function HistoryPage() {
       <main className="max-w-4xl mx-auto px-6 py-12">
         <header className="mb-10">
           <h1 className="text-5xl font-black tracking-tight mb-4">Learning History</h1>
-          
-          {/* 🌟 ハイブリッド・ナビゲーション（タブ ＆ 月選択） */}
           <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-3xl border-2 border-gray-100 shadow-sm">
             <div className="flex bg-gray-100 p-1 rounded-2xl">
-              <button onClick={() => setRange("7days")} className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${range === "7days" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}>7 Days</button>
-              <button onClick={() => setRange("30days")} className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${range === "30days" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}>30 Days</button>
-              <button onClick={() => setRange("month")} className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${range === "month" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}>Archive</button>
+              <TabButton active={range === "7days"} onClick={() => setRange("7days")}>7 Days</TabButton>
+              <TabButton active={range === "30days"} onClick={() => setRange("30days")}>30 Days</TabButton>
+              <TabButton active={range === "month"} onClick={() => setRange("month")}>Archive</TabButton>
             </div>
             
             {range === "month" && (
@@ -114,26 +138,15 @@ export default function HistoryPage() {
           <div className="space-y-12">
             {Object.keys(groupedByDate).map((date) => (
               <div key={date}>
-                <div className="flex items-center gap-4 mb-6">
-                  <h3 className="font-black text-gray-400 uppercase text-xs tracking-[0.2em] whitespace-nowrap">{date}</h3>
-                  <div className="h-px bg-gray-200 w-full"></div>
-                </div>
+                <DateDivider date={date} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {groupedByDate[date].map((vocab: any) => {
-                    const langInfo = languages.find((l: any) => l.code === vocab.language_code);
-                    return (
-                      <Link href={`/word/${vocab.id}`} key={vocab.id} className="bg-white border-2 border-gray-100 p-5 rounded-[2rem] hover:border-blue-500 hover:shadow-xl transition-all flex items-center justify-between group">
-                        <div className="flex items-center gap-4">
-                          <span className="text-2xl">{langInfo?.emoji}</span>
-                          <div>
-                            <p className="font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
-                            <p className="text-xs text-gray-400 font-bold">{vocab.translation}</p>
-                          </div>
-                        </div>
-                        <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
-                      </Link>
-                    );
-                  })}
+                  {groupedByDate[date].map((vocab: any) => (
+                    <HistoryCard 
+                      key={vocab.id} 
+                      vocab={vocab} 
+                      langInfo={languages.find((l: any) => l.code === vocab.language_code)} 
+                    />
+                  ))}
                 </div>
               </div>
             ))}
