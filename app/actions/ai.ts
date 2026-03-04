@@ -13,7 +13,6 @@ const supabase = createClient(
 
 export async function generateVocabInfo(word: string, langCode: string) {
   try {
-    // 1. カテゴリー一覧をフェッチ（意味の紐付け用）
     const { data: categories, error: dbError } = await supabase
       .from("categories")
       .select("id, full_path");
@@ -51,13 +50,12 @@ export async function generateVocabInfo(word: string, langCode: string) {
       }
     `;
 
-    // 🌟 修正: 確実に認識されるように "gemini-1.5-flash-latest" に変更
+    // 🌟 修正: 最新モデルの "gemini-2.5-flash" に変更して404エラーを回避！
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.5-flash",
       generationConfig: { responseMimeType: "application/json" }
     });
 
-    // AIにプロンプトを送信
     const result = await model.generateContent(prompt);
     const content = result.response.text();
     
@@ -67,10 +65,8 @@ export async function generateVocabInfo(word: string, langCode: string) {
 
   } catch (error: any) {
     console.error("Gemini AI Generation Error:", error);
-    // エラー内容を画面の赤いアラートに返す
     return { error: error.message || "Unknown Gemini API error occurred." };
   }
 }
 
-// 🌟 エイリアス (CreateCardForm が呼び出す関数名と一致させるため)
 export const generateWordDetails = generateVocabInfo;
