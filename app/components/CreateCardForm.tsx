@@ -18,7 +18,6 @@ export default function CreateCardForm() {
   const [newExample, setNewExample] = useState("");
   const [newExampleTranslation, setNewExampleTranslation] = useState("");
   
-  // 🌟 新機能: カテゴリーと活用のステート
   const [newCategory, setNewCategory] = useState("");
   const [newConjugation, setNewConjugation] = useState("");
 
@@ -67,25 +66,29 @@ export default function CreateCardForm() {
     return () => clearTimeout(timer);
   }, [newWord, selectedLang, newPos]);
 
-  // 🌟 Geminiによる自動生成
+  // 🌟 Geminiによる自動生成（クラッシュ対策版）
   const handleAIGenerate = async () => {
     if (!newWord.trim()) return;
     setIsGenerating(true);
     try {
       const aiData = await generateWordDetails(newWord, selectedLang);
       
-      setNewTranslation(aiData.translation || "");
-      setNewPos(aiData.part_of_speech || "");
-      setNewExample(aiData.example_sentence || "");
-      setNewExampleTranslation(aiData.example_translation || "");
-      
-      // 🌟 Geminiが生成したカテゴリーと活用をセット
-      setNewCategory(aiData.category || "Other");
-      setNewConjugation(aiData.conjugation || "");
+      // 🌟 返ってきた値がエラーオブジェクトでないかチェック
+      if (aiData && !aiData.error) {
+        setNewTranslation(aiData.translation || "");
+        setNewPos(aiData.part_of_speech || "");
+        setNewExample(aiData.example_sentence || "");
+        setNewExampleTranslation(aiData.example_translation || "");
+        setNewCategory(aiData.category || "Other");
+        setNewConjugation(aiData.conjugation || "");
+      } else {
+        // エラーメッセージがあれば表示
+        alert(aiData?.error || "AI could not generate details. Please fill manually.");
+      }
       
     } catch (error) {
-      console.error("AI Generation Error:", error);
-      alert("AI had a hiccup. Please try again!");
+      console.error("Critical Client Error:", error);
+      alert("Something went wrong. Please check your connection.");
     } finally {
       setIsGenerating(false);
     }
@@ -104,8 +107,8 @@ export default function CreateCardForm() {
         part_of_speech: newPos || null,
         example_sentence: newExample || null,
         example_translation: newExampleTranslation || null,
-        category: newCategory || "Other", // 🌟 保存！
-        conjugation: newConjugation || null, // 🌟 保存！
+        category: newCategory || "Other",
+        conjugation: newConjugation || null,
         is_remembered: false,
       },
     ]);
@@ -134,7 +137,9 @@ export default function CreateCardForm() {
       </div>
 
       <h2 className="text-2xl md:text-3xl font-black mb-2 text-gray-900 mt-6 md:mt-0">Grow your Library</h2>
-      <p className="text-sm md:text-base text-gray-500 font-medium mb-8">Gemini 1.5 Flash is ready to help you categorize and conjugate.</p>
+      <p className="text-sm md:text-base text-gray-500 font-medium mb-8">
+        Gemini 2.5 Flash is ready to help you categorize and conjugate.
+      </p>
 
       <form onSubmit={handleAddWord} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,7 +181,6 @@ export default function CreateCardForm() {
           </div>
         </div>
 
-        {/* 🌟 活用情報のプレビュー表示（動詞の時だけ表示） */}
         {newConjugation && (
           <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-100">
             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">AI Conjugation Tip</p>
