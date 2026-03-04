@@ -7,7 +7,6 @@ export async function generateWordDetails(word: string, langCode: string) {
 
   const genAI = new GoogleGenerativeAI(apiKey);
 
-  // 2026年3月の診断ログで動作確認済みのモデルID
   const candidates = [
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
@@ -16,10 +15,16 @@ export async function generateWordDetails(word: string, langCode: string) {
 
   for (const modelId of candidates) {
     try {
-      // apiVersion: "v1" を明示的に指定して接続を安定化
       const model = genAI.getGenerativeModel({ model: modelId }, { apiVersion: "v1" });
+      
+      // 🌟 プロンプトを厳格化：「動詞なら必ずこの3つの時制を出すこと。動詞以外はnullにすること」と命令
       const prompt = `Return ONLY a valid raw JSON object for the word "${word}" in language "${langCode}".
-      Required keys: "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".`;
+      Required keys: "translation", "part_of_speech", "category", "example_sentence", "example_translation", "conjugation".
+      
+      CRITICAL INSTRUCTION FOR "conjugation":
+      - If the word is NOT a verb, set "conjugation" to null.
+      - If the word IS a verb, return an object with EXACTLY these 3 keys: "present_indicative", "past_tense", and "future_tense". 
+      Provide the full conjugation for all pronouns inside each tense. Do not add any other tenses.`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text();
