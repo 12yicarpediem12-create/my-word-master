@@ -63,27 +63,29 @@ export default function CreateCardForm() {
     return () => clearTimeout(timer);
   }, [newWord, selectedLang, newPos]);
 
-  // 🌟 AIの複雑なデータを「人間が読める綺麗なテキスト」に変換する関数
+  // 🌟 AIのデータを綺麗に整形する関数（アンダーバー除去版）
   const formatAIData = (val: any): string => {
     if (val === null || val === undefined) return "";
     if (typeof val === "string") return val;
     
-    // もしAIが複雑なオブジェクト（辞書データ）を返してきた場合
     if (typeof val === "object") {
       try {
         return Object.entries(val).map(([tense, forms]) => {
-          // forms がさらにオブジェクト（io: parlo, tu: parli...）の場合
+          
+          // 🌟 ここで「present_indicative」を「Present Indicative」に変換！
+          const cleanTense = tense
+            .replace(/_/g, " ") // アンダーバーをスペースに置換
+            .replace(/\b\w/g, (char) => char.toUpperCase()); // 各単語の先頭を大文字に
+            
           if (typeof forms === "object" && forms !== null) {
             const conjugations = Object.entries(forms)
               .map(([pronoun, word]) => `${pronoun} ${word}`)
               .join(", ");
-            return `■ ${tense}:\n${conjugations}`;
+            return `■ ${cleanTense}:\n${conjugations}`;
           }
-          // forms が単なる文字列の場合
-          return `■ ${tense}: ${forms}`;
+          return `■ ${cleanTense}: ${forms}`;
         }).join("\n\n");
       } catch (e) {
-        // 万が一パースに失敗したらとりあえず文字列にする
         return JSON.stringify(val);
       }
     }
@@ -97,14 +99,13 @@ export default function CreateCardForm() {
       const aiData = await generateWordDetails(newWord, selectedLang);
       
       if (aiData && typeof aiData === 'object' && !aiData.error) {
-        // 単純な文字列の項目はそのまま、活用形は formatAIData で綺麗にする
         setNewTranslation(typeof aiData.translation === "string" ? aiData.translation : formatAIData(aiData.translation));
         setNewPos(typeof aiData.part_of_speech === "string" ? aiData.part_of_speech : formatAIData(aiData.part_of_speech));
         setNewExample(typeof aiData.example_sentence === "string" ? aiData.example_sentence : formatAIData(aiData.example_sentence));
         setNewExampleTranslation(typeof aiData.example_translation === "string" ? aiData.example_translation : formatAIData(aiData.example_translation));
         setNewCategory(typeof aiData.category === "string" ? aiData.category : formatAIData(aiData.category) || "Other");
         
-        // 🌟 ここがポイント：活用形を綺麗な改行入りテキストにする
+        // 活用形をセット
         setNewConjugation(formatAIData(aiData.conjugation));
       } else {
         alert(aiData?.error || "AI could not generate details. Please fill manually.");
@@ -208,7 +209,6 @@ export default function CreateCardForm() {
         {newConjugation && (
           <div className="bg-amber-50 p-6 rounded-3xl border-2 border-amber-100">
             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2">AI Conjugation Tip</p>
-            {/* 🌟 改行 (whitespace-pre-wrap) を効かせて綺麗に表示！ */}
             <p className="text-sm font-bold text-amber-900 whitespace-pre-wrap leading-relaxed">{newConjugation}</p>
           </div>
         )}
