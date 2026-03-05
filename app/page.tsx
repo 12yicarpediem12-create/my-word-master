@@ -140,10 +140,11 @@ export default function Dashboard() {
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
           </div>
-          {/* 🌟 ここを分割して2つのボタンにしました！ */}
+          {/* 🌟 Origins Library ボタンを追加して3つ並べる形にしました */}
           <div className="flex-1 flex flex-col md:flex-row gap-4">
             <Link href="/library" className="px-5 py-4 bg-gray-50 hover:bg-blue-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">📚 View Library</Link>
             <Link href="/manage" className="px-5 py-4 bg-gray-50 hover:bg-green-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">🌍 Add Language</Link>
+            <Link href="/root" className="px-5 py-4 bg-gray-50 hover:bg-rose-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">🌱 Origins Library</Link>
           </div>
         </div>
       </div>
