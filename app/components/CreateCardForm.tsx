@@ -35,7 +35,14 @@ const FieldWrapper = ({ label, color = "gray", children }: { label: string, colo
 export default function CreateCardForm() {
   const router = useRouter();
   const [languages, setLanguages] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
+  
+  // カテゴリの3階層ドリルダウン用State
+  const [selL1, setSelL1] = useState<string>("");
+  const [selL2, setSelL2] = useState<string>("");
+  const [selL3, setSelL3] = useState<string>("");
+
   const [formData, setFormData] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -43,18 +50,66 @@ export default function CreateCardForm() {
   const [successMsg, setSuccessMsg] = useState(false);
 
   useEffect(() => {
-    async function fetchLangs() {
-      const { data } = await supabase.from("languages").select("*");
-      if (data) {
-        setLanguages(data);
-        if (data.length > 0) setSelectedLang(data[0].code);
+    async function fetchData() {
+      const [langRes, catRes] = await Promise.all([
+        supabase.from("languages").select("*"),
+        supabase.from("categories").select("*")
+      ]);
+      if (langRes.data) {
+        setLanguages(langRes.data);
+        if (langRes.data.length > 0) setSelectedLang(langRes.data[0].code);
+      }
+      if (catRes.data) {
+        setCategories(catRes.data);
       }
     }
-    fetchLangs();
+    fetchData();
   }, []);
 
   const handleChange = (field: keyof typeof initialForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // 🌟 AIが返したIDから、親を辿ってドロップダウン3つの状態を復元する魔法の関数
+  const updateCategoryHierarchy = (categoryId: string | number | null, allCats: any[]) => {
+    if (!categoryId) {
+      setSelL1(""); setSelL2(""); setSelL3("");
+      handleChange("categoryId", "");
+      return;
+    }
+    
+    let current = allCats.find(c => String(c.id) === String(categoryId));
+    let l1 = "", l2 = "", l3 = "";
+
+    if (current?.level === 3) {
+      l3 = String(current.id);
+      current = allCats.find(c => String(c.id) === String(current.parent_id));
+    }
+    if (current?.level === 2) {
+      l2 = String(current.id);
+      current = allCats.find(c => String(c.id) === String(current.parent_id));
+    }
+    if (current?.level === 1) {
+      l1 = String(current.id);
+    }
+    
+    setSelL1(l1); setSelL2(l2); setSelL3(l3);
+    handleChange("categoryId", String(categoryId));
+  };
+
+  const handleL1Change = (val: string) => {
+    setSelL1(val); setSelL2(""); setSelL3("");
+    handleChange("categoryId", val);
+  };
+
+  const handleL2Change = (val: string) => {
+    setSelL2(val); setSelL3("");
+    handleChange("categoryId", val || selL1);
+  };
+
+  const handleL3Change = (val: string) => {
+    setSelL3(val);
+    handleChange("categoryId", val || selL2);
   };
 
   const checkDuplicate = async (wordToCheck: string, lang: string, posToCheck: string) => {
@@ -90,6 +145,10 @@ export default function CreateCardForm() {
           setIsGenerating(false);
           return;
         }
+
+        // 🌟 自動でドロップダウンを同期
+        updateCategoryHierarchy(aiData.category_id, categories);
+
         setFormData(prev => ({
           ...prev,
           word: aiData.word || prev.word,
@@ -97,7 +156,6 @@ export default function CreateCardForm() {
           pos: String(aiData.part_of_speech || ""),
           gender: String(aiData.gender || ""),
           verbType: String(aiData.verb_type || ""),
-          categoryId: aiData.category_id || "",
           example: String(aiData.example_sentence || ""),
           exampleTranslation: String(aiData.example_translation || ""),
           conjugation: String(aiData.conjugation || ""),
@@ -137,6 +195,7 @@ export default function CreateCardForm() {
 
     if (!error) {
       setFormData(initialForm);
+      setSelL1(""); setSelL2(""); setSelL3(""); // ドロップダウンもリセット
       setSuccessMsg(true);
       router.refresh(); 
       setTimeout(() => setSuccessMsg(false), 3000);
@@ -147,6 +206,11 @@ export default function CreateCardForm() {
 
   const baseInputClass = "w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all";
   const baseTextareaClass = "w-full p-4 border-2 rounded-2xl font-medium outline-none resize-none transition-all";
+
+  // ドロップダウン用の選択肢フィルタリング
+  const l1Options = categories.filter(c => c.level === 1);
+  const l2Options = selL1 ? categories.filter(c => String(c.parent_id) === selL1) : [];
+  const l3Options = selL2 ? categories.filter(c => String(c.parent_id) === selL2) : [];
 
   return (
     <div className="bg-white rounded-[2rem] p-6 sm:p-10 lg:p-14 border-2 border-gray-200 shadow-sm relative overflow-hidden transition-all">
@@ -197,17 +261,38 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
           <FieldWrapper label="Gender" color="emerald">
             <input type="text" value={formData.gender} onChange={(e) => handleChange("gender", e.target.value)} placeholder="Feminine" className={`${baseInputClass} ${colorTheme.emerald.input}`} />
           </FieldWrapper>
           <FieldWrapper label="Verb Type" color="emerald">
             <input type="text" value={formData.verbType} onChange={(e) => handleChange("verbType", e.target.value)} placeholder="Transitive" className={`${baseInputClass} ${colorTheme.emerald.input}`} />
           </FieldWrapper>
-          <FieldWrapper label="Category ID" color="purple">
-            <input type="text" value={formData.categoryId} onChange={(e) => handleChange("categoryId", e.target.value)} placeholder="Auto" className={`${baseInputClass} ${colorTheme.purple.input} text-[10px]`} />
-          </FieldWrapper>
         </div>
+
+        {/* 🌟 3階層ドリルダウン式カテゴリ選択 UI */}
+        <FieldWrapper label="Category Taxonomy" color="purple">
+          <div className="flex flex-col md:flex-row gap-3 w-full">
+            <select value={selL1} onChange={(e) => handleL1Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm`}>
+              <option value="">-- Main Category --</option>
+              {l1Options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            
+            {l2Options.length > 0 && (
+              <select value={selL2} onChange={(e) => handleL2Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm animate-in fade-in slide-in-from-left-2`}>
+                <option value="">-- Sub Category --</option>
+                {l2Options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+
+            {l3Options.length > 0 && (
+              <select value={selL3} onChange={(e) => handleL3Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm animate-in fade-in slide-in-from-left-2`}>
+                <option value="">-- Specific Topic --</option>
+                {l3Options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            )}
+          </div>
+        </FieldWrapper>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           <FieldWrapper label="Example Sentence" color="blue">
