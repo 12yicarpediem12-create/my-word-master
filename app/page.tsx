@@ -14,12 +14,11 @@ export default function RootIndexPage() {
   const [vocab, setVocab] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // 🌟 検索用のStateを追加
+  // 🌟 検索用のState
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     async function fetchRoots() {
-      // 語源（root_word）が登録されている単語だけを全取得
       const { data } = await supabase
         .from("vocab")
         .select("id, word, language_code, root_word, translation")
@@ -31,9 +30,7 @@ export default function RootIndexPage() {
     fetchRoots();
   }, []);
 
-  // 取得したデータを「語源」ごとにグループ化
   const rootGroups = useMemo(() => {
-    // 🌟 検索できるように、グループの中に「属している単語のリスト（words）」も保存しておく
     const groups: Record<string, { count: number; langs: Set<string>; words: string[] }> = {};
     vocab.forEach((v) => {
       if (!v.root_word || v.root_word.trim() === "") return; 
@@ -44,7 +41,7 @@ export default function RootIndexPage() {
       groups[v.root_word].count += 1;
       groups[v.root_word].langs.add(v.language_code);
       
-      // 検索ヒット用に「単語」と「意味」を配列に入れておく
+      // 検索ヒット用に単語と意味を配列に入れる
       groups[v.root_word].words.push(v.word.toLowerCase());
       if (v.translation) groups[v.root_word].words.push(v.translation.toLowerCase());
     });
@@ -54,16 +51,13 @@ export default function RootIndexPage() {
 
   // 🌟 検索キーワードで絞り込むロジック
   const filteredRoots = useMemo(() => {
-    if (!searchQuery.trim()) return rootGroups; // 検索枠が空なら全部表示
+    if (!searchQuery.trim()) return rootGroups;
     
     const query = searchQuery.toLowerCase().trim();
     
     return rootGroups.filter(([root, info]) => {
-      // ① 語源の名前（Root word）自体がマッチするか？
       const matchRoot = root.toLowerCase().includes(query);
-      // ② その語源に属している各言語の単語（または意味）がマッチするか？
       const matchWords = info.words.some(w => w.includes(query));
-      
       return matchRoot || matchWords;
     });
   }, [rootGroups, searchQuery]);
@@ -86,7 +80,7 @@ export default function RootIndexPage() {
           <p className="text-sm font-bold text-gray-400 mt-4">Discover the historical connections between your words.</p>
         </header>
 
-        {/* 🌟 検索バー UI */}
+        {/* 🌟 検索バー UI (ここに必ず表示されます) */}
         <div className="mb-10 relative">
           <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -147,7 +141,7 @@ export default function RootIndexPage() {
           </div>
         ) : (
           <div className="bg-white rounded-[2.5rem] p-16 border-2 border-gray-200 shadow-sm text-center">
-            <div className="text-6xl mb-6 opacity-50">🔍</div>
+            <div className="text-6xl mb-6 opacity-50">🧭</div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">No matches found</h2>
             <p className="text-gray-500 font-medium text-sm">We couldn't find any roots or words matching "{searchQuery}"</p>
           </div>
