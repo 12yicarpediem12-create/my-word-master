@@ -16,7 +16,7 @@ const colorTheme = {
   purple: { label: "text-purple-500", input: "bg-purple-50/20 border-purple-100 text-purple-800 focus:border-purple-400" },
   blue: { label: "text-blue-400", input: "bg-blue-50/30 border-blue-100 text-blue-900 focus:border-blue-400" },
   amber: { label: "text-amber-500", input: "bg-amber-50/30 border-amber-100 text-amber-900 focus:border-amber-400" },
-  rose: { label: "text-rose-500", input: "bg-rose-50/30 border-rose-100 text-rose-900 focus:border-rose-400" } // 🌟 語源用に新色追加
+  rose: { label: "text-rose-500", input: "bg-rose-50/30 border-rose-100 text-rose-900 focus:border-rose-400" } 
 };
 
 const FieldWrapper = ({ label, color = "gray", children }: { label: string, color?: keyof typeof colorTheme, children: React.ReactNode }) => (
@@ -35,7 +35,7 @@ export default function WordDetail() {
   
   const [vocab, setVocab] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
-  const [relatedWords, setRelatedWords] = useState<any[]>([]); // 🌟 同じ語源の単語リスト
+  const [relatedWords, setRelatedWords] = useState<any[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,7 +46,7 @@ export default function WordDetail() {
 
   const [editForm, setEditForm] = useState({
     word: "", translation: "", pos: "", notes: "", example: "",
-    exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: "", rootWord: "" // 🌟 rootWordを追加
+    exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: "", rootWord: "" 
   });
 
   useEffect(() => {
@@ -72,16 +72,15 @@ export default function WordDetail() {
           conjugation: vocabRes.data.conjugation || "",
           gender: vocabRes.data.gender || "",
           verbType: vocabRes.data.verb_type || "",
-          rootWord: vocabRes.data.root_word || "" // 🌟 読み込み
+          rootWord: vocabRes.data.root_word || "" 
         });
 
-        // 🌟 もし語源（root_word）があれば、同じ語源を持つ他の単語を探す
         if (vocabRes.data.root_word) {
           const { data: related } = await supabase
             .from("vocab")
             .select("id, word, language_code, translation")
             .eq("root_word", vocabRes.data.root_word)
-            .neq("id", wordId); // 自分自身は除く
+            .neq("id", wordId); 
           
           if (related) setRelatedWords(related);
         }
@@ -132,7 +131,7 @@ export default function WordDetail() {
           example: aiData.example_sentence || prev.example,
           exampleTranslation: aiData.example_translation || prev.exampleTranslation,
           categoryId: aiData.category_id ? String(aiData.category_id) : prev.categoryId,
-          rootWord: aiData.root_word || prev.rootWord, // 🌟 自動補完
+          rootWord: aiData.root_word || prev.rootWord, 
           notes: aiData.notes || prev.notes
         }));
       }
@@ -161,7 +160,7 @@ export default function WordDetail() {
         conjugation: editForm.conjugation || null,
         gender: editForm.gender || null,
         verb_type: editForm.verbType || null,
-        root_word: editForm.rootWord || null, // 🌟 更新
+        root_word: editForm.rootWord || null, 
       })
       .eq("id", wordId);
 
@@ -180,12 +179,11 @@ export default function WordDetail() {
         conjugation: editForm.conjugation || null,
         gender: editForm.gender || null,
         verb_type: editForm.verbType || null,
-        root_word: editForm.rootWord || null, // 🌟 状態更新
+        root_word: editForm.rootWord || null, 
         categories: selectedCategory ? { id: selectedCategory.id, full_path: selectedCategory.full_path } : null
       }));
       setIsEditing(false);
       
-      // 🌟 更新後に改めて関連語を取得
       if (editForm.rootWord) {
         const { data: related } = await supabase
           .from("vocab")
@@ -274,19 +272,19 @@ export default function WordDetail() {
                 </div>
               )}
 
-              {/* 🌟 語源・ルーツのセクション */}
+              {/* 🌟 語源・ルーツのセクション（サイズ修正・矢印削除・*削除済） */}
               {vocab.root_word && (
                 <div className="border-t-2 border-gray-50 pt-10">
                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 flex items-center gap-2"><span>🌱</span> Historical Roots</p>
                   <div className="bg-rose-50 rounded-[2rem] p-6 sm:p-8 border-2 border-rose-100">
                     <p className="text-sm font-black text-rose-400 uppercase tracking-widest mb-2">Origin</p>
                     
-                    {/* 🌟 ここをリンクに変更してマインドマップへ飛ばす */}
+                    {/* リンク機能は維持しつつ、見た目をスッキリさせました */}
                     <Link 
-                      href={`/roots/${encodeURIComponent(vocab.root_word)}`}
-                      className="inline-block text-xl sm:text-2xl font-bold text-rose-700 hover:text-rose-500 hover:underline transition-all mt-1 cursor-pointer"
+                      href={`/root/${encodeURIComponent(vocab.root_word)}`}
+                      className="inline-block text-base sm:text-lg font-bold text-rose-700 hover:text-rose-500 hover:underline transition-all mt-1 cursor-pointer"
                     >
-                      {vocab.root_word} <span className="text-sm">↗</span>
+                      {vocab.root_word.replace(/^\*/, '')}
                     </Link>
                     
                     {/* 他言語とのつながり */}
@@ -431,7 +429,6 @@ export default function WordDetail() {
                   <FieldWrapper label="Verb Type" color="emerald">
                     <input type="text" value={editForm.verbType} onChange={(e) => handleChange("verbType", e.target.value)} className={`${baseInputClass} ${colorTheme.emerald.input}`} />
                   </FieldWrapper>
-                  {/* 🌟 編集画面にも語源入力欄を追加 */}
                   <FieldWrapper label="Root Word (Etymology)" color="rose">
                     <input type="text" value={editForm.rootWord} onChange={(e) => handleChange("rootWord", e.target.value)} placeholder="e.g. noctem (Latin)" className={`${baseInputClass} ${colorTheme.rose.input}`} />
                   </FieldWrapper>
