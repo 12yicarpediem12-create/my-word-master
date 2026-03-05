@@ -24,11 +24,9 @@ export default function StudySession() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // 🌟 強化版音声再生エンジン（全ページ共通の最強仕様）
   const speak = useCallback((text: string, isEnglish: boolean = false) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
     
-    // フリーズ対策: キャンセル後に強制レジューム
     window.speechSynthesis.cancel();
     window.speechSynthesis.resume(); 
 
@@ -38,17 +36,9 @@ export default function StudySession() {
       utterance.lang = "en-US";
     } else {
       const langMap: Record<string, string> = { 
-        it: "it-IT", 
-        fr: "fr-FR", 
-        es: "es-ES", 
-        de: "de-DE", 
-        pt: "pt-PT", // ポルトガル語追加
-        ja: "ja-JP", 
-        ko: "ko-KR",
-        ru: "ru-RU",
-        zh: "zh-CN"
+        it: "it-IT", fr: "fr-FR", es: "es-ES", de: "de-DE", pt: "pt-PT", 
+        ja: "ja-JP", ko: "ko-KR", ru: "ru-RU", zh: "zh-CN"
       };
-      // マップにない場合は自動生成（例：pl -> pl-PL）
       utterance.lang = langMap[langCode] || `${langCode}-${langCode.toUpperCase()}`;
     }
     
@@ -86,7 +76,6 @@ export default function StudySession() {
       }));
       setWords(preparedWords);
       const firstWord = preparedWords[0];
-      // 🌟 最初の単語を読み上げ
       setTimeout(() => speak(firstWord.isReversed ? firstWord.translation : firstWord.word, firstWord.isReversed), 500);
     } else {
       setWords([]);
@@ -147,14 +136,12 @@ export default function StudySession() {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
       const nextWord = words[nextIdx];
-      // 🌟 次の単語を読み上げ
       setTimeout(() => speak(nextWord.isReversed ? nextWord.translation : nextWord.word, nextWord.isReversed), 300);
     } else {
       setIsFinished(true);
     }
   };
 
-  // 🌟 カードを裏返した時に「答え」を読み上げる
   useEffect(() => {
     if (isFlipped && words[currentIndex]) {
       const currentWord = words[currentIndex];
@@ -208,18 +195,27 @@ export default function StudySession() {
     );
   }
 
-  if (isLoading) return <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white font-black text-2xl animate-pulse tracking-widest">CALCULATING...</div>;
-  if (words.length === 0) return <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center"><h1 className="text-3xl font-black mb-8">All caught up! 🏜️</h1><button onClick={() => setMode(null)} className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black">Change Settings</button></div>;
-  if (isFinished) return <div className="min-h-screen bg-blue-600 flex flex-col items-center justify-center text-white p-6 text-center"><div className="text-8xl mb-8 animate-bounce">🎖️</div><h1 className="text-5xl font-black mb-4">Session Complete</h1><button onClick={() => router.push(`/study/${langCode}`)} className="bg-white text-blue-600 px-16 py-6 rounded-[2.5rem] font-black text-xl shadow-2xl">Finish Session</button></div>;
+  if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400 tracking-widest uppercase animate-pulse">Loading Session...</div>;
+  
+  if (words.length === 0) return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
+      <h1 className="text-3xl font-black mb-8">All caught up! 🏜️</h1>
+      <button onClick={() => setMode(null)} className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black shadow-lg">Change Settings</button>
+    </div>
+  );
+
+  if (isFinished) return (
+    <div className="min-h-screen bg-blue-600 flex flex-col items-center justify-center text-white p-6 text-center">
+      <div className="text-8xl mb-8 animate-bounce">🎖️</div>
+      <h1 className="text-5xl font-black mb-4">Session Complete</h1>
+      <button onClick={() => router.push(`/study/${langCode}`)} className="mt-8 bg-white text-blue-600 px-16 py-6 rounded-[2.5rem] font-black text-xl shadow-2xl hover:scale-105 transition-transform">Finish Session</button>
+    </div>
+  );
 
   const currentWord = words[currentIndex];
   const progress = ((currentIndex + 1) / words.length) * 100;
   const frontText = currentWord.isReversed ? currentWord.translation : currentWord.word;
   const backText = currentWord.isReversed ? currentWord.word : currentWord.translation;
-  const previewAgain = "< 10m";
-  const previewHard = calculateNextReview(3, currentWord).interval + "d";
-  const previewGood = calculateNextReview(4, currentWord).interval + "d";
-  const previewEasy = calculateNextReview(5, currentWord).interval + "d";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col select-none">
@@ -227,7 +223,7 @@ export default function StudySession() {
         <div className="h-full bg-blue-600 transition-all duration-700" style={{ width: `${progress}%` }} />
       </div>
       
-      <main className="flex-1 flex flex-col items-center justify-start pt-12 pb-10 p-4 relative">
+      <main className="flex-1 flex flex-col items-center justify-start pt-12 pb-10 px-4 relative max-w-3xl mx-auto w-full">
         <button onClick={() => setMode(null)} className="absolute top-6 left-6 text-gray-400 hover:text-gray-900 font-black flex items-center gap-2 uppercase text-[10px] tracking-widest">
           <span>←</span> Back
         </button>
@@ -237,26 +233,28 @@ export default function StudySession() {
           <p className="text-gray-400 font-bold text-xs">{currentIndex + 1} / {words.length}</p>
         </div>
 
-        <div className="relative w-full max-w-sm h-[380px] [perspective:1000px] mb-8" onClick={() => setIsFlipped(!isFlipped)}>
+        <div className="relative w-full max-w-sm h-[380px] [perspective:1000px] mb-8 cursor-pointer" onClick={() => setIsFlipped(!isFlipped)}>
           <div className={`relative w-full h-full transition-transform duration-700 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
             
+            {/* Front of Card */}
             <div className="absolute inset-0 bg-white border-4 border-gray-100 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden]">
               <button onClick={(e) => { e.stopPropagation(); speak(frontText, currentWord.isReversed); }} className="absolute top-6 right-6 w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center hover:bg-blue-50 transition-colors text-xl">🔊</button>
               <span className="absolute top-10 text-[10px] font-black text-gray-300 uppercase tracking-widest">
                 {currentWord.isReversed ? "Translate" : "Question"}
               </span>
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 text-center leading-tight tracking-tight px-4">{frontText}</h2>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 text-center leading-tight tracking-tight px-4 break-words w-full">{frontText}</h2>
               <p className="absolute bottom-10 text-blue-400 font-bold text-[10px] uppercase tracking-widest animate-pulse italic">Tap to flip</p>
             </div>
 
+            {/* Back of Card */}
             <div className="absolute inset-0 bg-blue-600 border-4 border-blue-400 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 [backface-visibility:hidden] [transform:rotateY(180deg)] text-white text-center">
               <button onClick={(e) => { e.stopPropagation(); speak(backText, !currentWord.isReversed); }} className="absolute top-6 right-6 w-12 h-12 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors text-xl">🔊</button>
               <span className="absolute top-10 text-[10px] font-black opacity-50 uppercase tracking-widest">Answer</span>
-              <div className="flex flex-col items-center justify-center w-full">
-                <h2 className="text-4xl md:text-5xl font-black leading-tight tracking-tight mb-6">{backText}</h2>
+              <div className="flex flex-col items-center justify-center w-full h-full pt-8 pb-4">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight tracking-tight mb-6 break-words w-full">{backText}</h2>
                 {currentWord.example_sentence && (
-                  <div className="bg-black/10 p-5 rounded-2xl border border-white/10 w-full max-w-[280px]">
-                    <p className="text-[12px] italic font-medium leading-relaxed opacity-95">"{currentWord.example_sentence}"</p>
+                  <div className="bg-black/10 p-4 sm:p-5 rounded-2xl border border-white/10 w-full overflow-y-auto max-h-[120px] scrollbar-hide">
+                    <p className="text-[11px] sm:text-[12px] italic font-medium leading-relaxed opacity-95">"{currentWord.example_sentence}"</p>
                   </div>
                 )}
               </div>
@@ -264,22 +262,23 @@ export default function StudySession() {
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className={`grid grid-cols-4 gap-2 w-full max-w-sm transition-all duration-500 ${isFlipped ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(0); }} className="flex flex-col items-center justify-center bg-white border-2 border-red-100 text-red-500 py-4 rounded-2xl hover:bg-red-50 shadow-sm transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(0); }} className="flex flex-col items-center justify-center bg-white border-2 border-red-100 text-red-500 py-3 sm:py-4 rounded-2xl hover:bg-red-50 shadow-sm transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Again</span>
-            <span className="text-[9px] font-bold opacity-60 mt-0.5">{previewAgain}</span>
+            <span className="text-[9px] font-bold opacity-60 mt-0.5">&lt; 10m</span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(3); }} className="flex flex-col items-center justify-center bg-white border-2 border-orange-100 text-orange-500 py-4 rounded-2xl hover:bg-orange-50 shadow-sm transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(3); }} className="flex flex-col items-center justify-center bg-white border-2 border-orange-100 text-orange-500 py-3 sm:py-4 rounded-2xl hover:bg-orange-50 shadow-sm transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Hard</span>
-            <span className="text-[9px] font-bold opacity-60 mt-0.5">{previewHard}</span>
+            <span className="text-[9px] font-bold opacity-60 mt-0.5">{calculateNextReview(3, currentWord).interval}d</span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(4); }} className="flex flex-col items-center justify-center bg-green-500 text-white py-4 rounded-2xl hover:bg-green-600 shadow-md transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(4); }} className="flex flex-col items-center justify-center bg-green-500 text-white py-3 sm:py-4 rounded-2xl hover:bg-green-600 shadow-md transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Good</span>
-            <span className="text-[9px] font-bold opacity-80 mt-0.5">{previewGood}</span>
+            <span className="text-[9px] font-bold opacity-80 mt-0.5">{calculateNextReview(4, currentWord).interval}d</span>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); handleResult(5); }} className="flex flex-col items-center justify-center bg-blue-500 text-white py-4 rounded-2xl hover:bg-blue-600 shadow-md transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); handleResult(5); }} className="flex flex-col items-center justify-center bg-blue-500 text-white py-3 sm:py-4 rounded-2xl hover:bg-blue-600 shadow-md transition-colors">
             <span className="text-[10px] font-black uppercase tracking-widest">Easy</span>
-            <span className="text-[9px] font-bold opacity-80 mt-0.5">{previewEasy}</span>
+            <span className="text-[9px] font-bold opacity-80 mt-0.5">{calculateNextReview(5, currentWord).interval}d</span>
           </button>
         </div>
       </main>
