@@ -280,7 +280,14 @@ export default function WordDetail() {
                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 flex items-center gap-2"><span>🌱</span> Historical Roots</p>
                   <div className="bg-rose-50 rounded-[2rem] p-6 sm:p-8 border-2 border-rose-100">
                     <p className="text-sm font-black text-rose-400 uppercase tracking-widest mb-2">Origin</p>
-                    <p className="text-xl sm:text-2xl font-bold text-rose-700">{vocab.root_word}</p>
+                    
+                    {/* 🌟 ここをリンクに変更してマインドマップへ飛ばす */}
+                    <Link 
+                      href={`/roots/${encodeURIComponent(vocab.root_word)}`}
+                      className="inline-block text-xl sm:text-2xl font-bold text-rose-700 hover:text-rose-500 hover:underline transition-all mt-1 cursor-pointer"
+                    >
+                      {vocab.root_word} <span className="text-sm">↗</span>
+                    </Link>
                     
                     {/* 他言語とのつながり */}
                     {relatedWords.length > 0 && (
