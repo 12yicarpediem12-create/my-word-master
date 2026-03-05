@@ -36,11 +36,15 @@ export async function generateVocabInfo(word: string, langCode: string) {
          - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY IF the word fits PERFECTLY and UNDENIABLY into that specific sub-topic.
          - If there is ANY doubt, or if the word is an abstract concept, general verb, basic grammar word, or doesn't strongly belong to the list, you MUST return null. DO NOT force a categorization.
          - If returning a category, output ONLY the numerical ID (e.g., "45").
-      3. For nouns, include the definite article (e.g. "la mela").
-      4. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
-      5. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
+      3. ETYMOLOGY (Shared Roots) - NEW RULE:
+         - Identify the ultimate historical root of this word (e.g., Latin, Proto-Germanic, Old Chinese, Proto-Indo-European).
+         - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)" or "kard (Proto-Indo-European)".
+         - If unknown or not applicable, return null.
+      4. For nouns, include the definite article (e.g. "la mela").
+      5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
+      6. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
          🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:".
-      6. NOTES FIELD: For verbs, provide exactly two lines:
+      7. NOTES FIELD: For verbs, provide exactly two lines:
          Line 1: Group: [Pattern] (e.g., "Group: Regular -are verb").
          Line 2: Tip: [Grammar tip]
 
@@ -58,6 +62,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
         "example_sentence": "Sentence in target language",
         "example_translation": "English translation",
         "category_id": "Selected ID number or null",
+        "root_word": "e.g., noctem (Latin) or null",
         "notes": "Group: [Pattern]\\nTip: [Grammar tip]"
       }
     `;

@@ -12,7 +12,7 @@ const supabase = createClient(
 const initialForm = {
   word: "", hint: "", translation: "", pos: "", gender: "",
   verbType: "", categoryId: "", example: "", exampleTranslation: "",
-  conjugation: "", notes: ""
+  conjugation: "", notes: "", rootWord: "" // 🌟 初期値に追加
 };
 
 const colorTheme = {
@@ -38,7 +38,6 @@ export default function CreateCardForm() {
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   
-  // カテゴリの3階層ドリルダウン用State
   const [selL1, setSelL1] = useState<string>("");
   const [selL2, setSelL2] = useState<string>("");
   const [selL3, setSelL3] = useState<string>("");
@@ -70,7 +69,6 @@ export default function CreateCardForm() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // 🌟 AIが返したIDから、親を辿ってドロップダウン3つの状態を復元する魔法の関数
   const updateCategoryHierarchy = (categoryId: string | number | null, allCats: any[]) => {
     if (!categoryId) {
       setSelL1(""); setSelL2(""); setSelL3("");
@@ -146,7 +144,6 @@ export default function CreateCardForm() {
           return;
         }
 
-        // 🌟 自動でドロップダウンを同期
         updateCategoryHierarchy(aiData.category_id, categories);
 
         setFormData(prev => ({
@@ -159,7 +156,8 @@ export default function CreateCardForm() {
           example: String(aiData.example_sentence || ""),
           exampleTranslation: String(aiData.example_translation || ""),
           conjugation: String(aiData.conjugation || ""),
-          notes: String(aiData.notes || "")
+          notes: String(aiData.notes || ""),
+          rootWord: String(aiData.root_word || "") // 🌟 取得した語源を裏でセット
         }));
       }
     } catch (error: any) {
@@ -188,14 +186,16 @@ export default function CreateCardForm() {
       part_of_speech: formData.pos || null, gender: formData.gender || null, verb_type: formData.verbType || null,
       category_id: formData.categoryId || null, example_sentence: formData.example || null,
       example_translation: formData.exampleTranslation || null, conjugation: formData.conjugation || null,
-      notes: formData.notes || null, is_remembered: false,
+      notes: formData.notes || null, 
+      root_word: formData.rootWord || null, // 🌟 DBに保存
+      is_remembered: false,
     }]);
 
     setIsSubmitting(false);
 
     if (!error) {
       setFormData(initialForm);
-      setSelL1(""); setSelL2(""); setSelL3(""); // ドロップダウンもリセット
+      setSelL1(""); setSelL2(""); setSelL3("");
       setSuccessMsg(true);
       router.refresh(); 
       setTimeout(() => setSuccessMsg(false), 3000);
@@ -207,7 +207,6 @@ export default function CreateCardForm() {
   const baseInputClass = "w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all";
   const baseTextareaClass = "w-full p-4 border-2 rounded-2xl font-medium outline-none resize-none transition-all";
 
-  // ドロップダウン用の選択肢フィルタリング
   const l1Options = categories.filter(c => c.level === 1);
   const l2Options = selL1 ? categories.filter(c => String(c.parent_id) === selL1) : [];
   const l3Options = selL2 ? categories.filter(c => String(c.parent_id) === selL2) : [];
@@ -270,7 +269,6 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        {/* 🌟 3階層ドリルダウン式カテゴリ選択 UI */}
         <FieldWrapper label="Category Taxonomy" color="purple">
           <div className="flex flex-col md:flex-row gap-3 w-full">
             <select value={selL1} onChange={(e) => handleL1Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm`}>

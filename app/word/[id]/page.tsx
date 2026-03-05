@@ -15,7 +15,8 @@ const colorTheme = {
   emerald: { label: "text-emerald-500", input: "bg-emerald-50/20 border-emerald-100 text-emerald-800 focus:border-emerald-400" },
   purple: { label: "text-purple-500", input: "bg-purple-50/20 border-purple-100 text-purple-800 focus:border-purple-400" },
   blue: { label: "text-blue-400", input: "bg-blue-50/30 border-blue-100 text-blue-900 focus:border-blue-400" },
-  amber: { label: "text-amber-500", input: "bg-amber-50/30 border-amber-100 text-amber-900 focus:border-amber-400" }
+  amber: { label: "text-amber-500", input: "bg-amber-50/30 border-amber-100 text-amber-900 focus:border-amber-400" },
+  rose: { label: "text-rose-500", input: "bg-rose-50/30 border-rose-100 text-rose-900 focus:border-rose-400" } // 🌟 語源用に新色追加
 };
 
 const FieldWrapper = ({ label, color = "gray", children }: { label: string, color?: keyof typeof colorTheme, children: React.ReactNode }) => (
@@ -34,6 +35,7 @@ export default function WordDetail() {
   
   const [vocab, setVocab] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [relatedWords, setRelatedWords] = useState<any[]>([]); // 🌟 同じ語源の単語リスト
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -44,7 +46,7 @@ export default function WordDetail() {
 
   const [editForm, setEditForm] = useState({
     word: "", translation: "", pos: "", notes: "", example: "",
-    exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: ""
+    exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: "", rootWord: "" // 🌟 rootWordを追加
   });
 
   useEffect(() => {
@@ -69,8 +71,20 @@ export default function WordDetail() {
           categoryId: vocabRes.data.category_id || "",
           conjugation: vocabRes.data.conjugation || "",
           gender: vocabRes.data.gender || "",
-          verbType: vocabRes.data.verb_type || ""
+          verbType: vocabRes.data.verb_type || "",
+          rootWord: vocabRes.data.root_word || "" // 🌟 読み込み
         });
+
+        // 🌟 もし語源（root_word）があれば、同じ語源を持つ他の単語を探す
+        if (vocabRes.data.root_word) {
+          const { data: related } = await supabase
+            .from("vocab")
+            .select("id, word, language_code, translation")
+            .eq("root_word", vocabRes.data.root_word)
+            .neq("id", wordId); // 自分自身は除く
+          
+          if (related) setRelatedWords(related);
+        }
       }
       setIsLoading(false);
     }
@@ -118,6 +132,7 @@ export default function WordDetail() {
           example: aiData.example_sentence || prev.example,
           exampleTranslation: aiData.example_translation || prev.exampleTranslation,
           categoryId: aiData.category_id ? String(aiData.category_id) : prev.categoryId,
+          rootWord: aiData.root_word || prev.rootWord, // 🌟 自動補完
           notes: aiData.notes || prev.notes
         }));
       }
@@ -146,6 +161,7 @@ export default function WordDetail() {
         conjugation: editForm.conjugation || null,
         gender: editForm.gender || null,
         verb_type: editForm.verbType || null,
+        root_word: editForm.rootWord || null, // 🌟 更新
       })
       .eq("id", wordId);
 
@@ -164,9 +180,22 @@ export default function WordDetail() {
         conjugation: editForm.conjugation || null,
         gender: editForm.gender || null,
         verb_type: editForm.verbType || null,
+        root_word: editForm.rootWord || null, // 🌟 状態更新
         categories: selectedCategory ? { id: selectedCategory.id, full_path: selectedCategory.full_path } : null
       }));
       setIsEditing(false);
+      
+      // 🌟 更新後に改めて関連語を取得
+      if (editForm.rootWord) {
+        const { data: related } = await supabase
+          .from("vocab")
+          .select("id, word, language_code, translation")
+          .eq("root_word", editForm.rootWord)
+          .neq("id", wordId);
+        if (related) setRelatedWords(related);
+      } else {
+        setRelatedWords([]);
+      }
       router.refresh(); 
     }
   };
@@ -242,6 +271,39 @@ export default function WordDetail() {
                     </div>
                   )}
                   {vocab.example_translation && <p className="text-xs lg:text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
+                </div>
+              )}
+
+              {/* 🌟 語源・ルーツのセクション */}
+              {vocab.root_word && (
+                <div className="border-t-2 border-gray-50 pt-10">
+                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 flex items-center gap-2"><span>🌱</span> Historical Roots</p>
+                  <div className="bg-rose-50 rounded-[2rem] p-6 sm:p-8 border-2 border-rose-100">
+                    <p className="text-sm font-black text-rose-400 uppercase tracking-widest mb-2">Origin</p>
+                    <p className="text-xl sm:text-2xl font-bold text-rose-700">{vocab.root_word}</p>
+                    
+                    {/* 他言語とのつながり */}
+                    {relatedWords.length > 0 && (
+                      <div className="mt-6 border-t-2 border-rose-100 pt-6">
+                        <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4">Words sharing this root</p>
+                        <div className="flex flex-wrap gap-3">
+                          {relatedWords.map(rw => (
+                            <Link 
+                              href={`/word/${rw.id}`} 
+                              key={rw.id}
+                              className="bg-white border-2 border-rose-100 px-4 py-2 rounded-xl hover:border-rose-400 transition-all group flex flex-col"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black bg-rose-50 text-rose-500 px-2 py-0.5 rounded-md uppercase">{rw.language_code}</span>
+                                <span className="font-bold text-gray-800 group-hover:text-rose-600 transition-colors">{rw.word}</span>
+                              </div>
+                              <span className="text-[10px] font-medium text-gray-400 mt-1">{rw.translation}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -362,8 +424,9 @@ export default function WordDetail() {
                   <FieldWrapper label="Verb Type" color="emerald">
                     <input type="text" value={editForm.verbType} onChange={(e) => handleChange("verbType", e.target.value)} className={`${baseInputClass} ${colorTheme.emerald.input}`} />
                   </FieldWrapper>
-                  <FieldWrapper label="Placeholder" color="gray">
-                     <div className="w-full p-4 border-2 border-transparent"></div>
+                  {/* 🌟 編集画面にも語源入力欄を追加 */}
+                  <FieldWrapper label="Root Word (Etymology)" color="rose">
+                    <input type="text" value={editForm.rootWord} onChange={(e) => handleChange("rootWord", e.target.value)} placeholder="e.g. noctem (Latin)" className={`${baseInputClass} ${colorTheme.rose.input}`} />
                   </FieldWrapper>
                 </div>
 
