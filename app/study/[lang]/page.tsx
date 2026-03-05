@@ -10,8 +10,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-const POS_LIST = ["Noun", "Verb", "Adjective", "Adverb", "Phrase"];
-
 const NavCard = ({ href, icon, subtitle, title, iconBg }: { href: string; icon: string; subtitle: string; title: string; iconBg: string }) => (
   <Link href={href} className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
     <div className="flex items-center gap-5">
@@ -145,19 +143,38 @@ export default function LanguageHub() {
     if (langCode) fetchData();
   }, [langCode]);
 
+  const dynamicPosList = useMemo(() => {
+    const posSet = new Set<string>();
+    vocabList.forEach(v => {
+      if (v.part_of_speech) {
+        const tags = v.part_of_speech.split(/[\/,]/).map((s: string) => s.trim()).filter(Boolean);
+        tags.forEach((t: string) => posSet.add(t));
+      }
+    });
+    return Array.from(posSet).sort();
+  }, [vocabList]);
+
   const posStats = useMemo(() => {
-    return POS_LIST.map(pos => {
-      const posVocab = vocabList.filter(v => v.part_of_speech === pos);
+    return dynamicPosList.map(pos => {
+      const posVocab = vocabList.filter(v => {
+        if (!v.part_of_speech) return false;
+        const tags = v.part_of_speech.split(/[\/,]/).map((s: string) => s.trim());
+        return tags.includes(pos);
+      });
       const mastered = posVocab.filter(v => v.is_remembered).length;
       const total = posVocab.length;
       const percentage = total === 0 ? 0 : Math.round((mastered / total) * 100);
       return { name: pos, mastered, total, percentage };
     });
-  }, [vocabList]);
+  }, [vocabList, dynamicPosList]);
 
   const filteredList = useMemo(() => {
     if (activeFilter === "All") return vocabList;
-    return vocabList.filter(v => v.part_of_speech === activeFilter);
+    return vocabList.filter(v => {
+      if (!v.part_of_speech) return false;
+      const tags = v.part_of_speech.split(/[\/,]/).map((s: string) => s.trim());
+      return tags.includes(activeFilter);
+    });
   }, [vocabList, activeFilter]);
 
   if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400 tracking-widest uppercase">Loading Hub...</div>;
@@ -245,7 +262,7 @@ export default function LanguageHub() {
             >
               All
             </button>
-            {POS_LIST.map((pos) => (
+            {dynamicPosList.map((pos) => (
               <FilterButton key={pos} active={activeFilter === pos} onClick={() => setActiveFilter(pos)}>
                 {pos}
               </FilterButton>
