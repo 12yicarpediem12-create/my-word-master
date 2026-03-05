@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import { getWordNuance } from "../../actions/ai";
+import { getWordNuance, generateWordDetails } from "../../actions/ai";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,12 +33,14 @@ export default function WordDetail() {
   const wordId = params.id as string;
   
   const [vocab, setVocab] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [tempNuance, setTempNuance] = useState<string | null>(null);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
 
   const [editForm, setEditForm] = useState({
     word: "", translation: "", pos: "", notes: "", example: "",
@@ -46,32 +48,33 @@ export default function WordDetail() {
   });
 
   useEffect(() => {
-    async function fetchWord() {
+    async function fetchData() {
       if (!wordId) return;
-      const { data } = await supabase
-        .from("vocab")
-        .select(`*, categories:category_id ( id, name, full_path )`)
-        .eq("id", wordId)
-        .single();
+      const [vocabRes, catRes] = await Promise.all([
+        supabase.from("vocab").select(`*, categories:category_id ( id, name, full_path )`).eq("id", wordId).single(),
+        supabase.from("categories").select("id, full_path").order("full_path")
+      ]);
       
-      if (data) {
-        setVocab(data);
+      if (catRes.data) setCategories(catRes.data);
+
+      if (vocabRes.data) {
+        setVocab(vocabRes.data);
         setEditForm({
-          word: data.word || "",
-          translation: data.translation || "",
-          pos: data.part_of_speech || "",
-          notes: data.notes || "",
-          example: data.example_sentence || "",
-          exampleTranslation: data.example_translation || "",
-          categoryId: data.category_id || "",
-          conjugation: data.conjugation || "",
-          gender: data.gender || "",
-          verbType: data.verb_type || ""
+          word: vocabRes.data.word || "",
+          translation: vocabRes.data.translation || "",
+          pos: vocabRes.data.part_of_speech || "",
+          notes: vocabRes.data.notes || "",
+          example: vocabRes.data.example_sentence || "",
+          exampleTranslation: vocabRes.data.example_translation || "",
+          categoryId: vocabRes.data.category_id || "",
+          conjugation: vocabRes.data.conjugation || "",
+          gender: vocabRes.data.gender || "",
+          verbType: vocabRes.data.verb_type || ""
         });
       }
       setIsLoading(false);
     }
-    fetchWord();
+    fetchData();
   }, [wordId]);
 
   const speak = useCallback((text: string) => {
@@ -79,7 +82,7 @@ export default function WordDetail() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     const langMap: Record<string, string> = { 
-      it: "it-IT", fr: "fr-FR", es: "es-ES", de: "de-DE", pt: "pt-PT" 
+      it: "it-IT", fr: "fr-FR", es: "es-ES", de: "de-DE", pt: "pt-PT", ja: "ja-JP", ko: "ko-KR", ru: "ru-RU", zh: "zh-CN", en: "en-US",
     };
     utterance.lang = langMap[vocab?.language_code] || "en-US";
     window.speechSynthesis.speak(utterance);
@@ -96,6 +99,32 @@ export default function WordDetail() {
       console.error(err); 
     } finally { 
       setIsAskingAI(false); 
+    }
+  };
+
+  const handleAutoFill = async () => {
+    if (!editForm.word || !vocab) return;
+    setIsAutoFilling(true);
+    try {
+      const aiData = await generateWordDetails(editForm.word, vocab.language_code);
+      if (!aiData.error) {
+        setEditForm(prev => ({
+          ...prev,
+          translation: aiData.translation || prev.translation,
+          pos: aiData.part_of_speech || prev.pos,
+          gender: aiData.gender || prev.gender,
+          verbType: aiData.verb_type || prev.verbType,
+          conjugation: aiData.conjugation || prev.conjugation,
+          example: aiData.example_sentence || prev.example,
+          exampleTranslation: aiData.example_translation || prev.exampleTranslation,
+          categoryId: aiData.category_id ? String(aiData.category_id) : prev.categoryId,
+          notes: aiData.notes || prev.notes
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAutoFilling(false);
     }
   };
 
@@ -121,6 +150,8 @@ export default function WordDetail() {
       .eq("id", wordId);
 
     if (!error) {
+      const selectedCategory = categories.find(c => String(c.id) === String(editForm.categoryId));
+      
       setVocab((prev: any) => ({
         ...prev,
         word: editForm.word,
@@ -133,6 +164,7 @@ export default function WordDetail() {
         conjugation: editForm.conjugation || null,
         gender: editForm.gender || null,
         verb_type: editForm.verbType || null,
+        categories: selectedCategory ? { id: selectedCategory.id, full_path: selectedCategory.full_path } : null
       }));
       setIsEditing(false);
       router.refresh(); 
@@ -283,15 +315,34 @@ export default function WordDetail() {
             </div>
           ) : (
             <div className="space-y-6 mt-10 lg:mt-12 animate-in fade-in duration-300">
-              <h2 className="text-2xl font-black mb-6 tracking-tight">Edit Word Details</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                <h2 className="text-2xl font-black tracking-tight">Edit Word Details</h2>
+                <button 
+                  onClick={handleAutoFill} 
+                  disabled={isAutoFilling}
+                  className="bg-purple-100 text-purple-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-purple-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {isAutoFilling ? "✨ Auto-filling..." : "🪄 AI Auto-Fill"}
+                </button>
+              </div>
+
               <div className="flex flex-col gap-y-6 lg:gap-y-8">
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
                   <FieldWrapper label="Word">
                     <input type="text" value={editForm.word} onChange={(e) => handleChange("word", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
                   </FieldWrapper>
-                  <FieldWrapper label="Category ID (UUID)" color="purple">
-                    <input type="text" value={editForm.categoryId} onChange={(e) => handleChange("categoryId", e.target.value)} className={`${baseInputClass} ${colorTheme.purple.input} text-[10px]`} />
+                  <FieldWrapper label="Category" color="purple">
+                    <select 
+                      value={editForm.categoryId || ""} 
+                      onChange={(e) => handleChange("categoryId", e.target.value)} 
+                      className={`${baseInputClass} ${colorTheme.purple.input} text-xs truncate`}
+                    >
+                      <option value="">-- No Category --</option>
+                      {categories.map(c => (
+                        <option key={c.id} value={c.id}>{c.full_path}</option>
+                      ))}
+                    </select>
                   </FieldWrapper>
                 </div>
 
