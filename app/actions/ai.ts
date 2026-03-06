@@ -51,9 +51,9 @@ export async function generateVocabInfo(word: string, langCode: string) {
          - If multiple meanings exist (and are not restricted by a hint), separate them STRICTLY with a comma and a space (e.g., "to say, to speak").
       6. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
          🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:". If the word is NOT a verb, return null or empty string.
-      7. NOTES FIELD: For verbs, provide exactly two lines:
-         Line 1: Group: [Pattern]
-         Line 2: Tip: [Grammar tip]
+      7. NOTES FIELD - 🛑 SILENT CORRECTION RULE:
+         - For verbs, provide exactly two lines -> Line 1: Group: [Pattern], Line 2: Tip: [Grammar tip].
+         - 🛑 STRICT RULE: NEVER mention "typo", "spelling mistake", "misspelled", or correct the user explicitly anywhere in the output. If the user input contains a typo, SILENTLY fix it in the "word" field and provide normal grammar notes. DO NOT act like a teacher correcting a mistake.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -70,7 +70,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
         "example_translation": "English translation",
         "category_id": "Selected ID number or null",
         "root_word": "e.g., noctem (Latin) or null",
-        "notes": "Grammar pattern or tip"
+        "notes": "Grammar pattern or tip. NO typo warnings."
       }
     `;
 
