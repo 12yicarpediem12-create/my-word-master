@@ -36,9 +36,11 @@ export async function generateVocabInfo(word: string, langCode: string) {
          - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY IF the word fits PERFECTLY and UNDENIABLY into that specific sub-topic.
          - If there is ANY doubt, or if the word is an abstract concept, general verb, basic grammar word, or doesn't strongly belong to the list, you MUST return null. DO NOT force a categorization.
          - If returning a category, output ONLY the numerical ID (e.g., "45").
-      3. ETYMOLOGY (Shared Roots) - NEW RULE:
-         - Identify the ultimate historical root of this word (e.g., Latin, Proto-Germanic, Old Chinese, Proto-Indo-European).
-         - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)" or "kard (Proto-Indo-European)".
+      3. ETYMOLOGY (Shared Roots) - STRICT RULES:
+         - For Romance languages (French, Italian, Spanish, Portuguese), trace the root back to "Latin" whenever possible.
+         - DO NOT use micro-classifications like "Late Latin", "Vulgar Latin", "Medieval Latin", or "Post-Classical Latin". Group them all strictly as "(Latin)".
+         - DO NOT trace back to "Proto-Indo-European" unless absolutely necessary. Stop at Latin, Proto-Germanic, Ancient Greek, or Arabic.
+         - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)" or "gwerra (Proto-Germanic)".
          - If unknown or not applicable, return null.
       4. For nouns, include the definite article (e.g. "la mela").
       5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
