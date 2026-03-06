@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 
@@ -9,61 +9,57 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function RootIndexPage() {
+export default function RootMindMapPage() {
+  const params = useParams();
   const router = useRouter();
-  const [vocab, setVocab] = useState<any[]>([]);
+  const [vocabList, setVocabList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // 🌟 検索用のState
-  const [searchQuery, setSearchQuery] = useState("");
+
+  // 🌟 1. 最大の解決策：URLの安全な文字(%20など)を、元の文字(スペースやカッコ)に復元する！
+  const rawRoot = params?.root as string || "";
+  const decodedRoot = decodeURIComponent(rawRoot);
 
   useEffect(() => {
-    async function fetchRoots() {
+    async function fetchRelatedWords() {
+      if (!decodedRoot) return;
+      
+      // 復元した正しい文字（例: "actor (Latin)"）でSupabaseを検索
       const { data } = await supabase
         .from("vocab")
-        .select("id, word, language_code, root_word, translation")
-        .not("root_word", "is", null);
+        .select("*")
+        .eq("root_word", decodedRoot);
 
-      if (data) setVocab(data);
+      if (data) setVocabList(data);
       setIsLoading(false);
     }
-    fetchRoots();
-  }, []);
+    fetchRelatedWords();
+  }, [decodedRoot]);
 
-  const rootGroups = useMemo(() => {
-    const groups: Record<string, { count: number; langs: Set<string>; words: string[] }> = {};
-    vocab.forEach((v) => {
-      if (!v.root_word || v.root_word.trim() === "") return; 
-      
-      if (!groups[v.root_word]) {
-        groups[v.root_word] = { count: 0, langs: new Set(), words: [] };
-      }
-      groups[v.root_word].count += 1;
-      groups[v.root_word].langs.add(v.language_code);
-      
-      // 検索ヒット用に単語と意味を配列に入れる
-      groups[v.root_word].words.push(v.word.toLowerCase());
-      if (v.translation) groups[v.root_word].words.push(v.translation.toLowerCase());
-    });
-    
-    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [vocab]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl font-bold text-gray-300 animate-pulse uppercase tracking-widest">
+          Loading Mind Map...
+        </div>
+      </div>
+    );
+  }
 
-  // 🌟 検索キーワードで絞り込むロジック
-  const filteredRoots = useMemo(() => {
-    if (!searchQuery.trim()) return rootGroups;
-    
-    const query = searchQuery.toLowerCase().trim();
-    
-    return rootGroups.filter(([root, info]) => {
-      const matchRoot = root.toLowerCase().includes(query);
-      const matchWords = info.words.some(w => w.includes(query));
-      return matchRoot || matchWords;
-    });
-  }, [rootGroups, searchQuery]);
+  if (vocabList.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center font-bold">
+        <div className="text-6xl mb-6 opacity-50">🧭</div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2">Root Not Found</h2>
+        <p className="text-gray-400 mb-8 font-medium">We couldn't find any words derived from "{decodedRoot}"</p>
+        <button onClick={() => router.back()} className="px-8 py-4 bg-rose-50 text-rose-500 rounded-2xl font-black uppercase tracking-widest hover:bg-rose-100 transition-colors">
+          ← Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20 overflow-x-hidden">
       <nav className="bg-white border-b-2 border-gray-200 px-6 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <Link href="/" className="text-2xl font-black text-blue-600 tracking-tighter">WordMaster.</Link>
         <button onClick={() => router.back()} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
@@ -71,82 +67,61 @@ export default function RootIndexPage() {
         </button>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
-        <header className="mb-10 text-center sm:text-left">
-          <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-3 flex items-center justify-center sm:justify-start gap-2">
-            <span>🌱</span> Etymology Hub
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12 lg:py-20 flex flex-col items-center">
+        
+        {/* 🌟 語源の親玉（中心ノード） */}
+        <div className="bg-rose-600 text-white rounded-[2.5rem] p-10 sm:p-14 border-4 border-rose-200 shadow-2xl relative z-10 w-full max-w-2xl text-center transform hover:scale-[1.02] transition-transform">
+          <p className="text-[10px] font-black text-rose-200 uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+            <span>🌱</span> Etymological Root
           </p>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-gray-900">Origins Library</h1>
-          <p className="text-sm font-bold text-gray-400 mt-4">Discover the historical connections between your words.</p>
-        </header>
-
-        {/* 🌟 検索バー UI */}
-        <div className="mb-10 relative">
-          <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by root word, vocab, or meaning..."
-            className="w-full bg-white border-2 border-gray-200 text-gray-900 text-lg font-bold rounded-[2rem] pl-14 pr-6 py-5 outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-50 transition-all shadow-sm placeholder-gray-300"
-          />
-          {searchQuery && (
-            <button 
-              onClick={() => setSearchQuery("")}
-              className="absolute inset-y-0 right-0 pr-6 flex items-center text-gray-400 hover:text-rose-500 transition-colors"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight break-words">
+            {decodedRoot}
+          </h1>
+          <p className="text-xs font-bold text-rose-200 mt-6 uppercase tracking-widest bg-rose-700/50 inline-block px-4 py-2 rounded-full">
+            {vocabList.length} Derived Words
+          </p>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-20 font-bold text-gray-300 animate-pulse uppercase tracking-widest">
-            Loading Origins...
-          </div>
-        ) : filteredRoots.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRoots.map(([root, info]) => (
-              // 🌟 ここを2重エンコードに修正しました！
-              <Link 
-                href={`/root/${encodeURIComponent(encodeURIComponent(root).replace(/\*/g, '%2A').replace(/\(/g, '%28').replace(/\)/g, '%29'))}`} 
-                key={root}
-                className="bg-white rounded-[2rem] p-8 border-2 border-rose-100 hover:border-rose-400 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between min-h-[160px]"
-              >
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 group-hover:text-rose-600 transition-colors line-clamp-2 leading-tight">
-                    {root}
-                  </h2>
+        {/* 🌟 枝分かれの線（視覚的効果でマインドマップ感を演出） */}
+        <div className="w-1 h-12 sm:h-20 bg-rose-200 relative -mt-2 z-0"></div>
+        <div className="w-[80%] max-w-3xl border-t-4 border-rose-200 relative z-0 rounded-t-xl">
+           <div className="absolute left-0 top-0 w-1 h-8 sm:h-12 bg-rose-200"></div>
+           <div className="absolute right-0 top-0 w-1 h-8 sm:h-12 bg-rose-200"></div>
+           <div className="absolute left-1/2 top-0 w-1 h-8 sm:h-12 bg-rose-200 transform -translate-x-1/2"></div>
+        </div>
+
+        {/* 🌟 派生した単語リスト（子ノード群） */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full max-w-5xl mt-8 sm:mt-12">
+          {vocabList.map((vocab) => (
+            <Link 
+              href={`/word/${vocab.id}`} 
+              key={vocab.id}
+              className="bg-white rounded-[2rem] p-8 border-2 border-gray-200 shadow-sm hover:border-rose-400 hover:shadow-xl transition-all group flex flex-col justify-between animate-in fade-in slide-in-from-bottom-4 duration-500"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-[10px] font-black bg-gray-100 text-gray-500 px-3 py-1 rounded-lg uppercase tracking-widest group-hover:bg-rose-50 group-hover:text-rose-500 transition-colors">
+                    {vocab.language_code}
+                  </span>
                 </div>
-                <div className="mt-6 flex items-end justify-between">
-                  <div className="flex flex-wrap gap-1">
-                    {Array.from(info.langs).map(lang => (
-                      <span key={lang} className="text-[8px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md uppercase">
-                        {lang}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-2xl font-black text-rose-500 leading-none">{info.count}</span>
-                    <span className="text-[8px] font-bold text-rose-300 uppercase block mt-1">Words</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-white rounded-[2.5rem] p-16 border-2 border-gray-200 shadow-sm text-center">
-            <div className="text-6xl mb-6 opacity-50">🧭</div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">No matches found</h2>
-            <p className="text-gray-500 font-medium text-sm">We couldn't find any roots or words matching "{searchQuery}"</p>
-          </div>
-        )}
+                <h2 className="text-3xl font-black text-gray-900 group-hover:text-rose-600 transition-colors break-words leading-tight">
+                  {vocab.word}
+                </h2>
+                <p className="text-sm font-bold text-gray-400 mt-3 line-clamp-2">
+                  {vocab.translation}
+                </p>
+              </div>
+              
+              {vocab.part_of_speech && (
+                 <div className="mt-6 pt-4 border-t-2 border-gray-50 flex items-center justify-between">
+                    <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest">Type</span>
+                    <span className="text-xs font-bold text-gray-600">{vocab.part_of_speech}</span>
+                 </div>
+              )}
+            </Link>
+          ))}
+        </div>
+
       </main>
     </div>
   );
