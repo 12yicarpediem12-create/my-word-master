@@ -131,7 +131,7 @@ export default function WordDetail() {
           example: aiData.example_sentence || prev.example,
           exampleTranslation: aiData.example_translation || prev.exampleTranslation,
           categoryId: aiData.category_id ? String(aiData.category_id) : prev.categoryId,
-          rootWord: aiData.root_word || prev.rootWord, 
+          rootWord: String(aiData.root_word || prev.rootWord).replace(/^\*/, '').replace(/\s*↗$/, ''), 
           notes: aiData.notes || prev.notes
         }));
       }
@@ -272,22 +272,19 @@ export default function WordDetail() {
                 </div>
               )}
 
-              {/* 🌟 語源・ルーツのセクション（サイズ修正・矢印削除・*削除済） */}
               {vocab.root_word && (
                 <div className="border-t-2 border-gray-50 pt-10">
                   <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 flex items-center gap-2"><span>🌱</span> Historical Roots</p>
                   <div className="bg-rose-50 rounded-[2rem] p-6 sm:p-8 border-2 border-rose-100">
                     <p className="text-sm font-black text-rose-400 uppercase tracking-widest mb-2">Origin</p>
                     
-                    {/* リンク機能は維持しつつ、見た目をスッキリさせました */}
                     <Link 
-                      href={`/root/${encodeURIComponent(vocab.root_word)}`}
+                      href={`/root/${encodeURIComponent(encodeURIComponent(vocab.root_word).replace(/\*/g, '%2A').replace(/\(/g, '%28').replace(/\)/g, '%29'))}`}
                       className="inline-block text-base sm:text-lg font-bold text-rose-700 hover:text-rose-500 hover:underline transition-all mt-1 cursor-pointer"
                     >
                       {vocab.root_word.replace(/^\*/, '')}
                     </Link>
                     
-                    {/* 他言語とのつながり */}
                     {relatedWords.length > 0 && (
                       <div className="mt-6 border-t-2 border-rose-100 pt-6">
                         <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4">Words sharing this root</p>

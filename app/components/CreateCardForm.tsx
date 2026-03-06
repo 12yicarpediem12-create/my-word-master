@@ -21,7 +21,6 @@ const colorTheme = {
   purple: { label: "text-purple-500", input: "bg-purple-50/20 border-purple-100 text-purple-800 focus:border-purple-400" },
   blue: { label: "text-blue-400", input: "bg-blue-50/30 border-blue-100 text-blue-900 focus:border-blue-400" },
   amber: { label: "text-amber-500", input: "bg-amber-50/30 border-amber-100 text-amber-900 focus:border-amber-400" },
-  // 🌟 語源用のテーマカラーを追加
   rose: { label: "text-rose-500", input: "bg-rose-50/30 border-rose-100 text-rose-900 focus:border-rose-400" }
 };
 
@@ -159,7 +158,7 @@ export default function CreateCardForm() {
           exampleTranslation: String(aiData.example_translation || ""),
           conjugation: String(aiData.conjugation || ""),
           notes: String(aiData.notes || ""),
-          rootWord: String(aiData.root_word || "") 
+          rootWord: String(aiData.root_word || "").replace(/^\*/, '').replace(/\s*↗$/, '')
         }));
       }
     } catch (error: any) {
@@ -262,7 +261,6 @@ export default function CreateCardForm() {
           </FieldWrapper>
         </div>
 
-        {/* 🌟 3カラムに変更し、Root Wordの入力欄を追加しました */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <FieldWrapper label="Gender" color="emerald">
             <input type="text" value={formData.gender} onChange={(e) => handleChange("gender", e.target.value)} placeholder="Feminine" className={`${baseInputClass} ${colorTheme.emerald.input}`} />

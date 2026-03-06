@@ -80,7 +80,7 @@ export default function RootIndexPage() {
           <p className="text-sm font-bold text-gray-400 mt-4">Discover the historical connections between your words.</p>
         </header>
 
-        {/* 🌟 検索バー UI (ここに必ず表示されます) */}
+        {/* 🌟 検索バー UI */}
         <div className="mb-10 relative">
           <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -113,8 +113,9 @@ export default function RootIndexPage() {
         ) : filteredRoots.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRoots.map(([root, info]) => (
+              // 🌟 ここを2重エンコードに修正しました！
               <Link 
-                href={`/root/${encodeURIComponent(root)}`} 
+                href={`/root/${encodeURIComponent(encodeURIComponent(root).replace(/\*/g, '%2A').replace(/\(/g, '%28').replace(/\)/g, '%29'))}`} 
                 key={root}
                 className="bg-white rounded-[2rem] p-8 border-2 border-rose-100 hover:border-rose-400 shadow-sm hover:shadow-md transition-all group flex flex-col justify-between min-h-[160px]"
               >
