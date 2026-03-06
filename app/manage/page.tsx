@@ -84,6 +84,25 @@ export default function ManageLibrary() {
           <CreateCardForm />
         </section>
 
+        {/* 🌟 新機能：AI一括インポートへの巨大リンク */}
+        <section className="w-full">
+          <Link 
+            href="/import" 
+            className="flex items-center justify-between bg-purple-50 border-2 border-purple-100 p-6 md:p-8 rounded-3xl hover:border-purple-400 hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center gap-5 md:gap-6">
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-2xl flex items-center justify-center text-3xl md:text-4xl group-hover:scale-110 transition-transform shadow-sm">
+                🪄
+              </div>
+              <div>
+                <p className="text-[10px] md:text-xs font-black text-purple-400 uppercase tracking-widest">AI-Powered Magic</p>
+                <h2 className="text-xl md:text-2xl font-black text-purple-900 mt-1">Bulk Import (CSV)</h2>
+              </div>
+            </div>
+            <span className="text-purple-300 font-black group-hover:text-purple-600 transition-colors mr-2 text-2xl md:text-3xl">→</span>
+          </Link>
+        </section>
+
         <section className="w-full">
           <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-200 shadow-sm transition-all hover:shadow-md">
             <h2 className="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mb-6 flex items-center gap-2">
@@ -114,25 +133,6 @@ export default function ManageLibrary() {
               </p>
             </form>
           </div>
-        </section>
-
-        {/* 🌟 ここに Origins Library へのリンクを追加しました！ */}
-        <section className="w-full">
-          <Link 
-            href="/root" 
-            className="flex items-center justify-between bg-rose-50 border-2 border-rose-100 p-6 md:p-8 rounded-3xl hover:border-rose-400 hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center gap-5 md:gap-6">
-              <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-2xl flex items-center justify-center text-3xl md:text-4xl group-hover:scale-110 transition-transform shadow-sm">
-                🌱
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-black text-rose-400 uppercase tracking-widest">Etymology</p>
-                <h2 className="text-xl md:text-2xl font-black text-rose-900 mt-1">Origins Library</h2>
-              </div>
-            </div>
-            <span className="text-rose-300 font-black group-hover:text-rose-600 transition-colors mr-2 text-2xl md:text-3xl">→</span>
-          </Link>
         </section>
 
       </main>
