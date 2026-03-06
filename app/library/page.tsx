@@ -18,43 +18,67 @@ const FilterButton = ({ active, onClick, children, activeClass = "bg-blue-600 te
   </button>
 );
 
-const VocabCard = ({ v }: { v: any }) => (
-  <Link href={`/word/${v.id}`} className="group block h-full">
-    <div className="bg-white rounded-[2rem] p-6 border-2 border-gray-100 shadow-sm hover:border-blue-500 hover:shadow-xl transition-all h-full flex flex-col relative overflow-hidden">
-      <div className="absolute top-6 right-6 text-2xl group-hover:scale-110 transition-transform">
-        {v.is_remembered ? "✅" : "🔥"}
-      </div>
-      <div className="flex items-center gap-2 mb-4">
-        <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-          {v.language_code}
-        </span>
-        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-          {v.part_of_speech || "Word"}
-        </span>
-      </div>
-      <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-1 group-hover:text-blue-600 transition-colors break-words">
-        {v.word}
-      </h2>
-      <p className="text-gray-500 font-bold text-lg mb-6">{v.translation}</p>
-      <div className="mt-auto flex flex-wrap gap-2">
-        {v.gender && (
-          <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
-            {v.gender}
+// 🌟 カードコンポーネントに選択機能（isSelected, onToggle）を追加
+const VocabCard = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, onToggle: (id: string) => void }) => (
+  <div className={`relative h-full transition-all duration-300 ${isSelected ? "scale-[1.02]" : ""}`}>
+    
+    {/* 🌟 左上のカスタムチェックボックス */}
+    <button
+      onClick={(e) => {
+        e.preventDefault(); // リンクへの遷移を防ぐ
+        e.stopPropagation();
+        onToggle(v.id);
+      }}
+      className={`absolute top-5 left-5 z-20 w-8 h-8 rounded-xl border-2 flex items-center justify-center transition-all shadow-sm ${
+        isSelected 
+          ? "bg-red-500 border-red-500 text-white shadow-red-200" 
+          : "bg-white border-gray-200 text-transparent hover:border-red-300 hover:shadow-md"
+      }`}
+    >
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      </svg>
+    </button>
+
+    <Link href={`/word/${v.id}`} className="group block h-full">
+      <div className={`bg-white rounded-[2rem] pt-16 px-6 pb-6 border-2 shadow-sm h-full flex flex-col relative overflow-hidden transition-all duration-300 ${
+        isSelected ? "border-red-400 ring-4 ring-red-50" : "border-gray-100 hover:border-blue-500 hover:shadow-xl"
+      }`}>
+        <div className="absolute top-6 right-6 text-2xl group-hover:scale-110 transition-transform">
+          {v.is_remembered ? "✅" : "🔥"}
+        </div>
+        <div className="flex items-center gap-2 mb-4">
+          <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+            {v.language_code}
           </span>
-        )}
-        {v.verb_type && (
-          <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
-            {v.verb_type}
+          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+            {v.part_of_speech || "Word"}
           </span>
-        )}
-        {v.category && v.category !== "Other" && (
-          <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
-            {v.category}
-          </span>
-        )}
+        </div>
+        <h2 className={`text-3xl font-black tracking-tight mb-1 break-words transition-colors ${isSelected ? "text-red-600" : "text-gray-900 group-hover:text-blue-600"}`}>
+          {v.word}
+        </h2>
+        <p className="text-gray-500 font-bold text-lg mb-6">{v.translation}</p>
+        <div className="mt-auto flex flex-wrap gap-2">
+          {v.gender && (
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+              {v.gender}
+            </span>
+          )}
+          {v.verb_type && (
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+              {v.verb_type}
+            </span>
+          )}
+          {v.category && v.category !== "Other" && (
+            <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+              {v.category}
+            </span>
+          )}
+        </div>
       </div>
-    </div>
-  </Link>
+    </Link>
+  </div>
 );
 
 export default function LibraryPage() {
@@ -64,6 +88,10 @@ export default function LibraryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLang, setSelectedLang] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // 🌟 選択された単語のIDを保存するStateと、削除処理中のState
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -90,9 +118,36 @@ export default function LibraryPage() {
     });
   }, [vocab, selectedLang, filterStatus]);
 
+  // 🌟 チェックボックスのON/OFFを切り替える関数
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  // 🌟 一括削除を実行する関数
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} words? This action cannot be undone.`)) return;
+    
+    setIsDeleting(true);
+    const { error } = await supabase
+      .from("vocab")
+      .delete()
+      .in("id", selectedIds); // 配列を渡すだけで一括削除！
+
+    if (!error) {
+      // 画面上のリストからも消す
+      setVocab(prev => prev.filter(v => !selectedIds.includes(v.id)));
+      setSelectedIds([]); // 選択をクリア
+    } else {
+      alert("Error deleting words: " + error.message);
+    }
+    setIsDeleting(false);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-32 relative">
+      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
         <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80">
           WordMaster.
         </Link>
@@ -102,11 +157,23 @@ export default function LibraryPage() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        <header className="mb-10 sm:mb-12 text-center sm:text-left">
-          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-4">Your Library</h1>
-          <p className="text-lg text-gray-500 font-medium italic">
-            You have collected <span className="font-black text-blue-600">{vocab.length}</span> words so far. Keep growing!
-          </p>
+        <header className="mb-10 sm:mb-12 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
+          <div>
+            <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-4">Your Library</h1>
+            <p className="text-lg text-gray-500 font-medium italic">
+              You have collected <span className="font-black text-blue-600">{vocab.length}</span> words so far. Keep growing!
+            </p>
+          </div>
+          
+          {/* 🌟 選択を全解除するボタン（1つでも選んでいれば表示） */}
+          {selectedIds.length > 0 && (
+            <button 
+              onClick={() => setSelectedIds([])}
+              className="text-sm font-bold text-gray-400 hover:text-gray-700 bg-gray-200/50 px-4 py-2 rounded-xl transition-colors"
+            >
+              Clear Selection
+            </button>
+          )}
         </header>
 
         <div className="mb-10 flex flex-col gap-6 bg-white p-6 rounded-[2rem] border-2 border-gray-200 shadow-sm">
@@ -161,7 +228,12 @@ export default function LibraryPage() {
         ) : filteredVocab.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredVocab.map((v) => (
-              <VocabCard key={v.id} v={v} />
+              <VocabCard 
+                key={v.id} 
+                v={v} 
+                isSelected={selectedIds.includes(v.id)} 
+                onToggle={toggleSelection} 
+              />
             ))}
           </div>
         ) : (
@@ -174,6 +246,27 @@ export default function LibraryPage() {
           </div>
         )}
       </main>
+
+      {/* 🌟 フローティングアクションバー（選択した時だけ下から現れる） */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-md text-white px-6 sm:px-10 py-5 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center gap-6 sm:gap-10 z-50 border border-gray-700 animate-in slide-in-from-bottom-20 duration-500">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selected</span>
+            <span className="text-xl sm:text-2xl font-black tracking-tight">{selectedIds.length} <span className="text-base text-gray-400 font-bold">words</span></span>
+          </div>
+          
+          <div className="w-px h-10 bg-gray-700"></div>
+          
+          <button
+            onClick={handleBulkDelete}
+            disabled={isDeleting}
+            className="bg-red-500 hover:bg-red-600 text-white font-black px-6 sm:px-8 py-3 rounded-2xl transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isDeleting ? "Deleting..." : "🗑️ Delete All"}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

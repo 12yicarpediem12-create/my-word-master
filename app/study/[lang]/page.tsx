@@ -60,14 +60,37 @@ const FilterButton = ({ active, onClick, children }: { active: boolean; onClick:
   </button>
 );
 
-const VocabItem = ({ vocab, isWeak, onSpeak }: { vocab: any; isWeak: boolean; onSpeak: (text: string) => void }) => (
-  <div className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between group gap-4">
-    <div className="flex items-start sm:items-center gap-4 sm:gap-6">
-      <span className={`w-3 h-3 rounded-full mt-2 sm:mt-0 shrink-0 ${vocab.is_remembered ? "bg-green-400" : "bg-orange-400"}`}></span>
+// 🌟 VocabItem に isSelected と onToggle を追加
+const VocabItem = ({ vocab, isWeak, onSpeak, isSelected, onToggle }: { vocab: any; isWeak: boolean; onSpeak: (text: string) => void; isSelected: boolean; onToggle: (id: string) => void; }) => (
+  <div className={`p-6 transition-colors flex flex-col sm:flex-row sm:items-center justify-between group gap-4 relative ${isSelected ? "bg-red-50/40" : "hover:bg-gray-50"}`}>
+    <div className="flex items-start sm:items-center gap-4 sm:gap-5">
+      
+      {/* 🌟 チェックボックス */}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle(vocab.id);
+        }}
+        className={`mt-1 sm:mt-0 shrink-0 z-20 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all shadow-sm ${
+          isSelected 
+            ? "bg-red-500 border-red-500 text-white shadow-red-200" 
+            : "bg-white border-gray-300 text-transparent hover:border-red-300 hover:shadow-md"
+        }`}
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+        </svg>
+      </button>
+
+      <span className={`hidden sm:block w-3 h-3 rounded-full shrink-0 ${vocab.is_remembered ? "bg-green-400" : "bg-orange-400"}`}></span>
+      
       <div>
         <Link href={`/word/${vocab.id}`} className="block">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
+            <p className={`text-xl font-black transition-colors ${isSelected ? "text-red-700" : "text-gray-900 group-hover:text-blue-600"}`}>
+              {vocab.word}
+            </p>
             {isWeak && !vocab.is_remembered && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-widest">Weak</span>}
           </div>
           <p className="text-sm font-medium text-gray-500 mt-1">{vocab.translation}</p>
@@ -78,7 +101,8 @@ const VocabItem = ({ vocab, isWeak, onSpeak }: { vocab: any; isWeak: boolean; on
         </div>
       </div>
     </div>
-    <div className="flex items-center gap-4 self-end sm:self-auto">
+    
+    <div className="flex items-center gap-4 self-end sm:self-auto pl-10 sm:pl-0">
       <button onClick={() => onSpeak(vocab.word)} className="p-3 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition-all active:scale-90">🔊</button>
       <span className="hidden sm:inline-block text-[10px] font-bold bg-gray-100 text-gray-400 px-3 py-1 rounded-full uppercase tracking-widest">{vocab.part_of_speech || "N/A"}</span>
       <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
@@ -96,6 +120,10 @@ export default function LanguageHub() {
   const [randomWord, setRandomWord] = useState<any>(null);
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [isLoading, setIsLoading] = useState(true);
+
+  // 🌟 一括削除用のState
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const speak = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -143,6 +171,30 @@ export default function LanguageHub() {
     if (langCode) fetchData();
   }, [langCode]);
 
+  // 🌟 選択状態の切り替え
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
+  }, []);
+
+  // 🌟 一括削除の実行
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} words? This action cannot be undone.`)) return;
+    
+    setIsDeleting(true);
+    const { error } = await supabase
+      .from("vocab")
+      .delete()
+      .in("id", selectedIds);
+
+    if (!error) {
+      setVocabList(prev => prev.filter(v => !selectedIds.includes(v.id)));
+      setSelectedIds([]);
+    } else {
+      alert("Error deleting words: " + error.message);
+    }
+    setIsDeleting(false);
+  };
+
   const dynamicPosList = useMemo(() => {
     const posSet = new Set<string>();
     vocabList.forEach(v => {
@@ -185,8 +237,8 @@ export default function LanguageHub() {
   const weakWordsCount = vocabList.filter(v => (v.mistake_count || 0) > 0).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20 overflow-x-hidden">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-32 overflow-x-hidden relative">
+      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center sticky top-0 z-40 shadow-sm gap-4">
         <div className="w-full md:w-auto flex justify-between items-center">
           <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80">WordMaster.</Link>
         </div>
@@ -254,27 +306,46 @@ export default function LanguageHub() {
           </div>
         )}
 
-        <div className="mb-8 overflow-x-auto pb-4 scrollbar-hide">
-          <div className="flex gap-3">
-            <button 
-              onClick={() => setActiveFilter("All")} 
-              className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === "All" ? "bg-gray-900 border-gray-900 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-gray-900"}`}
-            >
-              All
-            </button>
-            {dynamicPosList.map((pos) => (
-              <FilterButton key={pos} active={activeFilter === pos} onClick={() => setActiveFilter(pos)}>
-                {pos}
-              </FilterButton>
-            ))}
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto">
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setActiveFilter("All")} 
+                className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === "All" ? "bg-gray-900 border-gray-900 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-gray-900"}`}
+              >
+                All
+              </button>
+              {dynamicPosList.map((pos) => (
+                <FilterButton key={pos} active={activeFilter === pos} onClick={() => setActiveFilter(pos)}>
+                  {pos}
+                </FilterButton>
+              ))}
+            </div>
           </div>
+          
+          {/* 🌟 クリアボタン（選択中のみ表示） */}
+          {selectedIds.length > 0 && (
+            <button 
+              onClick={() => setSelectedIds([])}
+              className="text-[10px] font-bold text-gray-400 hover:text-gray-700 bg-gray-200/50 px-4 py-3 rounded-xl uppercase tracking-widest transition-colors shrink-0"
+            >
+              Clear Selection
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm overflow-hidden mb-12">
           {filteredList.length > 0 ? (
             <div className="divide-y-2 divide-gray-100">
               {filteredList.map((vocab) => (
-                <VocabItem key={vocab.id} vocab={vocab} isWeak={(vocab.mistake_count || 0) > 0} onSpeak={speak} />
+                <VocabItem 
+                  key={vocab.id} 
+                  vocab={vocab} 
+                  isWeak={(vocab.mistake_count || 0) > 0} 
+                  onSpeak={speak} 
+                  isSelected={selectedIds.includes(vocab.id)}
+                  onToggle={toggleSelection}
+                />
               ))}
             </div>
           ) : (
@@ -282,6 +353,27 @@ export default function LanguageHub() {
           )}
         </div>
       </main>
+
+      {/* 🌟 フローティングアクションバー */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-md text-white px-6 sm:px-10 py-5 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center gap-6 sm:gap-10 z-50 border border-gray-700 animate-in slide-in-from-bottom-20 duration-500">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selected</span>
+            <span className="text-xl sm:text-2xl font-black tracking-tight">{selectedIds.length} <span className="text-base text-gray-400 font-bold">words</span></span>
+          </div>
+          
+          <div className="w-px h-10 bg-gray-700"></div>
+          
+          <button
+            onClick={handleBulkDelete}
+            disabled={isDeleting}
+            className="bg-red-500 hover:bg-red-600 text-white font-black px-6 sm:px-8 py-3 rounded-2xl transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 flex items-center gap-2"
+          >
+            {isDeleting ? "Deleting..." : "🗑️ Delete All"}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }

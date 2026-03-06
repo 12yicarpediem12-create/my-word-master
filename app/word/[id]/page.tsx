@@ -44,17 +44,68 @@ export default function WordDetail() {
   const [tempNuance, setTempNuance] = useState<string | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
 
+  // 🌟 カテゴリ階層用のState
+  const [selL1, setSelL1] = useState<string>("");
+  const [selL2, setSelL2] = useState<string>("");
+  const [selL3, setSelL3] = useState<string>("");
+
   const [editForm, setEditForm] = useState({
-    word: "", hint: "", translation: "", pos: "", notes: "", example: "", // 🌟 hint を追加
+    word: "", hint: "", translation: "", pos: "", notes: "", example: "",
     exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: "", rootWord: "" 
   });
+
+  const handleChange = (field: keyof typeof editForm, value: string) => {
+    setEditForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  // 🌟 カテゴリの階層を更新する関数
+  const updateCategoryHierarchy = useCallback((categoryId: string | number | null, allCats: any[]) => {
+    if (!categoryId) {
+      setSelL1(""); setSelL2(""); setSelL3("");
+      setEditForm(prev => ({ ...prev, categoryId: "" }));
+      return;
+    }
+    
+    let current = allCats.find(c => String(c.id) === String(categoryId));
+    let l1 = "", l2 = "", l3 = "";
+
+    if (current?.level === 3) {
+      l3 = String(current.id);
+      current = allCats.find(c => String(c.id) === String(current.parent_id));
+    }
+    if (current?.level === 2) {
+      l2 = String(current.id);
+      current = allCats.find(c => String(c.id) === String(current.parent_id));
+    }
+    if (current?.level === 1) {
+      l1 = String(current.id);
+    }
+    
+    setSelL1(l1); setSelL2(l2); setSelL3(l3);
+    setEditForm(prev => ({ ...prev, categoryId: String(categoryId) }));
+  }, []);
+
+  const handleL1Change = (val: string) => {
+    setSelL1(val); setSelL2(""); setSelL3("");
+    handleChange("categoryId", val);
+  };
+
+  const handleL2Change = (val: string) => {
+    setSelL2(val); setSelL3("");
+    handleChange("categoryId", val || selL1);
+  };
+
+  const handleL3Change = (val: string) => {
+    setSelL3(val);
+    handleChange("categoryId", val || selL2);
+  };
 
   useEffect(() => {
     async function fetchData() {
       if (!wordId) return;
       const [vocabRes, catRes] = await Promise.all([
         supabase.from("vocab").select(`*, categories:category_id ( id, name, full_path )`).eq("id", wordId).single(),
-        supabase.from("categories").select("id, full_path").order("full_path")
+        supabase.from("categories").select("*").order("full_path") // 🌟 select("*") に変更して全情報を取得
       ]);
       
       if (catRes.data) setCategories(catRes.data);
@@ -63,7 +114,7 @@ export default function WordDetail() {
         setVocab(vocabRes.data);
         setEditForm({
           word: vocabRes.data.word || "",
-          hint: "", // 🌟 初期値
+          hint: "",
           translation: vocabRes.data.translation || "",
           pos: vocabRes.data.part_of_speech || "",
           notes: vocabRes.data.notes || "",
@@ -75,6 +126,11 @@ export default function WordDetail() {
           verbType: vocabRes.data.verb_type || "",
           rootWord: vocabRes.data.root_word || "" 
         });
+
+        // 🌟 初回ロード時にカテゴリ階層をセット
+        if (catRes.data && vocabRes.data.category_id) {
+          updateCategoryHierarchy(vocabRes.data.category_id, catRes.data);
+        }
 
         if (vocabRes.data.root_word) {
           const { data: related } = await supabase
@@ -89,7 +145,7 @@ export default function WordDetail() {
       setIsLoading(false);
     }
     fetchData();
-  }, [wordId]);
+  }, [wordId, updateCategoryHierarchy]);
 
   const speak = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -120,7 +176,6 @@ export default function WordDetail() {
     if (!editForm.word || !vocab) return;
     setIsAutoFilling(true);
     try {
-      // 🌟 HintをAIに渡すように修正
       const contextHint = editForm.hint 
         ? ` (Hint: ${editForm.hint})` 
         : (editForm.pos || editForm.translation ? ` (Hint: User intends this word to be POS: "${editForm.pos}", meaning related to: "${editForm.translation}")` : "");
@@ -137,20 +192,20 @@ export default function WordDetail() {
           conjugation: aiData.conjugation || prev.conjugation,
           example: aiData.example_sentence || prev.example,
           exampleTranslation: aiData.example_translation || prev.exampleTranslation,
-          categoryId: aiData.category_id ? String(aiData.category_id) : prev.categoryId,
           rootWord: String(aiData.root_word || prev.rootWord).replace(/^\*/, '').replace(/\s*↗$/, ''), 
           notes: aiData.notes || prev.notes
         }));
+
+        // 🌟 AIからの返答にカテゴリが含まれていれば、階層を同期
+        if (aiData.category_id) {
+          updateCategoryHierarchy(aiData.category_id, categories);
+        }
       }
     } catch (err) {
       console.error(err);
     } finally {
       setIsAutoFilling(false);
     }
-  };
-
-  const handleChange = (field: keyof typeof editForm, value: string) => {
-    setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleUpdate = async () => {
@@ -229,6 +284,11 @@ export default function WordDetail() {
 
   const baseInputClass = "w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all";
   const baseTextareaClass = "w-full p-4 border-2 rounded-2xl font-medium outline-none resize-none transition-all";
+
+  // 🌟 カテゴリ用のオプション配列を作成
+  const l1Options = categories.filter(c => c.level === 1);
+  const l2Options = selL1 ? categories.filter(c => String(c.parent_id) === selL1) : [];
+  const l3Options = selL2 ? categories.filter(c => String(c.parent_id) === selL2) : [];
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
@@ -384,7 +444,7 @@ export default function WordDetail() {
                   onClick={() => {
                     setEditForm({
                       word: vocab.word || "",
-                      hint: "", // 🌟
+                      hint: "", 
                       translation: vocab.translation || "",
                       pos: vocab.part_of_speech || "",
                       notes: vocab.notes || "",
@@ -396,6 +456,8 @@ export default function WordDetail() {
                       verbType: vocab.verb_type || "",
                       rootWord: vocab.root_word || "" 
                     });
+                    // 🌟 編集画面を開くときに階層を再同期
+                    updateCategoryHierarchy(vocab.category_id, categories);
                     setIsEditing(true);
                   }} 
                   className="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl active:scale-[0.98]"
@@ -409,7 +471,7 @@ export default function WordDetail() {
             <div className="space-y-6 mt-10 lg:mt-12 animate-in fade-in duration-300">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <h2 className="text-2xl font-black tracking-tight">Edit Word Details</h2>
-                <div className="flex flex-col gap-2"> {/* 🌟 */}
+                <div className="flex flex-col gap-2"> 
                   <button 
                     onClick={handleAutoFill} 
                     disabled={isAutoFilling}
@@ -422,27 +484,39 @@ export default function WordDetail() {
 
               <div className="flex flex-col gap-y-6 lg:gap-y-8">
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+                {/* 🌟 Wordは1カラムで広く取る */}
+                <div className="grid grid-cols-1 gap-6 lg:gap-8 items-start">
                   <FieldWrapper label="Word">
                     <input type="text" value={editForm.word} onChange={(e) => handleChange("word", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
-                    {/* 🌟 Hint 入力欄を追加 */}
                     <input type="text" value={editForm.hint} onChange={(e) => handleChange("hint", e.target.value)} placeholder="Hint for AI: specific meaning or part of speech..." className={`mt-2 p-2 rounded-xl text-[9px] font-bold outline-none w-full border border-blue-100 ${colorTheme.blue.input}`} />
-                  </FieldWrapper>
-                  <FieldWrapper label="Category" color="purple">
-                    <select 
-                      value={editForm.categoryId || ""} 
-                      onChange={(e) => handleChange("categoryId", e.target.value)} 
-                      className={`${baseInputClass} ${colorTheme.purple.input} text-xs truncate`}
-                    >
-                      <option value="">-- No Category --</option>
-                      {categories.map(c => (
-                        <option key={c.id} value={c.id}>{c.full_path}</option>
-                      ))}
-                    </select>
                   </FieldWrapper>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                {/* 🌟 3階層のカテゴリ選択UIを追加 */}
+                <FieldWrapper label="Category Taxonomy" color="purple">
+                  <div className="flex flex-col md:flex-row gap-3 w-full">
+                    <select value={selL1} onChange={(e) => handleL1Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm`}>
+                      <option value="">-- Main Category --</option>
+                      {l1Options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                    
+                    {l2Options.length > 0 && (
+                      <select value={selL2} onChange={(e) => handleL2Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm animate-in fade-in slide-in-from-left-2`}>
+                        <option value="">-- Sub Category --</option>
+                        {l2Options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    )}
+
+                    {l3Options.length > 0 && (
+                      <select value={selL3} onChange={(e) => handleL3Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm animate-in fade-in slide-in-from-left-2`}>
+                        <option value="">-- Specific Topic --</option>
+                        {l3Options.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    )}
+                  </div>
+                </FieldWrapper>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mt-2">
                   <FieldWrapper label="Meaning">
                     <input type="text" value={editForm.translation} onChange={(e) => handleChange("translation", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
                   </FieldWrapper>
