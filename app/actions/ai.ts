@@ -34,16 +34,18 @@ export async function generateVocabInfo(word: string, langCode: string) {
          - If a word functions as multiple POS, join them with a slash (e.g., "Adverb/Conjunction" or "Noun/Adjective").
       2. CATEGORY SELECTION - STRICT RULE: 
          - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY IF the word fits PERFECTLY and UNDENIABLY into that specific sub-topic.
-         - If there is ANY doubt, or if the word is an abstract concept, general verb, basic grammar word, or doesn't strongly belong to the list, you MUST return null. DO NOT force a categorization.
          - If returning a category, output ONLY the numerical ID (e.g., "45").
       3. ETYMOLOGY (Shared Roots) - STRICT RULES:
          - For Romance languages (French, Italian, Spanish, Portuguese), trace the root back to "Latin" whenever possible.
          - DO NOT use micro-classifications like "Late Latin", "Vulgar Latin", "Medieval Latin", or "Post-Classical Latin". Group them all strictly as "(Latin)".
          - DO NOT trace back to "Proto-Indo-European" unless absolutely necessary. Stop at Latin, Proto-Germanic, Ancient Greek, or Arabic.
-         - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)" or "gwerra (Proto-Germanic)".
+         - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)".
          - If unknown or not applicable, return null.
-      4. For nouns, include the definite article (e.g. "la mela").
-      5. LANGUAGE: ALWAYS provide "translation" and "example_translation" in ENGLISH.
+      4. TARGET LANGUAGE ARTICLE: For nouns, include the definite article in the "word" field (e.g. "la mela").
+      5. ENGLISH TRANSLATION - STRICT RULES:
+         - ALWAYS translate to ENGLISH.
+         - DO NOT include English articles like "the", "a", or "an" (e.g., output "apple", NOT "the apple").
+         - If multiple meanings exist, separate them STRICTLY with a comma and a space (e.g., "to say, to speak"). DO NOT use slashes (/) or semicolons (;).
       6. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
          🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:".
       7. NOTES FIELD: For verbs, provide exactly two lines:
@@ -56,7 +58,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
       ### OUTPUT FORMAT (JSON ONLY):
       {
         "word": "word with article",
-        "translation": "English translation",
+        "translation": "English translation without articles",
         "part_of_speech": "e.g., Adverb/Conjunction",
         "gender": "Masculine/Feminine/Neuter or null",
         "verb_type": "Transitive/Intransitive or null",

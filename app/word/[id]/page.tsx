@@ -119,7 +119,12 @@ export default function WordDetail() {
     if (!editForm.word || !vocab) return;
     setIsAutoFilling(true);
     try {
-      const aiData = await generateWordDetails(editForm.word, vocab.language_code);
+      // 🌟 Gelato対策: 既存の品詞と意味をAIに「ヒント」として渡し、文脈を破壊させない
+      const contextHint = editForm.pos || editForm.translation 
+        ? ` (Hint: User intends this word to be POS: "${editForm.pos}", meaning related to: "${editForm.translation}")` 
+        : "";
+
+      const aiData = await generateWordDetails(editForm.word + contextHint, vocab.language_code);
       if (!aiData.error) {
         setEditForm(prev => ({
           ...prev,
@@ -373,7 +378,28 @@ export default function WordDetail() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t-2 border-gray-50">
-                <button onClick={() => setIsEditing(true)} className="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl active:scale-[0.98]">✏️ Edit Details</button>
+                {/* 🌟 Cancel対策: ここで毎回DBの値にリセットしてから編集画面を開く */}
+                <button 
+                  onClick={() => {
+                    setEditForm({
+                      word: vocab.word || "",
+                      translation: vocab.translation || "",
+                      pos: vocab.part_of_speech || "",
+                      notes: vocab.notes || "",
+                      example: vocab.example_sentence || "",
+                      exampleTranslation: vocab.example_translation || "",
+                      categoryId: vocab.category_id || "",
+                      conjugation: vocab.conjugation || "",
+                      gender: vocab.gender || "",
+                      verbType: vocab.verb_type || "",
+                      rootWord: vocab.root_word || "" 
+                    });
+                    setIsEditing(true);
+                  }} 
+                  className="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl active:scale-[0.98]"
+                >
+                  ✏️ Edit Details
+                </button>
                 <button onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto px-8 bg-red-50 text-red-500 font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-red-100 transition-colors">🗑️ Delete</button>
               </div>
             </div>
