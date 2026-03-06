@@ -45,7 +45,7 @@ export default function WordDetail() {
   const [isAutoFilling, setIsAutoFilling] = useState(false);
 
   const [editForm, setEditForm] = useState({
-    word: "", translation: "", pos: "", notes: "", example: "",
+    word: "", hint: "", translation: "", pos: "", notes: "", example: "", // 🌟 hint を追加
     exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: "", rootWord: "" 
   });
 
@@ -63,6 +63,7 @@ export default function WordDetail() {
         setVocab(vocabRes.data);
         setEditForm({
           word: vocabRes.data.word || "",
+          hint: "", // 🌟 初期値
           translation: vocabRes.data.translation || "",
           pos: vocabRes.data.part_of_speech || "",
           notes: vocabRes.data.notes || "",
@@ -119,12 +120,13 @@ export default function WordDetail() {
     if (!editForm.word || !vocab) return;
     setIsAutoFilling(true);
     try {
-      // 🌟 Gelato対策: 既存の品詞と意味をAIに「ヒント」として渡し、文脈を破壊させない
-      const contextHint = editForm.pos || editForm.translation 
-        ? ` (Hint: User intends this word to be POS: "${editForm.pos}", meaning related to: "${editForm.translation}")` 
-        : "";
+      // 🌟 HintをAIに渡すように修正
+      const contextHint = editForm.hint 
+        ? ` (Hint: ${editForm.hint})` 
+        : (editForm.pos || editForm.translation ? ` (Hint: User intends this word to be POS: "${editForm.pos}", meaning related to: "${editForm.translation}")` : "");
 
       const aiData = await generateWordDetails(editForm.word + contextHint, vocab.language_code);
+      
       if (!aiData.error) {
         setEditForm(prev => ({
           ...prev,
@@ -378,11 +380,11 @@ export default function WordDetail() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t-2 border-gray-50">
-                {/* 🌟 Cancel対策: ここで毎回DBの値にリセットしてから編集画面を開く */}
                 <button 
                   onClick={() => {
                     setEditForm({
                       word: vocab.word || "",
+                      hint: "", // 🌟
                       translation: vocab.translation || "",
                       pos: vocab.part_of_speech || "",
                       notes: vocab.notes || "",
@@ -407,13 +409,15 @@ export default function WordDetail() {
             <div className="space-y-6 mt-10 lg:mt-12 animate-in fade-in duration-300">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <h2 className="text-2xl font-black tracking-tight">Edit Word Details</h2>
-                <button 
-                  onClick={handleAutoFill} 
-                  disabled={isAutoFilling}
-                  className="bg-purple-100 text-purple-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-purple-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
-                >
-                  {isAutoFilling ? "✨ Auto-filling..." : "🪄 AI Auto-Fill"}
-                </button>
+                <div className="flex flex-col gap-2"> {/* 🌟 */}
+                  <button 
+                    onClick={handleAutoFill} 
+                    disabled={isAutoFilling}
+                    className="bg-purple-100 text-purple-600 px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-purple-200 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    {isAutoFilling ? "✨ Auto-filling..." : "🪄 AI Auto-Fill"}
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-y-6 lg:gap-y-8">
@@ -421,6 +425,8 @@ export default function WordDetail() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
                   <FieldWrapper label="Word">
                     <input type="text" value={editForm.word} onChange={(e) => handleChange("word", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
+                    {/* 🌟 Hint 入力欄を追加 */}
+                    <input type="text" value={editForm.hint} onChange={(e) => handleChange("hint", e.target.value)} placeholder="Hint for AI: specific meaning or part of speech..." className={`mt-2 p-2 rounded-xl text-[9px] font-bold outline-none w-full border border-blue-100 ${colorTheme.blue.input}`} />
                   </FieldWrapper>
                   <FieldWrapper label="Category" color="purple">
                     <select 
