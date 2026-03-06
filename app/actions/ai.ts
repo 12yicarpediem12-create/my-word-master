@@ -26,12 +26,15 @@ export async function generateVocabInfo(word: string, langCode: string) {
       .join("\n") || "No categories found";
 
     const prompt = `
-      You are a linguistic expert. Analyze the word "${word}" in "${langCode}".
+      You are a linguistic expert. Analyze the input "${word}" in "${langCode}".
 
       ### CRITICAL INSTRUCTIONS:
+      0. OBEY THE HINT (IF PROVIDED):
+         - If the input contains a "(Hint: ...)" specifying a specific Part of Speech or meaning, you MUST restrict your entire analysis EXACTLY to that context.
+         - DO NOT provide multiple meanings or other POS if the hint narrows it down. Focus 100% on the user's intended usage.
       1. PART OF SPEECH (POS):
-         - Determine the most appropriate Part of Speech freely (e.g., Noun, Verb, Adjective, Adverb, Phrase, Conjunction, Pronoun, Preposition, Interjection).
-         - If a word functions as multiple POS, join them with a slash (e.g., "Adverb/Conjunction" or "Noun/Adjective").
+         - Determine the most appropriate Part of Speech.
+         - If (and ONLY if) there is no hint restricting it, and the word commonly functions as multiple POS, join them with a slash (e.g., "Noun/Adjective").
       2. CATEGORY SELECTION - STRICT RULE: 
          - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY IF the word fits PERFECTLY and UNDENIABLY into that specific sub-topic.
          - If returning a category, output ONLY the numerical ID (e.g., "45").
@@ -41,15 +44,15 @@ export async function generateVocabInfo(word: string, langCode: string) {
          - DO NOT trace back to "Proto-Indo-European" unless absolutely necessary. Stop at Latin, Proto-Germanic, Ancient Greek, or Arabic.
          - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)".
          - If unknown or not applicable, return null.
-      4. TARGET LANGUAGE ARTICLE: For nouns, include the definite article in the "word" field (e.g. "la mela").
+      4. TARGET LANGUAGE ARTICLE: For nouns, include the definite article in the "word" field (e.g. "la mela"). Do not add articles for adjectives or verbs.
       5. ENGLISH TRANSLATION - STRICT RULES:
          - ALWAYS translate to ENGLISH.
-         - DO NOT include English articles like "the", "a", or "an" (e.g., output "apple", NOT "the apple").
-         - If multiple meanings exist, separate them STRICTLY with a comma and a space (e.g., "to say, to speak"). DO NOT use slashes (/) or semicolons (;).
+         - DO NOT include English articles like "the", "a", or "an".
+         - If multiple meanings exist (and are not restricted by a hint), separate them STRICTLY with a comma and a space (e.g., "to say, to speak").
       6. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
-         🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:".
+         🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:". If the word is NOT a verb, return null or empty string.
       7. NOTES FIELD: For verbs, provide exactly two lines:
-         Line 1: Group: [Pattern] (e.g., "Group: Regular -are verb").
+         Line 1: Group: [Pattern]
          Line 2: Tip: [Grammar tip]
 
       ### AVAILABLE CATEGORY LIST:
@@ -57,17 +60,17 @@ export async function generateVocabInfo(word: string, langCode: string) {
 
       ### OUTPUT FORMAT (JSON ONLY):
       {
-        "word": "word with article",
+        "word": "word with article (only if noun)",
         "translation": "English translation without articles",
-        "part_of_speech": "e.g., Adverb/Conjunction",
+        "part_of_speech": "e.g., Adjective",
         "gender": "Masculine/Feminine/Neuter or null",
         "verb_type": "Transitive/Intransitive or null",
         "conjugation": "Present:\\nio parlo...\\n\\nPast Participle: parlato",
-        "example_sentence": "Sentence in target language",
+        "example_sentence": "Sentence in target language matching the specific POS/Meaning",
         "example_translation": "English translation",
         "category_id": "Selected ID number or null",
         "root_word": "e.g., noctem (Latin) or null",
-        "notes": "Group: [Pattern]\\nTip: [Grammar tip]"
+        "notes": "Grammar pattern or tip"
       }
     `;
 
