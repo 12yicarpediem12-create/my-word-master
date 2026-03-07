@@ -1,14 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
 import CreateCardForm from "../components/CreateCardForm";
 import AppHeader from "../components/AppHeader";
+import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const LANGUAGE_AUTO_MAP: Record<string, { code: string; emoji: string }> = {
   english: { code: "en", emoji: "🇺🇸" }, spanish: { code: "es", emoji: "🇪🇸" },

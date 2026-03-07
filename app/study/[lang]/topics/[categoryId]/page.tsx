@@ -2,13 +2,10 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import AppHeader from "@/app/components/AppHeader";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const BreadcrumbNav = ({ breadcrumbs, langCode, rootId }: { breadcrumbs: any[]; langCode: string; rootId: string }) => (
   <div className="text-[10px] sm:text-xs font-black text-blue-500 uppercase tracking-widest mb-3 flex flex-wrap items-center gap-2">

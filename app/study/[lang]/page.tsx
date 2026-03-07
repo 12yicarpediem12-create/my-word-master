@@ -6,16 +6,18 @@ import Link from "next/link";
 import SearchBar from "../../components/SearchBar";
 import AppHeader from "../../components/AppHeader";
 import {
-  LanguageHabitPanel,
-  LanguageHubHero,
   NavCard,
   ProgressBar,
+  StatCircle,
+} from "./primitives";
+import {
+  LanguageHabitPanel,
+  LanguageHubHero,
   RandomFlashbackCard,
   SelectionActionBar,
-  StatCircle,
   VocabFilterToolbar,
   VocabListSection,
-} from "./components";
+} from "./sections";
 import { bulkDeleteVocab } from "../../actions/vocab";
 import { useLanguageHubData } from "./useLanguageHubData";
 

@@ -1,22 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Papa from "papaparse";
 import { generateVocabInfo } from "../actions/ai";
 import { bulkInsertVocabWords } from "../actions/vocab";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import type { Language } from "@/app/lib/types";
+import { buildDuplicateWordSet, normalizeRootWord, normalizeWordForLookup } from "@/app/lib/vocab-form";
 import type { AnalyzedWord, ImportLog, ParsedRow, Phase } from "./types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-function normalizeWord(word: string) {
-  const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
-  return word.toLowerCase().replace(articlesRegex, "").trim();
-}
+const supabase = getSupabaseBrowserClient();
 
 async function loadDuplicateIndex(lang: string) {
   const { data, error } = await supabase.from("vocab").select("word").eq("language_code", lang);
@@ -24,12 +17,7 @@ async function loadDuplicateIndex(lang: string) {
     throw new Error(`Failed to load duplicates: ${error.message}`);
   }
 
-  const existing = new Set<string>();
-  (data || []).forEach((item) => {
-    existing.add(normalizeWord(item.word));
-  });
-
-  return existing;
+  return buildDuplicateWordSet((data || []) as Array<{ word: string }>);
 }
 
 function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
@@ -39,7 +27,7 @@ function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnTyp
     translation: aiData?.translation || row.translation || "",
     part_of_speech: aiData?.part_of_speech || row.pos || "",
     gender: aiData?.gender || "",
-    root_word: String(aiData?.root_word || "").replace(/^\*/, "").replace(/\s*↗$/, ""),
+    root_word: normalizeRootWord(aiData?.root_word),
     verb_type: aiData?.verb_type || "",
     category_id: aiData?.category_id || "",
     example_sentence: aiData?.example_sentence || "",
@@ -129,7 +117,7 @@ export function useImportWorkflow() {
         setProgress({ current: index + 1, total: parsedData.length });
 
         try {
-          const normalized = normalizeWord(currentRow.word);
+          const normalized = normalizeWordForLookup(currentRow.word);
           if (existingWords.has(normalized)) {
             setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: "Already exists" }, ...prev]);
             continue;

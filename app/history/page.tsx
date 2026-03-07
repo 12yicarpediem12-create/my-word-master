@@ -1,10 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import SearchBar from "../components/SearchBar";
 import AppHeader from "../components/AppHeader";
 import { summarizeActivity } from "../lib/activity-summary";
+import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 import type { Language, VocabItem } from "@/app/lib/types";
 
 type ViewRange = "7days" | "30days" | "month";
@@ -14,10 +14,7 @@ type HistoryCardProps = {
   langInfo?: Language;
 };
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
   <button

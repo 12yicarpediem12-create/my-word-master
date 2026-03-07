@@ -1,16 +1,41 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import { generateVocabInfo } from "../actions/ai";
 import { addVocabWord } from "../actions/vocab";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
+import type { Category, Language } from "@/app/lib/types";
+import {
+  appendDuplicateEntry,
+  buildDuplicateIndex,
+  getCategoryHierarchyOptions,
+  getCategorySelection,
+  getCategorySelectionAfterL1Change,
+  getCategorySelectionAfterL2Change,
+  getCategorySelectionAfterL3Change,
+  hasDuplicateEntry,
+  normalizeRootWord,
+  type DuplicateIndexEntry,
+} from "@/app/lib/vocab-form";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
-const initialForm = {
+type CreateCardFormData = {
+  word: string;
+  hint: string;
+  translation: string;
+  pos: string;
+  gender: string;
+  verbType: string;
+  categoryId: string;
+  example: string;
+  exampleTranslation: string;
+  conjugation: string;
+  notes: string;
+  rootWord: string;
+};
+
+const initialForm: CreateCardFormData = {
   word: "", hint: "", translation: "", pos: "", gender: "",
   verbType: "", categoryId: "", example: "", exampleTranslation: "",
   conjugation: "", notes: "", rootWord: "" 
@@ -25,7 +50,7 @@ const colorTheme = {
   rose: { label: "text-rose-500", input: "bg-rose-50/30 border-rose-100 text-rose-900 focus:border-rose-400" }
 };
 
-const FieldWrapper = ({ label, color = "gray", children }: { label: string, color?: keyof typeof colorTheme, children: React.ReactNode }) => (
+const FieldWrapper = ({ label, color = "gray", children }: { label: string, color?: keyof typeof colorTheme, children: ReactNode }) => (
   <div className="flex flex-col gap-2 w-full">
     <label className={`text-[9px] font-black uppercase tracking-tight ml-2 ${colorTheme[color].label}`}>
       {label}
@@ -36,8 +61,8 @@ const FieldWrapper = ({ label, color = "gray", children }: { label: string, colo
 
 export default function CreateCardForm() {
   const router = useRouter();
-  const [languages, setLanguages] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   
   const [selL1, setSelL1] = useState<string>("");
@@ -49,7 +74,7 @@ export default function CreateCardForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState(false);
-  const [duplicateIndex, setDuplicateIndex] = useState<{ cleanWord: string; pos: string }[]>([]);
+  const [duplicateIndex, setDuplicateIndex] = useState<DuplicateIndexEntry[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -74,73 +99,56 @@ export default function CreateCardForm() {
         setDuplicateIndex([]);
         return;
       }
-      const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
       const { data, error } = await supabase.from("vocab").select("word, part_of_speech").eq("language_code", selectedLang);
       if (error) {
         setErrorMsg(`Failed to load duplicate index: ${error.message}`);
         setDuplicateIndex([]);
         return;
       }
-      const index = (data || []).map((item) => ({
-        cleanWord: item.word.toLowerCase().replace(articlesRegex, "").trim(),
-        pos: String(item.part_of_speech || "").toLowerCase(),
-      }));
-      setDuplicateIndex(index);
+      setDuplicateIndex(buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>));
     }
     loadDuplicateIndex();
   }, [selectedLang]);
 
-  const handleChange = (field: keyof typeof initialForm, value: string) => {
+  const handleChange = (field: keyof CreateCardFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateCategoryHierarchy = (categoryId: string | number | null, allCats: any[]) => {
-    if (!categoryId) {
-      setSelL1(""); setSelL2(""); setSelL3("");
-      handleChange("categoryId", "");
-      return;
-    }
-    
-    let current = allCats.find(c => String(c.id) === String(categoryId));
-    let l1 = "", l2 = "", l3 = "";
-
-    if (current?.level === 3) {
-      l3 = String(current.id);
-      current = allCats.find(c => String(c.id) === String(current.parent_id));
-    }
-    if (current?.level === 2) {
-      l2 = String(current.id);
-      current = allCats.find(c => String(c.id) === String(current.parent_id));
-    }
-    if (current?.level === 1) {
-      l1 = String(current.id);
-    }
-    
-    setSelL1(l1); setSelL2(l2); setSelL3(l3);
-    handleChange("categoryId", String(categoryId));
+  const updateCategoryHierarchy = (categoryId: string | number | null, allCats: Category[]) => {
+    const selection = getCategorySelection(categoryId, allCats);
+    setSelL1(selection.l1);
+    setSelL2(selection.l2);
+    setSelL3(selection.l3);
+    handleChange("categoryId", selection.categoryId);
   };
 
   const handleL1Change = (val: string) => {
-    setSelL1(val); setSelL2(""); setSelL3("");
-    handleChange("categoryId", val);
+    const selection = getCategorySelectionAfterL1Change(val);
+    setSelL1(selection.l1);
+    setSelL2(selection.l2);
+    setSelL3(selection.l3);
+    handleChange("categoryId", selection.categoryId);
   };
 
   const handleL2Change = (val: string) => {
-    setSelL2(val); setSelL3("");
-    handleChange("categoryId", val || selL1);
+    const selection = getCategorySelectionAfterL2Change(val, selL1);
+    setSelL1(selection.l1);
+    setSelL2(selection.l2);
+    setSelL3(selection.l3);
+    handleChange("categoryId", selection.categoryId);
   };
 
   const handleL3Change = (val: string) => {
-    setSelL3(val);
-    handleChange("categoryId", val || selL2);
+    const selection = getCategorySelectionAfterL3Change(val, selL1, selL2);
+    setSelL1(selection.l1);
+    setSelL2(selection.l2);
+    setSelL3(selection.l3);
+    handleChange("categoryId", selection.categoryId);
   };
 
-  const checkDuplicate = async (wordToCheck: string, lang: string, posToCheck: string) => {
-    if (!posToCheck) return false;
-    const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
-    const cleanInputWord = wordToCheck.toLowerCase().replace(articlesRegex, "").trim();
+  const checkDuplicate = (wordToCheck: string, lang: string, posToCheck: string) => {
     if (lang !== selectedLang) return false;
-    return duplicateIndex.some((item) => item.cleanWord === cleanInputWord && item.pos === posToCheck.toLowerCase());
+    return hasDuplicateEntry(duplicateIndex, wordToCheck, posToCheck);
   };
 
   const handleAIGenerate = async () => {
@@ -154,7 +162,7 @@ export default function CreateCardForm() {
       if (aiData?.error) { setErrorMsg("AI Error: " + aiData.error); return; }
 
       if (aiData) {
-        const isDup = await checkDuplicate(aiData.word || formData.word, selectedLang, aiData.part_of_speech);
+        const isDup = checkDuplicate(aiData.word || formData.word, selectedLang, aiData.part_of_speech);
         if (isDup) {
           setErrorMsg(`Already in library as ${aiData.part_of_speech}.`);
           setIsGenerating(false);
@@ -174,24 +182,24 @@ export default function CreateCardForm() {
           exampleTranslation: String(aiData.example_translation || ""),
           conjugation: String(aiData.conjugation || ""),
           notes: String(aiData.notes || ""),
-          rootWord: String(aiData.root_word || "").replace(/^\*/, '').replace(/\s*↗$/, '')
+          rootWord: normalizeRootWord(aiData.root_word)
         }));
       }
-    } catch (error: any) {
-      setErrorMsg("System Error: " + error.message);
+    } catch (error) {
+      setErrorMsg(`System Error: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleAddWord = async (e: React.FormEvent) => {
+  const handleAddWord = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.word || !formData.translation || !selectedLang) return;
     setIsSubmitting(true);
     setErrorMsg(null);
     setSuccessMsg(false);
 
-    const isDup = await checkDuplicate(formData.word, selectedLang, formData.pos);
+    const isDup = checkDuplicate(formData.word, selectedLang, formData.pos);
     if (isDup) {
       setErrorMsg("This word + Part of Speech already exists.");
       setIsSubmitting(false);
@@ -211,14 +219,7 @@ export default function CreateCardForm() {
     setIsSubmitting(false);
 
     if (!error) {
-      const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
-      setDuplicateIndex((prev) => [
-        ...prev,
-        {
-          cleanWord: formData.word.toLowerCase().replace(articlesRegex, "").trim(),
-          pos: formData.pos.toLowerCase(),
-        },
-      ]);
+      setDuplicateIndex((prev) => appendDuplicateEntry(prev, formData.word, formData.pos));
       setFormData(initialForm);
       setSelL1(""); setSelL2(""); setSelL3("");
       setSuccessMsg(true);
@@ -232,9 +233,7 @@ export default function CreateCardForm() {
   const baseInputClass = "w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all";
   const baseTextareaClass = "w-full p-4 border-2 rounded-2xl font-medium outline-none resize-none transition-all";
 
-  const l1Options = categories.filter(c => c.level === 1);
-  const l2Options = selL1 ? categories.filter(c => String(c.parent_id) === selL1) : [];
-  const l3Options = selL2 ? categories.filter(c => String(c.parent_id) === selL2) : [];
+  const { l1Options, l2Options, l3Options } = getCategoryHierarchyOptions(categories, selL1, selL2);
 
   return (
     <div className="bg-white rounded-[2rem] p-6 sm:p-10 lg:p-14 border-2 border-gray-200 shadow-sm relative overflow-hidden transition-all">

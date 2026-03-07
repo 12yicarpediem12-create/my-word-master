@@ -1,29 +1,27 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
+import type { Language, VocabItem } from "@/app/lib/types";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const SEARCH_BAR_COLUMNS = "id, language_code, word, translation, part_of_speech";
 
 export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
   const router = useRouter();
-  const [languages, setLanguages] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
   const [selectedLang, setSelectedLang] = useState(forcedLang || "all");
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<VocabItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function fetchLangs() {
       const { data } = await supabase.from("languages").select("*");
-      if (data) setLanguages(data);
+      if (data) setLanguages(data as Language[]);
     }
     fetchLangs();
   }, []);
@@ -56,7 +54,7 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     if (wordError || translationError) return;
 
     const merged = [...(words || []), ...(translations || [])];
-    const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values()).slice(0, 20);
+    const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values()).slice(0, 20) as VocabItem[];
     setResults(unique);
     setIsOpen(true);
   };

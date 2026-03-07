@@ -6,7 +6,7 @@ import CalendarHeatmap from "react-calendar-heatmap";
 import { Tooltip } from "react-tooltip";
 import "react-calendar-heatmap/dist/styles.css";
 import "react-tooltip/dist/react-tooltip.css";
-import type { DashboardVocabStat } from "@/app/hooks/useDashboardData";
+import type { DashboardVocabStat } from "@/app/lib/dashboard";
 import type { HeatmapValue, Language } from "@/app/lib/types";
 
 type HeatmapCell = { date?: string; count?: number } | undefined;

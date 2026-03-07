@@ -1,23 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import { summarizeActivity } from "@/app/lib/activity-summary";
+import type { DashboardActivityMeta, DashboardVocabStat } from "@/app/lib/dashboard";
 import type { HeatmapValue, Language, VocabItem } from "@/app/lib/types";
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-
-export type DashboardVocabStat = Language & {
-  total: number;
-  remembered: number;
-  percentage: number;
-};
-
-export type DashboardActivityMeta = {
-  activeToday: boolean;
-  activeYesterday: boolean;
-  activeDays: number;
-};
+const supabase = getSupabaseBrowserClient();
 
 function buildLanguageVocabMap(vocab: VocabItem[]) {
   return vocab.reduce<Record<string, VocabItem[]>>((acc, item) => {

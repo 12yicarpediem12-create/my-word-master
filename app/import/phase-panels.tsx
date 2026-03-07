@@ -1,74 +1,9 @@
+import type { ChangeEvent } from "react";
 import Link from "next/link";
-import type { AnalyzedWord, ImportLog, Phase } from "./types";
 import type { Language } from "@/app/lib/types";
-
-export function ImportCountCard({
-  label,
-  value,
-  tone = "gray",
-  helper,
-}: {
-  label: string;
-  value: number;
-  tone?: "gray" | "blue" | "emerald" | "amber" | "rose";
-  helper?: string;
-}) {
-  const toneMap = {
-    gray: "bg-gray-50 border-gray-100 text-gray-900",
-    blue: "bg-blue-50 border-blue-100 text-blue-900",
-    emerald: "bg-emerald-50 border-emerald-100 text-emerald-900",
-    amber: "bg-amber-50 border-amber-100 text-amber-900",
-    rose: "bg-rose-50 border-rose-100 text-rose-900",
-  };
-
-  return (
-    <div className={`rounded-[1.5rem] border p-4 ${toneMap[tone]}`}>
-      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
-      <p className="text-3xl font-black mt-2">{value}</p>
-      {helper && <p className="text-xs font-bold mt-2 opacity-60">{helper}</p>}
-    </div>
-  );
-}
-
-export function LogStatusBadge({ status }: { status: ImportLog["status"] }) {
-  const statusMap = {
-    success: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    skipped: "bg-amber-50 text-amber-700 border-amber-100",
-    error: "bg-rose-50 text-rose-700 border-rose-100",
-  };
-
-  return <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${statusMap[status]}`}>{status}</span>;
-}
-
-export function LogSummaryPanel({ logs }: { logs: ImportLog[] }) {
-  if (logs.length === 0) return null;
-
-  return (
-    <div className="bg-white rounded-[2rem] border-2 border-gray-200 shadow-sm p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-4 mb-5">
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Issues & Skips</p>
-          <h3 className="text-xl font-black text-gray-900">Rows needing attention</h3>
-        </div>
-        <span className="bg-gray-100 text-gray-500 text-xs font-black px-3 py-1 rounded-full">{logs.length}</span>
-      </div>
-
-      <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
-        {logs.map((log, index) => (
-          <div key={`${log.word}-${log.status}-${index}`} className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="min-w-0">
-                <p className="font-black text-gray-900 break-words">{log.word}</p>
-                <p className="text-sm font-medium text-gray-500 mt-1 break-words">{log.message || "No additional detail."}</p>
-              </div>
-              <LogStatusBadge status={log.status} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { ImportCountCard, LogSummaryPanel } from "./primitives";
+import { ImportReviewTable } from "./review-table";
+import type { AnalyzedWord, ImportLog, Phase } from "./types";
 
 export function ImportUploadPanel({
   languages,
@@ -84,7 +19,7 @@ export function ImportUploadPanel({
   fileName: string | null;
   parsedCount: number;
   onLanguageChange: (value: string) => void;
-  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onAnalyze: () => void;
 }) {
   return (
@@ -179,82 +114,6 @@ export function ImportProgressPanel({
       </div>
 
       <LogSummaryPanel logs={logs} />
-    </div>
-  );
-}
-
-export function ImportReviewTable({
-  analyzedData,
-  onRemove,
-  onEditChange,
-}: {
-  analyzedData: AnalyzedWord[];
-  onRemove: (id: number) => void;
-  onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
-}) {
-  return (
-    <div className="bg-white rounded-[2rem] border-2 border-gray-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b-2 border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Save Preview</p>
-          <p className="text-sm font-bold text-gray-500 mt-1">Everything shown below is editable and will be inserted on save.</p>
-        </div>
-        <span className="inline-flex items-center self-start sm:self-auto px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
-          Ready Rows: {analyzedData.length}
-        </span>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-50 border-b-2 border-gray-200">
-            <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-              <th className="p-4 w-10 text-center"></th>
-              <th className="p-4 min-w-[100px]">Status</th>
-              <th className="p-4 min-w-[150px]">Word</th>
-              <th className="p-4 min-w-[150px]">Meaning</th>
-              <th className="p-4 min-w-[120px]">POS</th>
-              <th className="p-4 min-w-[120px]">Gender</th>
-              <th className="p-4 min-w-[150px]">Root (Origin)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y-2 divide-gray-100">
-            {analyzedData.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-10 text-center text-gray-400 font-bold">No words to import. (All duplicates or errors)</td>
-              </tr>
-            ) : (
-              analyzedData.map((item) => (
-                <tr key={item.id} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="p-4 text-center">
-                    <button onClick={() => onRemove(item.id)} className="text-gray-300 hover:text-red-500 transition-colors" title="Remove from import list">
-                      ✖
-                    </button>
-                  </td>
-                  <td className="p-4">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
-                      Ready
-                    </span>
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.word} onChange={(e) => onEditChange(item.id, "word", e.target.value)} className="w-full p-2 bg-transparent border-b-2 border-transparent focus:border-blue-400 outline-none font-bold text-gray-900 transition-colors" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.translation} onChange={(e) => onEditChange(item.id, "translation", e.target.value)} className="w-full p-2 bg-transparent border-b-2 border-transparent focus:border-blue-400 outline-none font-bold text-blue-600 transition-colors" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.part_of_speech} onChange={(e) => onEditChange(item.id, "part_of_speech", e.target.value)} className="w-full p-2 bg-transparent border-b-2 border-transparent focus:border-blue-400 outline-none text-sm font-medium text-gray-600 transition-colors" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.gender} onChange={(e) => onEditChange(item.id, "gender", e.target.value)} className="w-full p-2 bg-transparent border-b-2 border-transparent focus:border-emerald-400 outline-none text-sm font-medium text-emerald-600 transition-colors" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.root_word} onChange={(e) => onEditChange(item.id, "root_word", e.target.value)} className="w-full p-2 bg-transparent border-b-2 border-transparent focus:border-rose-400 outline-none text-sm font-medium text-rose-600 transition-colors" />
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

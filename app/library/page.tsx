@@ -1,15 +1,12 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import { bulkDeleteVocab } from "../actions/vocab";
 import AppHeader from "../components/AppHeader";
 import DensityToggle, { type DensityMode } from "../components/DensityToggle";
+import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const FilterButton = ({ active, onClick, children, activeClass = "bg-blue-600 text-white shadow-md", inactiveClass = "bg-gray-100 text-gray-500 hover:bg-gray-200" }: { active: boolean, onClick: () => void, children: React.ReactNode, activeClass?: string, inactiveClass?: string }) => (
   <button 

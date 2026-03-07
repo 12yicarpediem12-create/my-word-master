@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import { getHabitNudge, summarizeActivity } from "../../lib/activity-summary";
 import type { Language, VocabItem } from "@/app/lib/types";
-import type { PosStat } from "./components";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+import type { PosStat } from "./types";
+const supabase = getSupabaseBrowserClient();
 
 function getPartOfSpeechTags(partOfSpeech: string | null) {
   if (!partOfSpeech) return [];

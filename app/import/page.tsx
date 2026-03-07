@@ -6,7 +6,7 @@ import {
   ImportProgressPanel,
   ImportReviewPanel,
   ImportUploadPanel,
-} from "./components";
+} from "./phase-panels";
 import { useImportWorkflow } from "./useImportWorkflow";
 
 export default function ImportPage() {

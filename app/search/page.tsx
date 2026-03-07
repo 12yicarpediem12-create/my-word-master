@@ -2,15 +2,12 @@
 import { useState, useEffect, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import SearchBar from "../components/SearchBar";
 import AppHeader from "../components/AppHeader";
 import DensityToggle, { type DensityMode } from "../components/DensityToggle";
+import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const SEARCH_RESULT_COLUMNS = "id, language_code, word, translation, part_of_speech, is_remembered, mistake_count";
 

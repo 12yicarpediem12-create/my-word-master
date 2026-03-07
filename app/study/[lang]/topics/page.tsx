@@ -2,13 +2,10 @@
 import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
 import AppHeader from "@/app/components/AppHeader";
+import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseBrowserClient();
 
 const TopicLink = ({ langCode, topic }: { langCode: string; topic: any }) => (
   <Link 
