@@ -314,7 +314,7 @@ export function DashboardActivitySection({
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="surface-muted px-3 py-4 sm:px-6 sm:py-5">
+        <div className="surface-muted px-2.5 py-3 sm:px-5 sm:py-4">
           <div className="dashboard-heatmap-shell">
             <div className="dashboard-heatmap-scroll">
               <div className="dashboard-heatmap-canvas">
@@ -349,7 +349,7 @@ export function DashboardActivitySection({
             </div>
           </div>
           <Tooltip id="heatmap-tooltip" />
-          <div className="heatmap-legend mt-4 flex flex-wrap items-center justify-center gap-1 text-xs font-bold text-gray-400 sm:justify-start">
+          <div className="heatmap-legend mt-3 flex flex-wrap items-center justify-center gap-1 text-xs font-bold text-gray-400 sm:justify-start">
             <span className="mr-2">Less</span>
             <div className="legend-box bg-gray-100 w-3 h-3 mx-1 rounded-sm"></div>
             <div className="legend-box bg-green-100 w-3 h-3 mx-1 rounded-sm"></div>

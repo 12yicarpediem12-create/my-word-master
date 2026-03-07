@@ -298,7 +298,7 @@ body {
 
 .dashboard-heatmap-canvas {
   min-width: 34rem;
-  padding: 1rem 0.25rem 0.25rem 2rem;
+  padding: 0.5rem 0.125rem 0.1rem 1.45rem;
 }
 
 .dashboard-heatmap-canvas .react-calendar-heatmap {
@@ -311,14 +311,14 @@ body {
   font-size: 0.625rem !important;
   fill: #9ca3af !important;
   font-weight: 600 !important;
-  transform: translateX(-1.35rem) !important;
+  transform: translateX(-0.95rem) translateY(0.05rem) !important;
 }
 
 .dashboard-heatmap-canvas .react-calendar-heatmap .react-calendar-heatmap-month-label {
   font-size: 0.65rem !important;
   fill: #9ca3af !important;
   font-weight: 600 !important;
-  transform: translateY(-0.45rem) !important;
+  transform: translateY(-0.18rem) !important;
   text-anchor: start !important;
 }
 
@@ -337,7 +337,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 15px;
+  margin-top: 10px;
   font-size: 11px;
   color: #9ca3af;
 }
@@ -362,17 +362,17 @@ body {
 
   .dashboard-heatmap-canvas {
     min-width: 0;
-    padding: 1.25rem 0.5rem 0.25rem 2.5rem;
+    padding: 0.75rem 0.35rem 0.1rem 2rem;
   }
 
   .dashboard-heatmap-canvas .react-calendar-heatmap .react-calendar-heatmap-weekday-label {
     font-size: 0.7rem !important;
-    transform: translateX(-1.7rem) !important;
+    transform: translateX(-1.25rem) translateY(0.04rem) !important;
   }
 
   .dashboard-heatmap-canvas .react-calendar-heatmap .react-calendar-heatmap-month-label {
     font-size: 0.72rem !important;
-    transform: translateY(-0.6rem) !important;
+    transform: translateY(-0.28rem) !important;
   }
 }
 
