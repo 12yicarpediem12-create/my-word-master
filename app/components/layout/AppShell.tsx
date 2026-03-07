@@ -70,7 +70,7 @@ export function PageIntro({
   description,
   actions,
   align = "left",
-  framed = true,
+  framed = false,
   className,
 }: {
   eyebrow?: string;
@@ -85,6 +85,7 @@ export function PageIntro({
     <section
       className={cn(
         framed && "page-intro-frame",
+        framed && "page-intro-framed",
         "page-intro",
         align === "center" && "page-intro-center",
         Boolean(actions) && "page-intro-with-actions",
