@@ -112,7 +112,11 @@ export async function generateVocabInfo(
          - DO NOT trace back to "Proto-Indo-European" unless absolutely necessary. Stop at Latin, Proto-Germanic, Ancient Greek, or Arabic.
          - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)".
          - If unknown or not applicable, return null.
-      4. TARGET LANGUAGE ARTICLE: For nouns, include the definite article in the "word" field (e.g. "la mela"). Do not add articles for adjectives or verbs.
+      4. NO ARTICLES IN WORD FIELD:
+         - ALWAYS return the lemma only in the "word" field.
+         - For nouns, DO NOT include any definite or indefinite article in "word".
+         - Keep gender separate in the "gender" field.
+         - Do not add articles for adjectives, verbs, or any other part of speech.
       5. ENGLISH TRANSLATION - STRICT RULES:
          - ALWAYS translate to ENGLISH.
          - DO NOT include English articles like "the", "a", or "an".
@@ -133,7 +137,7 @@ export async function generateVocabInfo(
       Success shape:
       {
         "status": "ok",
-        "word": "word with article (only if noun)",
+        "word": "lemma only, never include articles",
         "translation": "English translation without articles",
         "part_of_speech": "e.g., Adjective",
         "gender": "Masculine/Feminine/Neuter or null",
