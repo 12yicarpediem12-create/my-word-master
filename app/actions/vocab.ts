@@ -5,21 +5,17 @@ import { cookies } from "next/headers";
 
 type ActionResult = { error?: string };
 
-function getRequiredEnv(name: string): string {
-  const envMap: Record<string, string | undefined> = {
-    SUPABASE_URL: process.env.SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  };
-  const value = envMap[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
-
 function getServerSupabase() {
-  const url = getRequiredEnv("SUPABASE_URL");
-  const serviceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const url = process.env.SUPABASE_URL;
+  if (!url) {
+    throw new Error("Missing required environment variable: SUPABASE_URL");
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    throw new Error("Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY");
+  }
+
   return createClient(url, serviceRoleKey);
 }
 
