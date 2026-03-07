@@ -1,7 +1,10 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { getSupabaseServerAdminClient } from "@/app/lib/supabase-server";
+import {
+  getSupabaseServerAdminClient,
+  getSupabaseServerPublicClient,
+} from "@/app/lib/supabase-server";
 
 type ActionResult = { error?: string };
 
@@ -60,7 +63,7 @@ async function requireAuthenticatedUserId(): Promise<string> {
     throw new Error("Authentication required.");
   }
 
-  const supabase = getServerSupabase();
+  const supabase = getSupabaseServerPublicClient();
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) {
     throw new Error("Authentication required.");

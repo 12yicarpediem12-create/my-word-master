@@ -7,7 +7,12 @@ import SearchBar from "./components/SearchBar";
 import AppHeader from "./components/AppHeader";
 import DailyStudyHero from "./components/dashboard/DailyStudyHero";
 import SettingsPanel from "./components/dashboard/SettingsPanel";
-import { DashboardActivitySection, DashboardLanguageOverview, DashboardProgressSection } from "./components/dashboard/DashboardSections";
+import {
+  DashboardActivitySection,
+  DashboardLanguageListSection,
+  DashboardLanguageOverview,
+  DashboardProgressSection,
+} from "./components/dashboard/DashboardSections";
 import { AppMain, AppShell, PageIntro, Surface } from "./components/layout/AppShell";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { getHabitNudge } from "./lib/activity-summary";
@@ -101,6 +106,8 @@ export default function Dashboard() {
             primaryLanguageCode={primaryLanguage?.code}
           />
         </section>
+
+        <DashboardLanguageListSection vocabStats={vocabStats} />
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)] xl:items-start">
           <DashboardActivitySection dueTodayCount={dueTodayCount} streak={streak} totalWords={totalWords} heatmapValues={heatmapValues} />

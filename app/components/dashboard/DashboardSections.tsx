@@ -17,6 +17,12 @@ function formatMasteryLabel(remembered: number, total: number) {
   return `${remembered} mastered / ${total} total`;
 }
 
+function formatDueLabel(dueToday: number) {
+  if (dueToday <= 0) return "Nothing due";
+  if (dueToday === 1) return "1 due";
+  return `${dueToday} due`;
+}
+
 export function DashboardLanguageOverview({
   vocabStats,
   totalWords,
@@ -27,7 +33,6 @@ export function DashboardLanguageOverview({
   primaryLanguageCode?: string;
 }) {
   const activeLanguages = vocabStats.filter((stat) => stat.total > 0);
-  const overviewStats = (activeLanguages.length > 0 ? activeLanguages : vocabStats).slice(0, 5);
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -57,36 +62,48 @@ export function DashboardLanguageOverview({
         </div>
 
         <div className="mt-6 space-y-3">
-          {overviewStats.length > 0 ? (
-            overviewStats.map((stat) => (
-              <Link
+          {activeLanguages.length > 0 ? (
+            activeLanguages.slice(0, 3).map((stat) => (
+              <div
                 key={stat.code}
-                href={`/study/${stat.code}`}
-                className="group flex items-center gap-4 rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4 transition-all hover:border-blue-200 hover:bg-blue-50/50"
+                className="rounded-[1.5rem] border border-slate-200 bg-white/85 px-4 py-4"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
-                  {stat.emoji || "🌍"}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-black text-slate-950">{stat.name}</p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                        {formatMasteryLabel(stat.remembered, stat.total)}
-                      </p>
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                    {stat.emoji || "🌍"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-base font-black text-slate-950">{stat.name}</p>
+                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                          {formatMasteryLabel(stat.remembered, stat.total)}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
+                        {formatDueLabel(stat.dueToday)}
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-black text-slate-950">{stat.percentage}%</p>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 transition-transform group-hover:translate-x-1">
-                        Open
-                      </p>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link
+                        href={`/study/${stat.code}`}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                      >
+                        Open Hub
+                      </Link>
+                      <Link
+                        href={`/study/${stat.code}/topics`}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                      >
+                        Topics
+                      </Link>
                     </div>
                   </div>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
-                  </div>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <div className="surface-muted px-5 py-6">
@@ -130,6 +147,115 @@ export function DashboardLanguageOverview({
         </div>
       </section>
     </div>
+  );
+}
+
+export function DashboardLanguageListSection({ vocabStats }: { vocabStats: DashboardVocabStat[] }) {
+  const visibleStats = vocabStats.filter((stat) => stat.total > 0);
+  const displayedStats = visibleStats.length > 0 ? visibleStats : vocabStats;
+  const totalDue = displayedStats.reduce((sum, stat) => sum + stat.dueToday, 0);
+  const totalLearning = displayedStats.reduce((sum, stat) => sum + stat.learning, 0);
+
+  return (
+    <section className="surface-card p-6 sm:p-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Overview</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Your languages, at a glance</h2>
+          <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+            Keep every active language visible with its current workload, mastery progress, and direct next actions.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="surface-muted px-4 py-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Languages</p>
+            <p className="mt-2 text-2xl font-black text-slate-950">{displayedStats.length}</p>
+          </div>
+          <div className="surface-muted px-4 py-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
+            <p className="mt-2 text-2xl font-black text-slate-950">{totalDue}</p>
+          </div>
+          <div className="surface-muted px-4 py-4 col-span-2 sm:col-span-1">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Still Learning</p>
+            <p className="mt-2 text-2xl font-black text-slate-950">{totalLearning}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        {displayedStats.length > 0 ? (
+          <div className="space-y-3">
+            {displayedStats.map((stat) => (
+              <div
+                key={stat.code}
+                className="rounded-[1.75rem] border border-slate-200 bg-white/90 px-4 py-4 sm:px-5"
+              >
+                <div className="flex flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(15rem,0.85fr)_auto] xl:items-center">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                      {stat.emoji || "🌍"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-lg font-black text-slate-950">{stat.name}</p>
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          {stat.code}
+                        </span>
+                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${stat.dueToday > 0 ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+                          {formatDueLabel(stat.dueToday)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-slate-600">
+                        {stat.remembered} mastered, {stat.learning} still in active learning, {stat.total} total words.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_5rem_5rem] xl:items-center">
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Mastery</p>
+                        <p className="text-sm font-black text-slate-950">{stat.percentage}%</p>
+                      </div>
+                      <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                        <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
+                      </div>
+                    </div>
+                    <div className="surface-muted px-3 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning</p>
+                      <p className="mt-1 text-xl font-black text-slate-950">{stat.learning}</p>
+                    </div>
+                    <div className="surface-muted px-3 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due</p>
+                      <p className="mt-1 text-xl font-black text-slate-950">{stat.dueToday}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 xl:justify-end">
+                    <Link
+                      href={`/study/${stat.code}`}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                    >
+                      Study Hub
+                    </Link>
+                    <Link
+                      href={`/study/${stat.code}/topics`}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                    >
+                      Topics
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="surface-muted px-5 py-6">
+            <p className="text-sm font-medium text-slate-600">Add your first language to restore the dashboard overview and start building a study routine.</p>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 

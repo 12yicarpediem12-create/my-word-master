@@ -3,6 +3,8 @@ import type { Language } from "./types";
 export type DashboardVocabStat = Language & {
   total: number;
   remembered: number;
+  learning: number;
+  dueToday: number;
   percentage: number;
 };
 

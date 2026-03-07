@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let adminClient: SupabaseClient | null = null;
@@ -22,9 +24,14 @@ function getSupabaseServerUrl(): string {
 }
 
 function getSupabaseServiceRoleKey(): string {
-  const key = getNonEmptyEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const key =
+    getNonEmptyEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY) ||
+    getNonEmptyEnvValue(process.env.SUPABASE_SERVICE_KEY);
+
   if (!key) {
-    throw new Error("Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY");
+    throw new Error(
+      "Missing Supabase service role key. Set SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SERVICE_KEY."
+    );
   }
 
   return key;

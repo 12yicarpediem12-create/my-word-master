@@ -49,15 +49,23 @@ function sortLanguagesByRecentActivity(languages: Language[], vocabByLanguage: R
 }
 
 function buildVocabStats(languages: Language[], vocabByLanguage: Record<string, VocabItem[]>): DashboardVocabStat[] {
+  const today = new Date().toISOString().split("T")[0];
+
   return languages.map((lang) => {
     const langVocab = vocabByLanguage[lang.code] || [];
     const total = langVocab.length;
     const remembered = langVocab.filter((item) => item.is_remembered).length;
+    const dueToday = langVocab.filter((item) => {
+      if (!item.next_review_date) return false;
+      return item.next_review_date.split("T")[0] <= today;
+    }).length;
 
     return {
       ...lang,
       total,
       remembered,
+      learning: Math.max(total - remembered, 0),
+      dueToday,
       percentage: total === 0 ? 0 : Math.round((remembered / total) * 100),
     };
   });
