@@ -106,9 +106,11 @@ export async function generateVocabInfo(
          - Use a single label such as "Noun", "Verb", "Adjective", "Adverb", "Expression", "Proper Noun", or another single POS phrase if needed.
       4. CATEGORY SELECTION - CONSERVATIVE RULE:
          - Category is OPTIONAL.
-         - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY when there is one clearly best, high-confidence fit for this exact lexical record.
-         - If two or more categories are similarly plausible, return null.
-         - If the fit is broad, cross-topic, or uncertain, return null.
+         - Only return "category_id" when the lexical entry has one clear, high-confidence topic fit.
+         - If the word could reasonably belong to multiple categories, return null.
+         - If the category would be based mainly on loose association, geography, culture, or broad context rather than the entry's central meaning/use, return null.
+         - Do not assign a category based only on country, nationality, language, or cultural association unless the entry's central meaning is explicitly and strongly about that topic.
+         - In ambiguous cases, return null.
          - Prefer under-classification over wrong classification.
          - If returning a category, output ONLY the numerical ID (e.g., "45"). Otherwise return null.
       5. ETYMOLOGY (Shared Roots) - STRICT RULES:
