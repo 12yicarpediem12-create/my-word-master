@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Category, VocabDetail, VocabItem } from "@/app/lib/types";
 import type { EditFormData } from "@/app/lib/word-detail";
+import { getWordDisplayLabel } from "@/app/lib/vocab-form";
 
 const colorTheme = {
   gray: { label: "text-slate-400", input: "bg-slate-50 border-slate-200 text-slate-950 focus:border-blue-400" },
@@ -154,6 +155,7 @@ function SpellingFamilyHeader({
   siblingCount: number;
 }) {
   const totalEntries = siblingCount + 1;
+  const displayWord = getWordDisplayLabel(vocab.word, vocab.language_code, vocab.part_of_speech, vocab.gender);
 
   return (
     <section className="surface-hero relative overflow-hidden rounded-[2.75rem] p-6 sm:p-8 lg:p-10">
@@ -171,7 +173,7 @@ function SpellingFamilyHeader({
           </div>
 
           <h1 className="mt-5 break-all text-4xl font-black leading-[0.95] tracking-tight text-slate-950 sm:text-6xl">
-            {vocab.word}
+            {displayWord}
           </h1>
           <p className="mt-4 max-w-3xl text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
             Browse the distinct records stored under this spelling. Each entry below stays separate by part of
@@ -221,6 +223,7 @@ function WordEntryBlock({
   const canEdit = isCurrent && !!onStartEditing && !!onDelete;
   const canToggleRemembered = isCurrent && !!onToggleRemembered;
   const canAskNuance = isCurrent && !!onAskNuance;
+  const displayWord = getWordDisplayLabel(entry.word, entry.language_code, entry.part_of_speech, entry.gender);
 
   return (
     <section
@@ -255,6 +258,9 @@ function WordEntryBlock({
             )}
           </div>
 
+          <p className="mt-4 break-words text-lg font-bold tracking-tight text-slate-950 sm:text-xl">
+            {displayWord}
+          </p>
           <p className="mt-4 break-words text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
             {entry.translation}
           </p>

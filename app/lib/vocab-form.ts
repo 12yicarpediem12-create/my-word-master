@@ -26,6 +26,79 @@ export function normalizePartOfSpeech(value: string | null | undefined): string 
   return String(value || "").toLowerCase().trim();
 }
 
+export function isNounPartOfSpeech(value: string | null | undefined): boolean {
+  const normalized = normalizePartOfSpeech(value);
+  return (
+    /\bnoun\b/.test(normalized) ||
+    /^n\.?$/.test(normalized) ||
+    normalized === "substantive"
+  );
+}
+
+export function isVerbPartOfSpeech(value: string | null | undefined): boolean {
+  const normalized = normalizePartOfSpeech(value);
+  return /\bverb\b/.test(normalized) || /^v\.?$/.test(normalized);
+}
+
+function getDisplayArticleForNoun(languageCode: string | null | undefined, gender: string | null | undefined): string | null {
+  const lang = String(languageCode || "").toLowerCase();
+  const normalizedGender = String(gender || "").toLowerCase();
+
+  if (!normalizedGender) return null;
+
+  const isMasculine = normalizedGender.includes("masc");
+  const isFeminine = normalizedGender.includes("fem");
+  const isNeuter = normalizedGender.includes("neut");
+
+  if (lang === "it") {
+    if (isMasculine && isFeminine) return "il/la";
+    if (isMasculine) return "il";
+    if (isFeminine) return "la";
+  }
+
+  if (lang === "es") {
+    if (isMasculine && isFeminine) return "el/la";
+    if (isMasculine) return "el";
+    if (isFeminine) return "la";
+  }
+
+  if (lang === "fr") {
+    if (isMasculine && isFeminine) return "le/la";
+    if (isMasculine) return "le";
+    if (isFeminine) return "la";
+  }
+
+  if (lang === "de") {
+    if (isMasculine && isFeminine) return "der/die";
+    if (isMasculine) return "der";
+    if (isFeminine) return "die";
+    if (isNeuter) return "das";
+  }
+
+  if (lang === "pt") {
+    if (isMasculine && isFeminine) return "o/a";
+    if (isMasculine) return "o";
+    if (isFeminine) return "a";
+  }
+
+  return null;
+}
+
+export function getWordDisplayLabel(
+  word: string | null | undefined,
+  languageCode: string | null | undefined,
+  partOfSpeech: string | null | undefined,
+  gender: string | null | undefined
+): string {
+  const trimmedWord = String(word || "").trim();
+  if (!trimmedWord) return "";
+  if (!isNounPartOfSpeech(partOfSpeech)) return trimmedWord;
+
+  const article = getDisplayArticleForNoun(languageCode, gender);
+  if (!article) return trimmedWord;
+  return `${article} ${trimmedWord}`;
+}
+
 export function normalizeRootWord(value: string | null | undefined): string {
   return String(value || "").replace(/^\*/, "").replace(/\s*↗$/, "");
 }

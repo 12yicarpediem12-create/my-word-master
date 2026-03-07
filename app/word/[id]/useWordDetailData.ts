@@ -60,7 +60,7 @@ async function loadSiblingEntries(languageCode: string, comparableLemma: string,
 
   return {
     data: ((data || []) as unknown as VocabDetail[]).filter(
-      (entry) => entry.id !== wordId && getComparableLemma(entry.word) === comparableLemma
+      (entry) => String(entry.id) !== String(wordId) && getComparableLemma(entry.word) === comparableLemma
     ),
     error: null,
   };

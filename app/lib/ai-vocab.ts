@@ -1,3 +1,5 @@
+import { isNounPartOfSpeech, isVerbPartOfSpeech } from "@/app/lib/vocab-form";
+
 const POS_LABEL_PATTERN =
   /\b(noun|verb|adjective|adverb|pronoun|preposition|conjunction|interjection|article|determiner|expression|phrase|idiom|particle|numeral|classifier|auxiliary verb|modal verb|proper noun|phrasal verb)\b/i;
 
@@ -69,6 +71,30 @@ function cleanNullableString(value: unknown): string | null {
   return cleaned || null;
 }
 
+function normalizeNounGender(value: unknown): string | null {
+  const cleaned = cleanString(value);
+  if (!cleaned) return null;
+
+  const normalized = cleaned
+    .toLowerCase()
+    .replace(/\s*(?:,|&|\band\b|\bor\b)\s*/g, "/")
+    .replace(/\s*\/\s*/g, "/");
+
+  const hasMasculine = /\bmasc(?:uline)?\b|(^|\/)m\.?(?=\/|$)/.test(normalized);
+  const hasFeminine = /\bfem(?:inine)?\b|(^|\/)f\.?(?=\/|$)/.test(normalized);
+  const hasNeuter = /\bneut(?:er)?\b|(^|\/)n\.?(?=\/|$)/.test(normalized);
+  const hasCommonGender = /\bcommon(?:\s+gender)?\b/.test(normalized);
+
+  if (hasCommonGender || (hasMasculine && hasFeminine)) {
+    return "Masculine/Feminine";
+  }
+
+  if (hasMasculine) return "Masculine";
+  if (hasFeminine) return "Feminine";
+  if (hasNeuter) return "Neuter";
+  return null;
+}
+
 function cleanCategoryId(value: unknown, allowedCategoryIds?: Set<string>): string | null {
   if (value === null || value === undefined) return null;
   const cleaned = String(value).trim();
@@ -138,10 +164,6 @@ function translationLooksBroad(value: string): boolean {
   return /\s\/\s|;/.test(value);
 }
 
-function partOfSpeechIncludes(partOfSpeech: string, label: string): boolean {
-  return partOfSpeech.toLowerCase().includes(label.toLowerCase());
-}
-
 export function normalizeAiVocabResponse(
   raw: unknown,
   { requestedWord, allowedCategoryIds }: NormalizeAiVocabParams
@@ -181,15 +203,15 @@ export function normalizeAiVocabResponse(
     return createNeedsHint("blended_senses");
   }
 
-  const isNoun = partOfSpeechIncludes(partOfSpeech, "noun");
-  const isVerb = partOfSpeechIncludes(partOfSpeech, "verb");
+  const isNoun = isNounPartOfSpeech(partOfSpeech);
+  const isVerb = isVerbPartOfSpeech(partOfSpeech);
 
   return {
     status: "ok",
     word,
     translation,
     part_of_speech: partOfSpeech,
-    gender: isNoun ? cleanNullableString(result.gender) : null,
+    gender: isNoun ? normalizeNounGender(result.gender) : null,
     verb_type: cleanNullableString(result.verb_type),
     conjugation: isVerb ? cleanNullableString(result.conjugation) : null,
     example_sentence: exampleSentence,
