@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { PageFrame } from "./layout/AppShell";
 
 type PrimarySection = "dashboard" | "study" | "library" | "import" | null;
 
@@ -48,73 +49,77 @@ export default function AppHeader({
   const activePrimary = primarySection ?? inferPrimarySection(pathname);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b-2 border-gray-200 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-        <Link href="/" className="text-2xl sm:text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity shrink-0">
-          WordMaster.
-        </Link>
+    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[rgba(248,251,255,0.78)] backdrop-blur-xl">
+      <PageFrame as="div" width="xl">
+        <div className="py-4 sm:py-5">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/" className="shrink-0 text-[1.75rem] sm:text-[2rem] font-black tracking-[-0.08em] text-slate-950 hover:opacity-80 transition-opacity">
+              WordMaster<span className="text-blue-600">.</span>
+            </Link>
 
-        <div className="flex items-center gap-3 shrink-0">{utility}</div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-4">
-        <nav className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {PRIMARY_LINKS.map((link) => {
-            const isActive = activePrimary === link.key;
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-4 py-2.5 rounded-2xl text-sm font-black whitespace-nowrap transition-all border ${
-                  isActive
-                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
-                    : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {(searchSlot || secondaryLinks.length > 0 || backHref) && (
-          <div className="mt-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            {searchSlot ? <div className="w-full lg:max-w-2xl">{searchSlot}</div> : <div />}
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-              {secondaryLinks.length > 0 && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">More</span>
-                  {secondaryLinks.map((link) => {
-                    const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
-                          isActive ? "text-gray-900" : "text-gray-400 hover:text-blue-600"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-
-              {backHref && (
-                <Link
-                  href={backHref}
-                  className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-gray-500 hover:text-blue-600 transition-colors"
-                >
-                  ← {backLabel}
-                </Link>
-              )}
-            </div>
+            <div className="flex items-center gap-3 shrink-0">{utility}</div>
           </div>
-        )}
-      </div>
+
+          <div className="mt-4 flex flex-col gap-4 border-t border-slate-200/70 pt-4 sm:mt-5 sm:pt-5">
+            <nav className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {PRIMARY_LINKS.map((link) => {
+                const isActive = activePrimary === link.key;
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`px-4 py-2.5 rounded-2xl text-sm font-black whitespace-nowrap transition-all border ${
+                      isActive
+                        ? "bg-blue-600 text-white border-blue-600 shadow-[0_14px_30px_-20px_rgba(37,99,235,0.8)]"
+                        : "bg-white/80 text-slate-600 border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {(searchSlot || secondaryLinks.length > 0 || backHref) && (
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {searchSlot ? <div className="w-full lg:max-w-2xl">{searchSlot}</div> : <div />}
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+                  {secondaryLinks.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Tools</span>
+                      {secondaryLinks.map((link) => {
+                        const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            className={`text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${
+                              isActive ? "text-slate-900" : "text-slate-400 hover:text-blue-600"
+                            }`}
+                          >
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {backHref && (
+                    <Link
+                      href={backHref}
+                      className="text-[10px] sm:text-xs font-black uppercase tracking-[0.18em] text-slate-500 hover:text-blue-600 transition-colors"
+                    >
+                      ← {backLabel}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </PageFrame>
     </header>
   );
 }

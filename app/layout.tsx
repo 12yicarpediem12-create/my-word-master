@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className="min-h-screen antialiased text-slate-900">
         <AuthGate>{children}</AuthGate>
       </body>
     </html>

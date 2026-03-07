@@ -7,9 +7,131 @@ import { Tooltip } from "react-tooltip";
 import "react-calendar-heatmap/dist/styles.css";
 import "react-tooltip/dist/react-tooltip.css";
 import type { DashboardVocabStat } from "@/app/lib/dashboard";
-import type { HeatmapValue, Language } from "@/app/lib/types";
+import type { HeatmapValue } from "@/app/lib/types";
 
 type HeatmapCell = { date?: string; count?: number } | undefined;
+
+function formatMasteryLabel(remembered: number, total: number) {
+  if (total === 0) return "No words yet";
+  if (remembered === total) return "Fully mastered";
+  return `${remembered} mastered / ${total} total`;
+}
+
+export function DashboardLanguageOverview({
+  vocabStats,
+  totalWords,
+  primaryLanguageCode,
+}: {
+  vocabStats: DashboardVocabStat[];
+  totalWords: number;
+  primaryLanguageCode?: string;
+}) {
+  const activeLanguages = vocabStats.filter((stat) => stat.total > 0);
+  const overviewStats = (activeLanguages.length > 0 ? activeLanguages : vocabStats).slice(0, 5);
+
+  return (
+    <div className="flex h-full flex-col gap-5">
+      <section className="surface-card p-6 sm:p-7">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Overview</p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Your active stack</h2>
+            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+              Keep your languages visible, compact, and one tap away from study.
+            </p>
+          </div>
+          <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+            {activeLanguages.length || vocabStats.length} languages
+          </span>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="surface-muted px-4 py-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Words</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{totalWords}</p>
+          </div>
+          <div className="surface-muted px-4 py-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Languages</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{activeLanguages.length}</p>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          {overviewStats.length > 0 ? (
+            overviewStats.map((stat) => (
+              <Link
+                key={stat.code}
+                href={`/study/${stat.code}`}
+                className="group flex items-center gap-4 rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4 transition-all hover:border-blue-200 hover:bg-blue-50/50"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                  {stat.emoji || "🌍"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-black text-slate-950">{stat.name}</p>
+                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                        {formatMasteryLabel(stat.remembered, stat.total)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-slate-950">{stat.percentage}%</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-blue-500 transition-transform group-hover:translate-x-1">
+                        Open
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
+                  </div>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="surface-muted px-5 py-6">
+              <p className="text-sm font-medium text-slate-600">Add your first language to start building a study routine.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="surface-muted p-5 sm:p-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Next Actions</p>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link
+            href={primaryLanguageCode ? `/study/${primaryLanguageCode}` : "/manage"}
+            className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+          >
+            Study hub
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Open your main language</p>
+          </Link>
+          <Link
+            href="/library"
+            className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+          >
+            Library
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Browse and clean up words</p>
+          </Link>
+          <Link
+            href="/import"
+            className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+          >
+            Import
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Bring in a larger vocab list</p>
+          </Link>
+          <Link
+            href="/manage"
+            className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+          >
+            Manage
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Languages, categories, and setup</p>
+          </Link>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 export function DashboardActivitySection({
   dueTodayCount,
@@ -27,12 +149,23 @@ export function DashboardActivitySection({
   startDate.setDate(today.getDate() - 90);
 
   return (
-    <div className="mb-12 bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm flex flex-col md:flex-row gap-10">
-      <div className="w-full md:w-2/3">
-        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-          <span className="text-green-500">📈</span> Learning Activity
-        </h2>
-        <div className="overflow-visible">
+    <section className="surface-card p-6 sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Activity</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Recent learning rhythm</h2>
+          <p className="mt-2 text-sm font-medium text-slate-600">Your last 90 days, plus the core numbers that explain today’s pace.</p>
+        </div>
+        <Link
+          href="/history"
+          className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-blue-600"
+        >
+          Open full history
+        </Link>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="surface-muted overflow-visible px-4 py-5 sm:px-6">
           <CalendarHeatmap
             startDate={startDate}
             endDate={today}
@@ -71,94 +204,110 @@ export function DashboardActivitySection({
             <span className="ml-2">More</span>
           </div>
         </div>
-      </div>
 
-      <div className="w-full md:w-1/3 flex flex-col gap-4 justify-center">
-        <Link href="/history" className="block group">
-          <div className="bg-blue-600 rounded-3xl p-8 text-white shadow-xl shadow-blue-100 transition-all group-hover:scale-[1.02] group-hover:bg-blue-700 active:scale-95">
-            <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-2 leading-none">Review Today</p>
-            <p className="text-5xl font-black leading-none">{dueTodayCount}</p>
-            <p className="text-sm mt-4 font-medium italic opacity-90">Ready for your daily challenge?</p>
-            <p className="text-[10px] mt-3 font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">Click to see history →</p>
+        <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+          <div className="surface-muted px-5 py-5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Today</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{dueTodayCount}</p>
+            <p className="mt-1 text-sm font-medium text-slate-600">cards still need a pass</p>
           </div>
-        </Link>
 
-        <div className="bg-orange-50 rounded-3xl p-6 border-2 border-orange-100 flex justify-between items-center group transition-colors hover:bg-orange-100">
-          <span className="text-orange-600 font-bold uppercase text-xs tracking-widest flex items-center gap-2">
-            <span className="text-xl">🔥</span> Day Streak
-          </span>
-          <span className="text-3xl font-black text-orange-600 group-hover:scale-110 transition-transform">{streak}</span>
-        </div>
+          <div className="surface-muted px-5 py-5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Streak</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{streak}</p>
+            <p className="mt-1 text-sm font-medium text-slate-600">days with active review</p>
+          </div>
 
-        <div className="bg-white rounded-3xl p-6 border-2 border-gray-100 flex justify-between items-center group transition-colors hover:bg-gray-50">
-          <span className="text-gray-400 font-bold uppercase text-xs tracking-widest group-hover:text-blue-500">Total Learned</span>
-          <span className="text-3xl font-black group-hover:scale-110 transition-transform">{totalWords}</span>
+          <div className="surface-muted px-5 py-5">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Learned</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{totalWords}</p>
+            <p className="mt-1 text-sm font-medium text-slate-600">words in your library</p>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 export function DashboardProgressSection({ vocabStats }: { vocabStats: DashboardVocabStat[] }) {
-  return (
-    <div className="mb-12">
-      <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-        <span className="text-blue-500">🧠</span> Progress
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {vocabStats.map((stat) => {
-          const radius = 36;
-          const circumference = 2 * Math.PI * radius;
-          const strokeDashoffset = circumference - (stat.percentage / 100) * circumference;
+  const activeStats = vocabStats.filter((stat) => stat.total > 0);
+  const displayedStats = (activeStats.length > 0 ? activeStats : vocabStats).slice(0, 6);
+  const totalWords = activeStats.reduce((sum, stat) => sum + stat.total, 0);
+  const rememberedWords = activeStats.reduce((sum, stat) => sum + stat.remembered, 0);
+  const overallPercentage = totalWords === 0 ? 0 : Math.round((rememberedWords / totalWords) * 100);
 
-          return (
-            <div key={stat.code} className="bg-white rounded-3xl p-6 border-2 border-gray-200 shadow-sm flex flex-col items-center justify-center transition-all hover:shadow-md hover:border-blue-300">
-              <div className="text-3xl mb-2">{stat.emoji}</div>
-              <h3 className="font-bold text-gray-700 mb-4">{stat.name}</h3>
-              <div className="relative w-24 h-24 flex items-center justify-center">
-                <svg className="transform -rotate-90 w-24 h-24">
-                  <circle cx="48" cy="48" r={radius} stroke="#f3f4f6" strokeWidth="8" fill="none" />
-                  <circle
-                    cx="48"
-                    cy="48"
-                    r={radius}
-                    stroke="#2563eb"
-                    strokeWidth="8"
-                    fill="none"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={strokeDashoffset}
-                    className="transition-all duration-1000 ease-out"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute text-xl font-black">{stat.percentage}%</span>
-              </div>
-              <p className="text-xs font-bold text-gray-400 mt-4 uppercase tracking-widest">
-                {stat.remembered} / {stat.total} Words
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-export function DashboardLanguageGrid({ languages }: { languages: Language[] }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
-      {languages.map((lang) => (
-        <Link key={lang.code} href={`/study/${lang.code}`} className="group">
-          <div className="bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm hover:border-blue-500 hover:shadow-xl transition-all h-64 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 text-9xl transform translate-x-10 translate-y-[-20px]">{lang.emoji || "🏳️"}</div>
-            <div className="text-6xl z-10">{lang.emoji || "🏳️"}</div>
-            <div className="z-10">
-              <h3 className="text-3xl font-black tracking-tight">{lang.name}</h3>
-              <p className="text-blue-600 font-bold flex items-center gap-2 mt-2 group-hover:gap-4 transition-all uppercase text-xs tracking-widest">Start Session →</p>
-            </div>
-          </div>
+    <section className="surface-card p-6 sm:p-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Progress</p>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Mastery snapshot</h2>
+          <p className="mt-2 text-sm font-medium text-slate-600">A compact view of how much of your library has moved from learning into memory.</p>
+        </div>
+        <Link href="/library" className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-blue-600">
+          Open library
         </Link>
-      ))}
-    </div>
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="surface-muted px-5 py-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Overall Mastery</p>
+          <div className="mt-3 flex items-end gap-3">
+            <p className="text-4xl font-black tracking-tight text-slate-950">{overallPercentage}%</p>
+            <p className="pb-1 text-sm font-medium text-slate-600">{rememberedWords} remembered</p>
+          </div>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/80">
+            <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${overallPercentage}%` }} />
+          </div>
+        </div>
+
+        <div className="surface-muted px-5 py-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Library Mix</p>
+          <div className="mt-3 flex items-end gap-3">
+            <p className="text-4xl font-black tracking-tight text-slate-950">{totalWords}</p>
+            <p className="pb-1 text-sm font-medium text-slate-600">total words tracked</p>
+          </div>
+          <p className="mt-4 text-sm font-medium text-slate-600">
+            {Math.max(totalWords - rememberedWords, 0)} still in active learning.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-4">
+        {displayedStats.length > 0 ? (
+          displayedStats.map((stat) => (
+            <Link
+              key={stat.code}
+              href={`/study/${stat.code}`}
+              className="group block rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4 transition-all hover:border-blue-200 hover:bg-blue-50/40"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                  {stat.emoji || "🌍"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-black text-slate-950">{stat.name}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                        {stat.remembered} / {stat.total} mastered
+                      </p>
+                    </div>
+                    <p className="text-lg font-black text-slate-950">{stat.percentage}%</p>
+                  </div>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))
+        ) : (
+          <div className="surface-muted px-5 py-6">
+            <p className="text-sm font-medium text-slate-600">Progress appears here once you begin adding words and reviewing them.</p>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import CreateCardForm from "./components/CreateCardForm";
 import SearchBar from "./components/SearchBar";
 import AppHeader from "./components/AppHeader";
 import DailyStudyHero from "./components/dashboard/DailyStudyHero";
 import SettingsPanel from "./components/dashboard/SettingsPanel";
-import { DashboardActivitySection, DashboardLanguageGrid, DashboardProgressSection } from "./components/dashboard/DashboardSections";
+import { DashboardActivitySection, DashboardLanguageOverview, DashboardProgressSection } from "./components/dashboard/DashboardSections";
+import { AppMain, AppShell, PageIntro, Surface } from "./components/layout/AppShell";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { getHabitNudge } from "./lib/activity-summary";
 import { getSupabaseBrowserClient } from "./lib/supabase-browser";
@@ -55,7 +57,7 @@ export default function Dashboard() {
   if (!isMounted) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans overflow-x-hidden">
+    <AppShell className="overflow-x-hidden">
       <SettingsPanel isOpen={isSettingsOpen} isSigningOut={isSigningOut} onClose={() => setIsSettingsOpen(false)} onSignOut={handleSignOut} />
 
       <AppHeader
@@ -71,32 +73,68 @@ export default function Dashboard() {
         }
       />
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <AppMain width="xl" className="section-stack">
         {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
-        <header className="mb-12">
-          <h1 className="text-5xl font-black text-gray-900 tracking-tight mb-4 text-center md:text-left">Dashboard</h1>
-          <p className="text-xl text-gray-600 font-medium italic text-center md:text-left">"Every word learned is a new window to the world."</p>
-        </header>
-
-        <DailyStudyHero
-          primaryLanguage={primaryLanguage}
-          dueTodayCount={dueTodayCount}
-          overdueCount={overdueCount}
-          streak={streak}
-          lastActivityLabel={lastActivityLabel}
-          quickSessionSize={quickSessionSize}
-          doneForToday={doneForToday}
-          habitNudge={habitNudge}
+        <PageIntro
+          eyebrow="Learning Workspace"
+          title="Home Base"
+          description="Start with today’s review, check the health of your languages, and decide the next best step without leaving one workspace."
+          framed={false}
         />
 
-        <DashboardActivitySection dueTodayCount={dueTodayCount} streak={streak} totalWords={totalWords} heatmapValues={heatmapValues} />
-        <DashboardProgressSection vocabStats={vocabStats} />
-        <DashboardLanguageGrid languages={languages} />
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.85fr)] xl:items-stretch">
+          <DailyStudyHero
+            primaryLanguage={primaryLanguage}
+            dueTodayCount={dueTodayCount}
+            overdueCount={overdueCount}
+            streak={streak}
+            lastActivityLabel={lastActivityLabel}
+            quickSessionSize={quickSessionSize}
+            doneForToday={doneForToday}
+            habitNudge={habitNudge}
+            className="h-full"
+          />
 
-        <div className="mb-12">
+          <DashboardLanguageOverview
+            vocabStats={vocabStats}
+            totalWords={totalWords}
+            primaryLanguageCode={primaryLanguage?.code}
+          />
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)] xl:items-start">
+          <DashboardActivitySection dueTodayCount={dueTodayCount} streak={streak} totalWords={totalWords} heatmapValues={heatmapValues} />
+          <DashboardProgressSection vocabStats={vocabStats} />
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(18rem,0.58fr)_minmax(0,1fr)] xl:items-start">
+          <Surface tone="muted" className="p-6 sm:p-8 xl:sticky xl:top-32">
+            <p className="page-eyebrow">Build Library</p>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">Add a new word when something is worth keeping.</h2>
+            <p className="mt-4 text-sm sm:text-base font-medium leading-relaxed text-slate-600">
+              Capture a new word, use AI autofill when it helps, and keep growing the same library that powers your study flow.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+              <Link
+                href="/import"
+                className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+              >
+                Bulk import
+                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Bring in a bigger list</p>
+              </Link>
+              <Link
+                href="/manage"
+                className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+              >
+                Manage setup
+                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Adjust languages and categories</p>
+              </Link>
+            </div>
+          </Surface>
+
           <CreateCardForm />
-        </div>
-      </main>
-    </div>
+        </section>
+      </AppMain>
+    </AppShell>
   );
 }

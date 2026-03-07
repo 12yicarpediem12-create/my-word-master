@@ -5,6 +5,12 @@ import Link from "next/link";
 import SearchBar from "../components/SearchBar";
 import AppHeader from "../components/AppHeader";
 import DensityToggle, { type DensityMode } from "../components/DensityToggle";
+import { AppMain, AppShell, PageIntro } from "../components/layout/AppShell";
+import {
+  WorkspaceEmptyState,
+  WorkspaceHeader,
+  WorkspacePanel,
+} from "../components/workspace/VocabWorkspace";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
 const supabase = getSupabaseBrowserClient();
@@ -76,7 +82,7 @@ const LanguageGroupCard = ({
   langInfo: any;
   densityMode: DensityMode;
 }) => (
-  <div className={`bg-white border-2 border-gray-200 shadow-sm ${densityMode === "rich" ? "rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10" : "rounded-[1.75rem] p-4 sm:p-5"}`}>
+  <div className={`surface-card ${densityMode === "rich" ? "rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10" : "rounded-[1.75rem] p-4 sm:p-5"}`}>
     <div className={`flex items-center gap-4 border-b-2 border-gray-50 ${densityMode === "rich" ? "mb-6 pb-4" : "mb-4 pb-3"}`}>
       <span className="text-4xl">{langInfo?.emoji || "🌍"}</span>
       <h2 className="text-2xl font-black text-gray-900">{langInfo?.name || langCode.toUpperCase()}</h2>
@@ -142,32 +148,39 @@ function SearchContent() {
   }, [results]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+    <AppShell className="pb-20">
       <AppHeader primarySection="library" searchSlot={<SearchBar />} backHref="/library" backLabel="Library" />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        
-        <div className="mb-10 sm:mb-12 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-          <div>
-            <p className="text-[10px] sm:text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Search Results</p>
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-gray-900 break-all">
-              "{query}"
-            </h1>
-            <p className="text-xs sm:text-sm font-bold text-gray-500 mt-4">
-              Found {results.length} word{results.length !== 1 ? 's' : ''} across your library.
-            </p>
-          </div>
+      <AppMain width="md" className="section-stack">
+        <PageIntro
+          eyebrow="Search Results"
+          title={`"${query}"`}
+          description={`Found ${results.length} word${results.length !== 1 ? "s" : ""} across your library.`}
+        />
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:block text-right">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">View Density</p>
-              <p className="text-sm font-bold text-gray-500 mt-1">
-                {densityMode === "rich" ? "More spacing and larger scan targets." : "Denser grouped rows for faster scanning."}
-              </p>
-            </div>
-            <DensityToggle value={densityMode} onChange={setDensityMode} />
-          </div>
-        </div>
+        <WorkspacePanel className="p-6 sm:p-7">
+          <WorkspaceHeader
+            eyebrow="Vocabulary Workspace"
+            title="Search workspace"
+            description={filterLang === "all" ? "Scanning results across your full library." : `Scanning only ${filterLang.toUpperCase()} results.`}
+            actions={
+              <>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  {results.length} results
+                </span>
+                <div className="surface-muted flex items-center gap-3 rounded-[1.5rem] px-4 py-3">
+                  <div className="hidden sm:block text-right">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">View Density</p>
+                    <p className="mt-1 text-sm font-bold text-slate-600">
+                      {densityMode === "rich" ? "More spacing and larger scan targets." : "Denser grouped rows for faster scanning."}
+                    </p>
+                  </div>
+                  <DensityToggle value={densityMode} onChange={setDensityMode} />
+                </div>
+              </>
+            }
+          />
+        </WorkspacePanel>
 
         {isLoading ? (
           <div className="text-center py-20 font-bold text-gray-400 animate-pulse tracking-widest uppercase">
@@ -186,15 +199,15 @@ function SearchContent() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[2.5rem] p-10 sm:p-12 border-2 border-gray-200 shadow-sm text-center">
-            <div className="text-5xl sm:text-6xl mb-6 opacity-50">🏜️</div>
-            <h2 className="text-xl sm:text-2xl font-black text-gray-900 mb-2">No words found</h2>
-            <p className="text-sm sm:text-base text-gray-500 font-medium">We couldn't find any words matching "{query}".</p>
-          </div>
+          <WorkspaceEmptyState
+            icon="🏜️"
+            title="No words found"
+            description={`We couldn't find any words matching "${query}".`}
+          />
         )}
 
-      </main>
-    </div>
+      </AppMain>
+    </AppShell>
   );
 }
 

@@ -9,19 +9,19 @@ type DensityToggleProps = {
 
 export default function DensityToggle({ value, onChange }: DensityToggleProps) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-2xl border-2 border-gray-200 bg-white p-1 shadow-sm">
+    <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white/85 p-1 shadow-sm backdrop-blur-sm">
       <button
         onClick={() => onChange("rich")}
-        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-          value === "rich" ? "bg-gray-900 text-white" : "text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+        className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+          value === "rich" ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
         }`}
       >
         Rich
       </button>
       <button
         onClick={() => onChange("compact")}
-        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-          value === "compact" ? "bg-blue-600 text-white" : "text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+        className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+          value === "compact" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-blue-50 hover:text-blue-600"
         }`}
       >
         Compact

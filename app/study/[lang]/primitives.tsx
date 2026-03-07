@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { WorkspaceChipButton } from "@/app/components/workspace/VocabWorkspace";
 import type { VocabItem } from "@/app/lib/types";
 import type { PosStat } from "./types";
 
@@ -13,15 +14,15 @@ type NavCardProps = {
 
 export function NavCard({ href, icon, subtitle, title, iconBg }: NavCardProps) {
   return (
-    <Link href={href} className="flex items-center justify-between bg-white border-2 border-gray-200 p-6 rounded-[2rem] hover:border-blue-500 hover:shadow-lg transition-all group">
+    <Link href={href} className="surface-card flex items-center justify-between rounded-[2rem] p-6 transition-all group hover:border-blue-300 hover:shadow-lg">
       <div className="flex items-center gap-5">
         <div className={`w-14 h-14 ${iconBg} rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform`}>{icon}</div>
         <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{subtitle}</p>
-          <h2 className="text-xl font-black text-gray-900">{title}</h2>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{subtitle}</p>
+          <h2 className="text-xl font-black text-slate-950">{title}</h2>
         </div>
       </div>
-      <span className="text-gray-300 font-black group-hover:text-blue-500 transition-colors mr-2">→</span>
+      <span className="mr-2 font-black text-slate-300 transition-colors group-hover:text-blue-500">→</span>
     </Link>
   );
 }
@@ -34,8 +35,8 @@ type StatCircleProps = {
 
 export function StatCircle({ percentage, mastered, total }: StatCircleProps) {
   return (
-    <div className="lg:col-span-1 bg-white rounded-3xl p-8 border-2 border-gray-200 flex flex-col items-center justify-center shadow-sm h-full">
-      <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 text-center">Overall Mastery</h3>
+    <div className="surface-card lg:col-span-1 flex h-full flex-col items-center justify-center rounded-3xl p-8">
+      <h3 className="mb-6 text-center text-xs font-black uppercase tracking-widest text-slate-400">Overall Mastery</h3>
       <div className="relative w-40 h-40 flex items-center justify-center">
         <svg className="transform -rotate-90 w-40 h-40">
           <circle cx="80" cy="80" r="65" stroke="#f3f4f6" strokeWidth="14" fill="none" />
@@ -71,14 +72,7 @@ type FilterButtonProps = {
 };
 
 export function FilterButton({ active, onClick, children }: FilterButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${active ? "bg-blue-600 border-blue-600 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-blue-600 hover:text-blue-600"}`}
-    >
-      {children}
-    </button>
-  );
+  return <WorkspaceChipButton active={active} onClick={onClick}>{children}</WorkspaceChipButton>;
 }
 
 type VocabItemCardProps = {

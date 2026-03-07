@@ -1,22 +1,12 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { getSupabaseServerAdminClient } from "@/app/lib/supabase-server";
 
 type ActionResult = { error?: string };
 
 function getServerSupabase() {
-  const url = process.env.SUPABASE_URL;
-  if (!url) {
-    throw new Error("Missing required environment variable: SUPABASE_URL");
-  }
-
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    throw new Error("Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY");
-  }
-
-  return createClient(url, serviceRoleKey);
+  return getSupabaseServerAdminClient();
 }
 
 function parseAccessTokenFromCookieValue(rawValue: string): string | null {

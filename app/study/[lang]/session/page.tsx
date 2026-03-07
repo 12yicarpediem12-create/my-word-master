@@ -67,7 +67,14 @@ export default function StudySession() {
   }
 
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400 tracking-widest uppercase animate-pulse">Loading Session...</div>;
+    return (
+      <div className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#eef4fb_55%,#f4f7fb_100%)] flex items-center justify-center px-4">
+        <div className="surface-card rounded-[2rem] px-8 py-6 text-center">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">Focus Mode</p>
+          <p className="mt-3 font-black text-slate-950 tracking-tight uppercase animate-pulse">Loading Session...</p>
+        </div>
+      </div>
+    );
   }
 
   if (words.length === 0) {

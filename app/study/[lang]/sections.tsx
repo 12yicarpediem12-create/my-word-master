@@ -1,4 +1,10 @@
 import Link from "next/link";
+import {
+  WorkspaceEmptyState,
+  WorkspaceHeader,
+  WorkspacePanel,
+  WorkspaceSelectionBar,
+} from "@/app/components/workspace/VocabWorkspace";
 import type { ActivitySummary, HabitNudge } from "@/app/lib/activity-summary";
 import type { Language, VocabItem } from "@/app/lib/types";
 import { FilterButton, VocabItemCard } from "./primitives";
@@ -134,23 +140,23 @@ export function RandomFlashbackCard({
   if (!randomWord) return null;
 
   return (
-    <div className="mb-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden group">
+    <div className="surface-card mb-12 relative overflow-hidden rounded-3xl bg-[linear-gradient(145deg,rgba(255,255,255,0.99),rgba(238,242,255,0.95))] p-6 text-slate-950 shadow-[0_24px_50px_-34px_rgba(79,70,229,0.35)] group sm:p-8">
       <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
         <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
-          <button onClick={() => onSpeak(randomWord.word)} className="w-16 h-16 bg-white/20 hover:bg-white/30 rounded-2xl flex items-center justify-center text-3xl transition-all active:scale-90 shrink-0">
+          <button onClick={() => onSpeak(randomWord.word)} className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-3xl transition-all hover:bg-indigo-100 active:scale-90">
             🔊
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-black uppercase tracking-widest opacity-70 mb-2">Random Flashback</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-widest text-indigo-500">Random Flashback</p>
             <h3 className="text-3xl sm:text-4xl font-black mb-1 truncate">{randomWord.word}</h3>
-            <p className="text-lg sm:text-xl opacity-90 font-medium truncate">{randomWord.translation}</p>
+            <p className="truncate text-lg font-medium text-slate-600 sm:text-xl">{randomWord.translation}</p>
           </div>
         </div>
-        <Link href={`/word/${randomWord.id}`} className="w-full md:w-auto bg-white text-indigo-600 px-8 py-4 rounded-2xl font-bold hover:bg-gray-100 transition-all shadow-lg active:scale-95 whitespace-nowrap text-center">
+        <Link href={`/word/${randomWord.id}`} className="w-full whitespace-nowrap rounded-2xl bg-indigo-600 px-8 py-4 text-center font-bold text-white transition-all hover:bg-indigo-700 active:scale-95 md:w-auto">
           Review Now
         </Link>
       </div>
-      <div className="absolute -bottom-10 -right-10 text-[200px] font-black opacity-10 select-none group-hover:scale-110 transition-transform pointer-events-none">?</div>
+      <div className="pointer-events-none absolute -bottom-10 -right-10 select-none text-[200px] font-black text-indigo-200/60 transition-transform group-hover:scale-110">?</div>
     </div>
   );
 }
@@ -175,12 +181,38 @@ export function VocabFilterToolbar({
   onClearSelection: () => void;
 }) {
   return (
-    <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div className="overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto">
+    <WorkspacePanel className="mb-5 p-5 sm:p-6">
+      <WorkspaceHeader
+        eyebrow="Vocabulary Workspace"
+        title="Study list"
+        description={`${filteredCount} word${filteredCount !== 1 ? "s" : ""} in ${activeFilter === "All" ? "your current workspace" : activeFilter}.`}
+        actions={
+          <>
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              {selectedCount} selected
+            </span>
+            {filteredCount > 0 && (
+              <button
+                onClick={onToggleSelectAll}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 shadow-sm transition-all hover:text-slate-900 active:scale-95"
+              >
+                {allSelected ? "Deselect All" : "Select All"}
+              </button>
+            )}
+            {selectedCount > 0 && (
+              <button onClick={onClearSelection} className="rounded-xl border border-slate-200 bg-slate-100/90 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-900">
+                Clear
+              </button>
+            )}
+          </>
+        }
+      />
+
+      <div className="mt-5 overflow-x-auto pb-2 scrollbar-hide">
         <div className="flex gap-3">
           <button
             onClick={() => onFilterChange("All")}
-            className={`px-6 py-3 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeFilter === "All" ? "bg-gray-900 border-gray-900 text-white shadow-lg" : "bg-white border-gray-200 text-gray-500 hover:border-gray-900"}`}
+            className={`rounded-2xl px-6 py-3 font-bold whitespace-nowrap transition-all border ${activeFilter === "All" ? "bg-slate-950 border-slate-950 text-white shadow-lg" : "bg-white border-slate-200 text-slate-600 hover:border-slate-950"}`}
           >
             All
           </button>
@@ -191,23 +223,7 @@ export function VocabFilterToolbar({
           ))}
         </div>
       </div>
-
-      <div className="flex items-center gap-3 shrink-0">
-        {filteredCount > 0 && (
-          <button
-            onClick={onToggleSelectAll}
-            className="text-[10px] font-black text-gray-500 hover:text-gray-900 bg-white border-2 border-gray-200 px-4 py-3 rounded-xl uppercase tracking-widest transition-all shadow-sm active:scale-95"
-          >
-            {allSelected ? "Deselect All" : "Select All"}
-          </button>
-        )}
-        {selectedCount > 0 && (
-          <button onClick={onClearSelection} className="text-[10px] font-bold text-gray-400 hover:text-gray-700 bg-gray-200/50 px-4 py-3 rounded-xl uppercase tracking-widest transition-colors shrink-0">
-            Clear
-          </button>
-        )}
-      </div>
-    </div>
+    </WorkspacePanel>
   );
 }
 
@@ -225,7 +241,7 @@ export function VocabListSection({
   onSpeak: (text: string) => void;
 }) {
   return (
-    <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm overflow-hidden mb-12">
+    <WorkspacePanel className="mb-12 overflow-hidden rounded-3xl">
       {vocabList.length > 0 ? (
         <div className="divide-y-2 divide-gray-100">
           {vocabList.map((vocab) => (
@@ -240,9 +256,14 @@ export function VocabListSection({
           ))}
         </div>
       ) : (
-        <div className="p-20 text-center text-gray-400 font-bold uppercase tracking-widest">No {activeFilter}s found.</div>
+        <WorkspaceEmptyState
+          icon="📚"
+          title="No words found"
+          description={`No ${activeFilter === "All" ? "words" : activeFilter.toLowerCase()} found in this workspace.`}
+          className="rounded-none border-0 shadow-none"
+        />
       )}
-    </div>
+    </WorkspacePanel>
   );
 }
 
@@ -258,23 +279,12 @@ export function SelectionActionBar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-md text-white px-6 sm:px-10 py-5 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center gap-6 sm:gap-10 z-50 border border-gray-700 animate-in slide-in-from-bottom-20 duration-500">
-      <div className="flex flex-col">
-        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Selected</span>
-        <span className="text-xl sm:text-2xl font-black tracking-tight">
-          {selectedCount} <span className="text-base text-gray-400 font-bold">words</span>
-        </span>
-      </div>
-
-      <div className="w-px h-10 bg-gray-700"></div>
-
-      <button
-        onClick={onDelete}
-        disabled={isDeleting}
-        className="bg-red-500 hover:bg-red-600 text-white font-black px-6 sm:px-8 py-3 rounded-2xl transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 flex items-center gap-2"
-      >
-        {isDeleting ? "Deleting..." : "🗑️ Delete All"}
-      </button>
-    </div>
+    <WorkspaceSelectionBar
+      selectedCount={selectedCount}
+      isBusy={isDeleting}
+      busyLabel="Deleting..."
+      actionLabel="🗑️ Delete All"
+      onAction={onDelete}
+    />
   );
 }

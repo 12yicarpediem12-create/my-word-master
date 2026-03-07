@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import SearchBar from "../../components/SearchBar";
 import AppHeader from "../../components/AppHeader";
+import { AppMain, AppShell, Surface } from "../../components/layout/AppShell";
 import {
   NavCard,
   ProgressBar,
@@ -115,14 +116,14 @@ export default function LanguageHub() {
   }, [removeVocabByIds, selectedIds, setErrorMsg]);
 
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400 tracking-widest uppercase">Loading Hub...</div>;
+    return <div className="app-shell flex min-h-screen items-center justify-center font-bold text-gray-400 tracking-widest uppercase">Loading Hub...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-32 overflow-x-hidden relative">
+    <AppShell className="pb-32 overflow-x-hidden relative">
       <AppHeader primarySection="study" searchSlot={<SearchBar forcedLang={langCode} />} backHref="/" backLabel="Dashboard" />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12">
+      <AppMain width="lg">
         {errorMsg && (
           <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">
             {errorMsg}
@@ -162,14 +163,14 @@ export default function LanguageHub() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
           <StatCircle percentage={globalPercentage} mastered={masteredWords} total={totalWords} />
-          <div className="lg:col-span-2 bg-white rounded-3xl p-8 border-2 border-gray-200 shadow-sm h-full flex flex-col justify-center">
+          <Surface tone="card" className="lg:col-span-2 h-full flex flex-col justify-center p-8 rounded-3xl">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 text-center sm:text-left">Mastery by Category</h3>
             <div className="space-y-5">
               {posStats.map((stat) => (
                 <ProgressBar key={stat.name} stat={stat} />
               ))}
             </div>
-          </div>
+          </Surface>
         </div>
 
         <RandomFlashbackCard randomWord={randomWord} onSpeak={speak} />
@@ -192,9 +193,9 @@ export default function LanguageHub() {
           onToggleSelection={toggleSelection}
           onSpeak={speak}
         />
-      </main>
+      </AppMain>
 
       <SelectionActionBar selectedCount={selectedIds.length} isDeleting={isDeleting} onDelete={handleBulkDelete} />
-    </div>
+    </AppShell>
   );
 }

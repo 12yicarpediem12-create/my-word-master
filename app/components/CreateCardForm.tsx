@@ -236,8 +236,8 @@ export default function CreateCardForm() {
   const { l1Options, l2Options, l3Options } = getCategoryHierarchyOptions(categories, selL1, selL2);
 
   return (
-    <div className="bg-white rounded-[2rem] p-6 sm:p-10 lg:p-14 border-2 border-gray-200 shadow-sm relative overflow-hidden transition-all">
-      <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black text-[10px] uppercase tracking-widest px-6 py-3 rounded-bl-2xl border-b-2 border-l-2 border-blue-100">
+    <div className="surface-card relative overflow-hidden rounded-[2rem] p-6 sm:p-10 lg:p-12 transition-all">
+      <div className="absolute top-0 right-0 rounded-bl-2xl border-b border-l border-blue-100 bg-blue-50/90 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-blue-600">
         ADD NEW WORD
       </div>
 

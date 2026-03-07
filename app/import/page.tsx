@@ -1,6 +1,8 @@
 "use client";
 
 import AppHeader from "../components/AppHeader";
+import { AppMain, AppShell, PageIntro } from "../components/layout/AppShell";
+import { ImportPhaseBadge, ImportWizardStepper } from "./primitives";
 import {
   ImportDonePanel,
   ImportProgressPanel,
@@ -35,11 +37,20 @@ export default function ImportPage() {
   } = useImportWorkflow();
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-32">
+    <AppShell className="pb-32">
       <AppHeader primarySection="import" backHref="/" backLabel="Dashboard" />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+      <AppMain width="xl" className="section-stack">
         {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
+
+        <PageIntro
+          eyebrow="Import Wizard"
+          title="Bring vocabulary into your library"
+          description="Upload a list, let AI structure it, review the rows that matter, and save only what belongs in your study system."
+          actions={<ImportPhaseBadge phase={phase} />}
+        />
+
+        <ImportWizardStepper phase={phase} />
 
         {phase === "idle" && (
           <ImportUploadPanel
@@ -92,7 +103,7 @@ export default function ImportPage() {
             onReset={() => setPhase("idle")}
           />
         )}
-      </main>
-    </div>
+      </AppMain>
+    </AppShell>
   );
 }

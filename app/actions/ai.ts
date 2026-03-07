@@ -1,12 +1,7 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getSupabaseServerPublicClient } from "@/app/lib/supabase-server";
 
 function getGeminiApiKey(): string {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -38,6 +33,7 @@ export async function generateVocabInfo(word: string, langCode: string) {
   try {
     const apiKey = getGeminiApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
+    const supabase = getSupabaseServerPublicClient();
 
     const { data: categories, error: dbError } = await supabase
       .from("categories")
