@@ -60,12 +60,10 @@ const FilterButton = ({ active, onClick, children }: { active: boolean; onClick:
   </button>
 );
 
-// 🌟 VocabItem に isSelected と onToggle を追加
 const VocabItem = ({ vocab, isWeak, onSpeak, isSelected, onToggle }: { vocab: any; isWeak: boolean; onSpeak: (text: string) => void; isSelected: boolean; onToggle: (id: string) => void; }) => (
   <div className={`p-6 transition-colors flex flex-col sm:flex-row sm:items-center justify-between group gap-4 relative ${isSelected ? "bg-red-50/40" : "hover:bg-gray-50"}`}>
     <div className="flex items-start sm:items-center gap-4 sm:gap-5">
       
-      {/* 🌟 チェックボックス */}
       <button
         onClick={(e) => {
           e.preventDefault();
@@ -121,7 +119,6 @@ export default function LanguageHub() {
   const [activeFilter, setActiveFilter] = useState<string>("All");
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🌟 一括削除用のState
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -171,12 +168,10 @@ export default function LanguageHub() {
     if (langCode) fetchData();
   }, [langCode]);
 
-  // 🌟 選択状態の切り替え
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
   }, []);
 
-  // 🌟 一括削除の実行
   const handleBulkDelete = async () => {
     if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} words? This action cannot be undone.`)) return;
     
@@ -228,6 +223,14 @@ export default function LanguageHub() {
       return tags.includes(activeFilter);
     });
   }, [vocabList, activeFilter]);
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredList.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredList.map(v => v.id));
+    }
+  };
 
   if (isLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400 tracking-widest uppercase">Loading Hub...</div>;
 
@@ -323,15 +326,24 @@ export default function LanguageHub() {
             </div>
           </div>
           
-          {/* 🌟 クリアボタン（選択中のみ表示） */}
-          {selectedIds.length > 0 && (
-            <button 
-              onClick={() => setSelectedIds([])}
-              className="text-[10px] font-bold text-gray-400 hover:text-gray-700 bg-gray-200/50 px-4 py-3 rounded-xl uppercase tracking-widest transition-colors shrink-0"
-            >
-              Clear Selection
-            </button>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            {filteredList.length > 0 && (
+              <button 
+                onClick={handleSelectAll}
+                className="text-[10px] font-black text-gray-500 hover:text-gray-900 bg-white border-2 border-gray-200 px-4 py-3 rounded-xl uppercase tracking-widest transition-all shadow-sm active:scale-95"
+              >
+                {selectedIds.length === filteredList.length ? "Deselect All" : "Select All"}
+              </button>
+            )}
+            {selectedIds.length > 0 && (
+              <button 
+                onClick={() => setSelectedIds([])}
+                className="text-[10px] font-bold text-gray-400 hover:text-gray-700 bg-gray-200/50 px-4 py-3 rounded-xl uppercase tracking-widest transition-colors shrink-0"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-3xl border-2 border-gray-200 shadow-sm overflow-hidden mb-12">
@@ -354,7 +366,6 @@ export default function LanguageHub() {
         </div>
       </main>
 
-      {/* 🌟 フローティングアクションバー */}
       {selectedIds.length > 0 && (
         <div className="fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-gray-900/95 backdrop-blur-md text-white px-6 sm:px-10 py-5 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] flex items-center gap-6 sm:gap-10 z-50 border border-gray-700 animate-in slide-in-from-bottom-20 duration-500">
           <div className="flex flex-col">
