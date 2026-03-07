@@ -23,8 +23,15 @@ export interface AnalyzedWord {
 
 export type ImportLog = {
   word: string;
-  status: "success" | "error" | "skipped";
+  status: "success" | "error" | "skipped" | "needs_hint";
   message?: string;
 };
 
 export type Phase = "idle" | "analyzing" | "review" | "saving" | "done";
+
+export type ImportProgress = {
+  current: number;
+  total: number;
+  currentWord: string | null;
+  currentStage: string | null;
+};

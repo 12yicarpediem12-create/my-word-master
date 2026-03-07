@@ -32,6 +32,7 @@ export default function ImportPage() {
     percentComplete,
     skippedCount,
     failedCount,
+    remainingCount,
     readyToSaveCount,
     needsHintCount,
     analyzedCount,
@@ -74,6 +75,7 @@ export default function ImportPage() {
             needsHintCount={needsHintCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
+            remainingCount={remainingCount}
             percentComplete={percentComplete}
             progress={progress}
             logs={logs}

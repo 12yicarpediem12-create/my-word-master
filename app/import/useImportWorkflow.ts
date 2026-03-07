@@ -12,7 +12,7 @@ import {
   hasDuplicateEntry,
   normalizeRootWord,
 } from "@/app/lib/vocab-form";
-import type { AnalyzedWord, ImportLog, ParsedRow, Phase } from "./types";
+import type { AnalyzedWord, ImportLog, ImportProgress, ParsedRow, Phase } from "./types";
 
 const supabase = getSupabaseBrowserClient();
 
@@ -55,7 +55,12 @@ export function useImportWorkflow() {
   const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
   const [analyzedData, setAnalyzedData] = useState<AnalyzedWord[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [progress, setProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
   const [logs, setLogs] = useState<ImportLog[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -80,6 +85,7 @@ export function useImportWorkflow() {
     setPhase("idle");
     setAnalyzedData([]);
     setLogs([]);
+    setProgress({ current: 0, total: 0, currentWord: null, currentStage: null });
     setErrorMsg(null);
 
     Papa.parse(file, {
@@ -115,7 +121,8 @@ export function useImportWorkflow() {
     if (parsedData.length === 0 || !selectedLang) return;
 
     setPhase("analyzing");
-    setProgress({ current: 0, total: parsedData.length });
+    setProgress({ current: 0, total: parsedData.length, currentWord: null, currentStage: "Preparing analysis queue" });
+    setAnalyzedData([]);
     setLogs([]);
     setErrorMsg(null);
 
@@ -125,11 +132,16 @@ export function useImportWorkflow() {
 
       for (let index = 0; index < parsedData.length; index++) {
         const currentRow = parsedData[index];
-        setProgress({ current: index + 1, total: parsedData.length });
+        setProgress({
+          current: index + 1,
+          total: parsedData.length,
+          currentWord: currentRow.word,
+          currentStage: "Checking duplicates and generating entry",
+        });
 
         try {
           if (currentRow.pos && hasDuplicateEntry(existingWords, currentRow.word, currentRow.pos)) {
-            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Already exists as ${currentRow.pos}` }, ...prev]);
+            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${currentRow.pos}` }, ...prev]);
             continue;
           }
 
@@ -143,6 +155,15 @@ export function useImportWorkflow() {
 
           if (aiData.status === "needs_hint") {
             nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
+            setAnalyzedData([...nextAnalyzed]);
+            setLogs((prev) => [
+              {
+                word: currentRow.word,
+                status: "needs_hint",
+                message: "Needs one clear part of speech or meaning before save.",
+              },
+              ...prev,
+            ]);
             continue;
           }
 
@@ -152,11 +173,20 @@ export function useImportWorkflow() {
           }
 
           if (hasDuplicateEntry(existingWords, aiData.word || currentRow.word, aiData.part_of_speech || currentRow.pos || "")) {
-            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Already exists as ${aiData.part_of_speech}` }, ...prev]);
+            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${aiData.part_of_speech}` }, ...prev]);
             continue;
           }
 
           nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
+          setAnalyzedData([...nextAnalyzed]);
+          setLogs((prev) => [
+            {
+              word: aiData.word || currentRow.word,
+              status: "success",
+              message: `Prepared as ${aiData.part_of_speech}${aiData.translation ? ` · ${aiData.translation}` : ""}`,
+            },
+            ...prev,
+          ]);
           existingWords = appendDuplicateEntry(existingWords, aiData.word || currentRow.word, aiData.part_of_speech || currentRow.pos || "");
         } catch {
           setLogs((prev) => [{ word: currentRow.word, status: "error", message: "Unexpected error" }, ...prev]);
@@ -170,6 +200,12 @@ export function useImportWorkflow() {
       }
 
       setAnalyzedData(nextAnalyzed);
+      setProgress({
+        current: parsedData.length,
+        total: parsedData.length,
+        currentWord: null,
+        currentStage: "Analysis complete",
+      });
       setPhase("review");
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : "Failed to analyze import.");
@@ -190,7 +226,12 @@ export function useImportWorkflow() {
     if (validRows.length === 0) return;
 
     setPhase("saving");
-    setProgress({ current: 0, total: validRows.length });
+    setProgress({
+      current: 0,
+      total: validRows.length,
+      currentWord: null,
+      currentStage: `Submitting ${validRows.length} approved row${validRows.length === 1 ? "" : "s"}`,
+    });
     setErrorMsg(null);
 
     const { error } = await bulkInsertVocabWords(
@@ -217,7 +258,20 @@ export function useImportWorkflow() {
       return;
     }
 
-    setProgress({ current: validRows.length, total: validRows.length });
+    setLogs((prev) => [
+      {
+        word: `${validRows.length} row${validRows.length === 1 ? "" : "s"}`,
+        status: "success",
+        message: "Saved to your library.",
+      },
+      ...prev,
+    ]);
+    setProgress({
+      current: validRows.length,
+      total: validRows.length,
+      currentWord: null,
+      currentStage: "Save complete",
+    });
     setPhase("done");
   };
 
@@ -235,6 +289,12 @@ export function useImportWorkflow() {
     [analyzedData]
   );
   const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
+  const remainingCount = useMemo(() => {
+    if (phase === "saving") {
+      return Math.max(progress.total - progress.current, 0);
+    }
+    return Math.max(parsedData.length - (readyToSaveCount + needsHintCount + skippedCount + failedCount), 0);
+  }, [failedCount, needsHintCount, parsedData.length, phase, progress.current, progress.total, readyToSaveCount, skippedCount]);
 
   return {
     languages,
@@ -256,6 +316,7 @@ export function useImportWorkflow() {
     percentComplete,
     skippedCount,
     failedCount,
+    remainingCount,
     readyToSaveCount,
     needsHintCount,
     analyzedCount,

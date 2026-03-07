@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { generateVocabInfo } from "../actions/ai";
 import { addVocabWord } from "../actions/vocab";
@@ -76,6 +76,26 @@ export default function CreateCardForm() {
   const [successMsg, setSuccessMsg] = useState(false);
   const [duplicateIndex, setDuplicateIndex] = useState<DuplicateIndexEntry[]>([]);
 
+  const refreshDuplicateIndex = useCallback(async (languageCode: string) => {
+    if (!languageCode) {
+      setDuplicateIndex([]);
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("vocab")
+      .select("word, part_of_speech")
+      .eq("language_code", languageCode);
+
+    if (error) {
+      throw new Error(`Failed to load duplicate index: ${error.message}`);
+    }
+
+    const nextIndex = buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
+    setDuplicateIndex(nextIndex);
+    return nextIndex;
+  }, []);
+
   useEffect(() => {
     async function fetchData() {
       const [langRes, catRes] = await Promise.all([
@@ -95,20 +115,15 @@ export default function CreateCardForm() {
 
   useEffect(() => {
     async function loadDuplicateIndex() {
-      if (!selectedLang) {
+      try {
+        await refreshDuplicateIndex(selectedLang);
+      } catch (error) {
+        setErrorMsg(error instanceof Error ? error.message : "Failed to load duplicate index.");
         setDuplicateIndex([]);
-        return;
       }
-      const { data, error } = await supabase.from("vocab").select("word, part_of_speech").eq("language_code", selectedLang);
-      if (error) {
-        setErrorMsg(`Failed to load duplicate index: ${error.message}`);
-        setDuplicateIndex([]);
-        return;
-      }
-      setDuplicateIndex(buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>));
     }
     loadDuplicateIndex();
-  }, [selectedLang]);
+  }, [refreshDuplicateIndex, selectedLang]);
 
   const handleChange = (field: keyof CreateCardFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -146,11 +161,6 @@ export default function CreateCardForm() {
     handleChange("categoryId", selection.categoryId);
   };
 
-  const checkDuplicate = (wordToCheck: string, lang: string, posToCheck: string) => {
-    if (lang !== selectedLang) return false;
-    return hasDuplicateEntry(duplicateIndex, wordToCheck, posToCheck);
-  };
-
   const handleAIGenerate = async () => {
     if (!formData.word.trim()) return;
     setErrorMsg(null);
@@ -158,6 +168,7 @@ export default function CreateCardForm() {
     setIsGenerating(true);
 
     try {
+      const latestDuplicateIndex = await refreshDuplicateIndex(selectedLang);
       const aiData = await generateVocabInfo({
         word: formData.word,
         langCode: selectedLang,
@@ -169,7 +180,7 @@ export default function CreateCardForm() {
       if (aiData?.error) { setErrorMsg("AI Error: " + aiData.error); return; }
 
       if (aiData) {
-        const isDup = checkDuplicate(aiData.word || formData.word, selectedLang, aiData.part_of_speech);
+        const isDup = hasDuplicateEntry(latestDuplicateIndex, aiData.word || formData.word, aiData.part_of_speech);
         if (isDup) {
           setErrorMsg(`Already in library as ${aiData.part_of_speech}.`);
           setIsGenerating(false);
@@ -206,9 +217,16 @@ export default function CreateCardForm() {
     setErrorMsg(null);
     setSuccessMsg(false);
 
-    const isDup = checkDuplicate(formData.word, selectedLang, formData.pos);
-    if (isDup) {
-      setErrorMsg("This word + Part of Speech already exists.");
+    try {
+      const latestDuplicateIndex = await refreshDuplicateIndex(selectedLang);
+      const isDup = hasDuplicateEntry(latestDuplicateIndex, formData.word, formData.pos);
+      if (isDup) {
+        setErrorMsg("This word + Part of Speech already exists.");
+        setIsSubmitting(false);
+        return;
+      }
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Failed to verify duplicates.");
       setIsSubmitting(false);
       return;
     }

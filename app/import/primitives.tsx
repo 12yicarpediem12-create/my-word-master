@@ -109,20 +109,30 @@ export function LogStatusBadge({ status }: { status: ImportLog["status"] }) {
     success: "bg-emerald-50 text-emerald-700 border-emerald-100",
     skipped: "bg-amber-50 text-amber-700 border-amber-100",
     error: "bg-rose-50 text-rose-700 border-rose-100",
+    needs_hint: "bg-blue-50 text-blue-700 border-blue-100",
   };
 
   return <span className={`px-2.5 py-1 rounded-full border text-[10px] font-medium uppercase tracking-[0.12em] ${statusMap[status]}`}>{status}</span>;
 }
 
-export function LogSummaryPanel({ logs }: { logs: ImportLog[] }) {
+export function LogSummaryPanel({
+  logs,
+  title = "Rows needing attention",
+  description = "Recent activity in the import workflow.",
+}: {
+  logs: ImportLog[];
+  title?: string;
+  description?: string;
+}) {
   if (logs.length === 0) return null;
 
   return (
     <div className="surface-muted rounded-[1.85rem] p-6 sm:p-7">
       <div className="flex items-center justify-between gap-4 mb-5">
         <div>
-          <p className="mb-2 support-label">Issues and skips</p>
-          <h3 className="text-xl font-semibold text-slate-950">Rows needing attention</h3>
+          <p className="mb-2 support-label">Activity log</p>
+          <h3 className="text-xl font-semibold text-slate-950">{title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">{description}</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">{logs.length}</span>
       </div>

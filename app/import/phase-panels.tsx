@@ -40,7 +40,7 @@ function SummaryGrid({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`grid grid-cols-2 gap-3 lg:grid-cols-5 ${className || ""}`}>{children}</div>;
+  return <div className={`grid grid-cols-2 gap-3 lg:grid-cols-6 ${className || ""}`}>{children}</div>;
 }
 
 export function ImportUploadPanel({
@@ -147,6 +147,7 @@ export function ImportProgressPanel({
   needsHintCount,
   skippedCount,
   failedCount,
+  remainingCount,
   percentComplete,
   progress,
   logs,
@@ -158,8 +159,9 @@ export function ImportProgressPanel({
   needsHintCount: number;
   skippedCount: number;
   failedCount: number;
+  remainingCount: number;
   percentComplete: number;
-  progress: { current: number; total: number };
+  progress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   logs: ImportLog[];
 }) {
   const isAnalyzing = phase === "analyzing";
@@ -176,12 +178,30 @@ export function ImportProgressPanel({
           <h2 className="mb-2 text-3xl font-semibold text-slate-950">{isAnalyzing ? "Analyzing words..." : "Saving valid rows..."}</h2>
           <p className="mb-8 text-sm font-medium text-slate-500">{isAnalyzing ? "The next step will open an editable review workspace." : "The wizard is writing your approved rows to the library."}</p>
 
+          <div className="mb-6 rounded-[1.65rem] border border-slate-200 bg-slate-50/75 p-5 text-left">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="support-label">{isAnalyzing ? "Current row" : "Current batch"}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                  {progress.currentWord || (isAnalyzing ? "Preparing next row" : `Saving ${progress.total} approved rows`)}
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  {progress.currentStage || (isAnalyzing ? "Preparing analysis queue" : "Submitting reviewed rows")}
+                </p>
+              </div>
+              <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600">
+                {progress.current} / {progress.total}
+              </div>
+            </div>
+          </div>
+
           <SummaryGrid className="mb-8 text-left">
-            <ImportCountCard label="Analyzed" value={analyzedCount} tone="blue" helper={`${parsedCount} uploaded`} />
-            <ImportCountCard label="Ready To Save" value={readyToSaveCount} tone="emerald" />
+            <ImportCountCard label="Processed" value={progress.current} tone="blue" helper={`${progress.total} total`} />
+            <ImportCountCard label="Ready" value={readyToSaveCount} tone="emerald" />
             <ImportCountCard label="Needs Hint" value={needsHintCount} tone="amber" helper="Ambiguous rows" />
-            <ImportCountCard label="Skipped" value={skippedCount} tone="amber" />
+            <ImportCountCard label="Duplicate" value={skippedCount} tone="amber" />
             <ImportCountCard label="Failed" value={failedCount} tone="rose" />
+            <ImportCountCard label="Remaining" value={remainingCount} tone="gray" helper={isAnalyzing ? `${parsedCount} uploaded` : "Still to save"} />
           </SummaryGrid>
 
           <div className="mb-3 flex items-end justify-between">
@@ -191,7 +211,11 @@ export function ImportProgressPanel({
           <div className="relative h-4 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
             <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out" style={{ width: `${percentComplete}%` }} />
           </div>
-          <p className="mt-3 text-center text-xs font-medium text-slate-400">{progress.current} / {progress.total} processed</p>
+          <p className="mt-3 text-center text-xs font-medium text-slate-400">
+            {isAnalyzing
+              ? `${progress.current} of ${progress.total} rows analyzed so far`
+              : `${progress.current} of ${progress.total} approved rows saved`}
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -203,8 +227,22 @@ export function ImportProgressPanel({
                 ? "The wizard is checking duplicates, calling AI, and preparing an editable review table."
                 : "The wizard is saving only the rows that survived review, skips, and manual removals."}
             </p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white/72 px-4 py-3">
+                <p className="support-label">Analyzed</p>
+                <p className="mt-2 text-xl font-semibold text-slate-950">{analyzedCount}</p>
+              </div>
+              <div className="rounded-[1.25rem] border border-slate-200 bg-white/72 px-4 py-3">
+                <p className="support-label">Remaining</p>
+                <p className="mt-2 text-xl font-semibold text-slate-950">{remainingCount}</p>
+              </div>
+            </div>
           </div>
-          <LogSummaryPanel logs={logs} />
+          <LogSummaryPanel
+            logs={logs}
+            title="Recent row activity"
+            description={isAnalyzing ? "Each row is checked for duplicates, then prepared for review." : "Save progress and recent row outcomes."}
+          />
         </div>
       </div>
     </WizardSection>
