@@ -8,9 +8,11 @@ import { AppMain, AppShell, PageIntro } from "../components/layout/AppShell";
 import {
   WorkspaceChipButton,
   WorkspaceEmptyState,
+  WorkspaceFilterGroup,
   WorkspaceHeader,
   WorkspacePanel,
   WorkspaceSelectionBar,
+  WorkspaceUtilityPanel,
 } from "../components/workspace/VocabWorkspace";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
@@ -36,8 +38,8 @@ const VocabCard = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, o
     </button>
 
     <Link href={`/word/${v.id}`} className="group block h-full">
-      <div className={`surface-card rounded-[2rem] pt-16 px-6 pb-6 h-full flex flex-col relative overflow-hidden transition-all duration-300 ${
-        isSelected ? "border-red-400 ring-4 ring-red-50" : "border-slate-200 hover:border-blue-300 hover:shadow-xl"
+      <div className={`rounded-[2rem] border bg-white/80 pt-16 px-6 pb-6 h-full flex flex-col relative overflow-hidden transition-all duration-300 ${
+        isSelected ? "border-red-400 ring-4 ring-red-50" : "border-slate-200/80 hover:border-blue-300 hover:bg-white hover:shadow-[0_22px_42px_-34px_rgba(15,23,42,0.3)]"
       }`}>
         <div className="absolute top-6 right-6 text-2xl group-hover:scale-110 transition-transform">
           {v.is_remembered ? "✅" : "🔥"}
@@ -77,7 +79,7 @@ const VocabCard = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, o
 );
 
 const CompactVocabRow = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, onToggle: (id: string) => void }) => (
-  <div className={`surface-card relative rounded-[1.75rem] transition-all ${isSelected ? "border-red-300 bg-red-50/50" : "border-slate-200 hover:border-blue-200"}`}>
+  <div className={`relative rounded-[1.75rem] border bg-white/85 transition-all ${isSelected ? "border-red-300 bg-red-50/50" : "border-slate-200/80 hover:border-blue-200 hover:bg-white"}`}>
     <button
       onClick={() => onToggle(v.id)}
       className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-xl border-2 flex items-center justify-center transition-all ${
@@ -210,16 +212,16 @@ export default function LibraryPage() {
         {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
         <PageIntro
           eyebrow="Learning Workspace"
-          title="Your Library"
-          description={`You have collected ${vocab.length} word${vocab.length !== 1 ? "s" : ""} so far. Keep growing and keep it tidy.`}
+          title="Library workspace"
+          description={`Browse, filter, and maintain ${vocab.length} word${vocab.length !== 1 ? "s" : ""} across your languages.`}
           actions={undefined}
         />
 
         <WorkspacePanel className="p-6 sm:p-7">
           <WorkspaceHeader
             eyebrow="Vocabulary Workspace"
-            title="Browse, filter, and clean up"
-            description={`${filteredVocab.length} word${filteredVocab.length !== 1 ? "s" : ""} match your current filters.`}
+            title="Workspace controls"
+            description={`${filteredVocab.length} word${filteredVocab.length !== 1 ? "s" : ""} match your current library filters.`}
             actions={
               <>
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
@@ -247,9 +249,7 @@ export default function LibraryPage() {
 
           <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="space-y-5">
-              <div>
-                <p className="mb-3 ml-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Filter by Language</p>
-                <div className="flex flex-wrap gap-2">
+              <WorkspaceFilterGroup label="Language">
                   <WorkspaceChipButton active={selectedLang === "all"} onClick={() => setSelectedLang("all")}>
                     🌍 All
                   </WorkspaceChipButton>
@@ -258,12 +258,9 @@ export default function LibraryPage() {
                       <span>{lang.emoji}</span> {lang.name}
                     </WorkspaceChipButton>
                   ))}
-                </div>
-              </div>
+              </WorkspaceFilterGroup>
 
-              <div>
-                <p className="mb-3 ml-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Filter by Status</p>
-                <div className="flex flex-wrap gap-2">
+              <WorkspaceFilterGroup label="Status">
                   <WorkspaceChipButton
                     active={filterStatus === "all"}
                     onClick={() => setFilterStatus("all")}
@@ -287,58 +284,70 @@ export default function LibraryPage() {
                   >
                     ✅ Mastered
                   </WorkspaceChipButton>
-                </div>
-              </div>
+              </WorkspaceFilterGroup>
             </div>
 
-            <div className="surface-muted flex flex-col justify-between gap-4 rounded-[1.75rem] px-4 py-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">View Density</p>
-                <p className="mt-2 text-sm font-bold text-slate-600">
-                  {densityMode === "rich" ? "Larger cards with more breathing room." : "Tighter rows for fast review and bulk selection."}
-                </p>
-              </div>
+            <WorkspaceUtilityPanel
+              eyebrow="Display"
+              title="View density"
+              description={densityMode === "rich" ? "Larger cards with more breathing room." : "Tighter rows for faster scanning and bulk selection."}
+            >
               <DensityToggle value={densityMode} onChange={setDensityMode} />
-            </div>
+            </WorkspaceUtilityPanel>
           </div>
         </WorkspacePanel>
 
-        {isLoading ? (
-          <div className="text-center py-20 font-bold text-gray-400 animate-pulse tracking-widest uppercase">
-            Loading your library...
-          </div>
-        ) : filteredVocab.length > 0 ? (
-          densityMode === "rich" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVocab.map((v) => (
-                <VocabCard 
-                  key={v.id} 
-                  v={v} 
-                  isSelected={selectedIds.includes(v.id)} 
-                  onToggle={toggleSelection} 
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filteredVocab.map((v) => (
-                <CompactVocabRow
-                  key={v.id}
-                  v={v}
-                  isSelected={selectedIds.includes(v.id)}
-                  onToggle={toggleSelection}
-                />
-              ))}
-            </div>
-          )
-        ) : (
-          <WorkspaceEmptyState
-            icon="📭"
-            title="No words found"
-            description="Try changing your filters or add new words from the dashboard."
-            className="rounded-[3rem] p-16"
+        <WorkspacePanel className="p-5 sm:p-6">
+          <WorkspaceHeader
+            eyebrow="Results"
+            title="Library results"
+            description={`Showing ${filteredVocab.length} word${filteredVocab.length !== 1 ? "s" : ""}${selectedLang !== "all" ? ` in ${selectedLang.toUpperCase()}` : ""}${filterStatus !== "all" ? ` with ${filterStatus} status` : ""}.`}
+            actions={
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                {densityMode} view
+              </span>
+            }
           />
-        )}
+
+          <div className="mt-5">
+            {isLoading ? (
+              <div className="rounded-[2rem] border border-slate-200 bg-slate-50/70 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
+                Loading your library...
+              </div>
+            ) : filteredVocab.length > 0 ? (
+              densityMode === "rich" ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredVocab.map((v) => (
+                    <VocabCard
+                      key={v.id}
+                      v={v}
+                      isSelected={selectedIds.includes(v.id)}
+                      onToggle={toggleSelection}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredVocab.map((v) => (
+                    <CompactVocabRow
+                      key={v.id}
+                      v={v}
+                      isSelected={selectedIds.includes(v.id)}
+                      onToggle={toggleSelection}
+                    />
+                  ))}
+                </div>
+              )
+            ) : (
+              <WorkspaceEmptyState
+                icon="📭"
+                title="No words found"
+                description="Try changing your filters or add new words from the dashboard."
+                className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 p-12 shadow-none"
+              />
+            )}
+          </div>
+        </WorkspacePanel>
       </AppMain>
 
       <WorkspaceSelectionBar

@@ -58,7 +58,7 @@ function RecordSection({
   className?: string;
 }) {
   return (
-    <section className={cn("surface-card rounded-[2rem] p-6 sm:p-8", className)}>
+    <section className={cn("rounded-[2rem] border border-slate-200/80 bg-white/85 p-6 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.22)] sm:p-8", className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{eyebrow}</p>
@@ -138,7 +138,7 @@ function SidebarSection({
   children: ReactNode;
 }) {
   return (
-    <section className="surface-card rounded-[2rem] p-5 sm:p-6">
+    <section className="surface-muted rounded-[2rem] p-5 sm:p-6">
       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{eyebrow}</p>
       <h3 className="mt-3 text-xl font-black tracking-tight text-slate-950">{title}</h3>
       <div className="mt-5">{children}</div>
@@ -172,12 +172,12 @@ export function WordDetailView({
   onAskNuance: () => void;
 }) {
   return (
-    <div className="mt-4 space-y-8 lg:mt-6">
-      <section className="surface-hero relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 lg:p-10">
+    <div className="mt-4 space-y-6 lg:mt-6">
+      <section className="surface-hero relative overflow-hidden rounded-[2.75rem] p-6 sm:p-8 lg:p-10">
         <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-blue-200/30 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-36 w-36 rounded-full bg-sky-100/50 blur-3xl" />
 
-        <div className="relative flex flex-col gap-8 xl:grid xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)] xl:items-start">
+        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] xl:items-start">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <MetadataChip tone="blue">{vocab.language_code}</MetadataChip>
@@ -186,7 +186,7 @@ export function WordDetailView({
             </div>
 
             <div className="mt-5 flex flex-wrap items-center gap-4">
-              <h1 className="break-all text-4xl font-black leading-tight tracking-tight text-slate-950 sm:text-6xl">{vocab.word}</h1>
+              <h1 className="break-all text-4xl font-black leading-[0.95] tracking-tight text-slate-950 sm:text-6xl">{vocab.word}</h1>
               <button
                 onClick={() => onSpeak(vocab.word)}
                 className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition-colors hover:bg-blue-50"
@@ -208,21 +208,21 @@ export function WordDetailView({
               </MetadataChip>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <QuickFact label="Mastery" value={vocab.is_remembered ? "Mastered" : "Learning"} tone={vocab.is_remembered ? "emerald" : "default"} />
-              <QuickFact label="Part of Speech" value={vocab.part_of_speech || "---"} tone="blue" />
-              <QuickFact label="Topic" value={vocab.categories?.name || "Uncategorized"} />
+              <QuickFact label="Topic" value={vocab.categories?.name || "Uncategorized"} tone="blue" />
+              <QuickFact label="Root" value={vocab.root_word ? vocab.root_word.replace(/^\*/, "") : "No root"} tone={vocab.root_word ? "rose" : "default"} />
             </div>
           </div>
 
-          <div className="surface-card rounded-[2rem] p-5 sm:p-6">
+          <div className="rounded-[2rem] border border-slate-200/80 bg-white/88 p-5 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.22)] sm:p-6">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Record Actions</p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Work with this entry</h2>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
               Update details, keep mastery accurate, or remove the record if it no longer belongs in your library.
             </p>
 
-            <div className="mt-6 flex flex-col gap-3">
+            <div className="mt-6 grid gap-3">
               <button
                 onClick={onStartEditing}
                 className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white transition-colors hover:bg-slate-800"
@@ -241,18 +241,18 @@ export function WordDetailView({
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(19rem,0.82fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
         <div className="space-y-6">
           {(vocab.example_sentence || vocab.example_translation) && (
             <RecordSection
               eyebrow="Primary Learning"
               title="Example Sentence"
-              description="Context stays in the main reading column so you can review meaning, phrasing, and pronunciation together."
+              description="Keep context, phrasing, and pronunciation in the main reading lane so the word behaves like a real record, not just a label."
             >
               <div className="rounded-[1.75rem] border border-blue-100 bg-blue-50/80 p-5 sm:p-7">
                 {vocab.example_sentence && (
                   <div className="flex flex-col items-start gap-4">
-                    <p className="text-lg font-bold leading-relaxed text-slate-950 italic sm:text-xl">
+                    <p className="text-xl font-bold leading-relaxed text-slate-950 italic sm:text-2xl">
                       &quot;{vocab.example_sentence}&quot;
                     </p>
                     <button
@@ -277,31 +277,8 @@ export function WordDetailView({
 
           <RecordSection
             eyebrow="Primary Learning"
-            title="Grammar & Recall Notes"
-            description="Core study information stays together here so example, grammar, and memory cues read as one unit."
-          >
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {vocab.conjugation && (
-                <div className="rounded-[1.75rem] border border-emerald-100 bg-emerald-50/85 p-5 sm:p-6">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-emerald-500">Conjugation</p>
-                  <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-emerald-950 sm:text-base">
-                    {vocab.conjugation}
-                  </p>
-                </div>
-              )}
-              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/90 p-5 sm:p-6">
-                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Notes</p>
-                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 italic sm:text-base">
-                  {vocab.notes || "No grammar notes added."}
-                </p>
-              </div>
-            </div>
-          </RecordSection>
-
-          <RecordSection
-            eyebrow="Primary Learning"
             title="Usage & Nuance"
-            description="AI nuance stays in the main column because it is part of understanding how this word behaves in real use."
+            description="Nuance stays near the example and translation so the record reads like one learning object with meaning, context, and usage together."
             actions={
               <button
                 onClick={onAskNuance}
@@ -327,6 +304,29 @@ export function WordDetailView({
               </div>
             )}
           </RecordSection>
+
+          <RecordSection
+            eyebrow="Primary Learning"
+            title="Grammar & Recall Notes"
+            description="Keep grammar guidance and memory cues close to the main content, but secondary to meaning, example, and nuance."
+          >
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {vocab.conjugation && (
+                <div className="rounded-[1.75rem] border border-emerald-100 bg-emerald-50/85 p-5 sm:p-6">
+                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-emerald-500">Conjugation</p>
+                  <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-emerald-950 sm:text-base">
+                    {vocab.conjugation}
+                  </p>
+                </div>
+              )}
+              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/90 p-5 sm:p-6">
+                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Notes</p>
+                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 italic sm:text-base">
+                  {vocab.notes || "No grammar notes added."}
+                </p>
+              </div>
+            </div>
+          </RecordSection>
         </div>
 
         <aside className="space-y-6">
@@ -336,7 +336,6 @@ export function WordDetailView({
               <QuickFact label="Mastery" value={vocab.is_remembered ? "Mastered" : "Learning"} tone={vocab.is_remembered ? "emerald" : "default"} />
               {vocab.gender && <QuickFact label="Gender" value={vocab.gender} tone="emerald" />}
               {vocab.verb_type && <QuickFact label="Verb Type" value={vocab.verb_type} tone="emerald" />}
-              {vocab.root_word && <QuickFact label="Root" value={vocab.root_word.replace(/^\*/, "")} tone="rose" />}
             </div>
           </SidebarSection>
 
@@ -439,10 +438,10 @@ export function WordDetailEditForm({
   onSave: () => void;
 }) {
   return (
-    <div className="mt-4 space-y-8 animate-in fade-in duration-300 lg:mt-6">
-      <section className="surface-hero relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 lg:p-10">
+    <div className="mt-4 space-y-6 animate-in fade-in duration-300 lg:mt-6">
+      <section className="surface-hero relative overflow-hidden rounded-[2.75rem] p-6 sm:p-8 lg:p-10">
         <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-blue-200/30 blur-3xl" />
-        <div className="relative flex flex-col gap-8 xl:grid xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)] xl:items-start">
+        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)] xl:items-start">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <MetadataChip tone="blue">Editing Record</MetadataChip>
@@ -452,6 +451,9 @@ export function WordDetailEditForm({
             <div className="mt-5 space-y-4">
               <FieldWrapper label="Word">
                 <input type="text" value={editForm.word} onChange={(e) => onChange("word", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
+              </FieldWrapper>
+              <FieldWrapper label="Meaning">
+                <input type="text" value={editForm.translation} onChange={(e) => onChange("translation", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
               </FieldWrapper>
               <FieldWrapper label="AI Hint" color="blue">
                 <input
@@ -465,14 +467,14 @@ export function WordDetailEditForm({
             </div>
           </div>
 
-          <div className="surface-card rounded-[2rem] p-5 sm:p-6">
+          <div className="rounded-[2rem] border border-slate-200/80 bg-white/88 p-5 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.22)] sm:p-6">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Edit Actions</p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Update this record</h2>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
               Keep the same record, refine its details, and use AI autofill when you want a faster pass.
             </p>
 
-            <div className="mt-6 flex flex-col gap-3">
+            <div className="mt-6 grid gap-3">
               <button
                 onClick={onAutoFill}
                 disabled={isAutoFilling}
@@ -497,7 +499,7 @@ export function WordDetailEditForm({
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(19rem,0.82fr)]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
         <div className="space-y-6">
           <RecordSection
             eyebrow="Primary Fields"
@@ -505,9 +507,6 @@ export function WordDetailEditForm({
             description="Edit the core learning content in the main column so the record still reads like the same study object."
           >
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <FieldWrapper label="Meaning">
-                <input type="text" value={editForm.translation} onChange={(e) => onChange("translation", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
-              </FieldWrapper>
               <FieldWrapper label="Part of Speech">
                 <input type="text" value={editForm.pos} onChange={(e) => onChange("pos", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
               </FieldWrapper>

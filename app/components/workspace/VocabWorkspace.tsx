@@ -48,6 +48,48 @@ export function WorkspaceHeader({
   );
 }
 
+export function WorkspaceFilterGroup({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-3", className)}>
+      <p className="ml-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <div className="flex flex-wrap gap-2.5">{children}</div>
+    </div>
+  );
+}
+
+export function WorkspaceUtilityPanel({
+  eyebrow,
+  title,
+  description,
+  children,
+  className,
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  children?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <aside className={cn("surface-muted flex flex-col justify-between gap-4 rounded-[1.75rem] p-4 sm:p-5", className)}>
+      <div>
+        {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{eyebrow}</p>}
+        <h3 className="mt-2 text-base font-black tracking-tight text-slate-950">{title}</h3>
+        {description && <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{description}</p>}
+      </div>
+      {children}
+    </aside>
+  );
+}
+
 export function WorkspaceChipButton({
   active,
   onClick,
@@ -89,7 +131,7 @@ export function WorkspaceEmptyState({
   className?: string;
 }) {
   return (
-    <WorkspacePanel className={cn("rounded-[2.5rem] p-10 text-center sm:p-12", className)}>
+    <WorkspacePanel tone="muted" className={cn("rounded-[2.25rem] p-10 text-center sm:p-12", className)}>
       <div className="mb-6 text-5xl opacity-50 sm:text-6xl">{icon}</div>
       <h3 className="text-xl font-black text-slate-950 sm:text-2xl">{title}</h3>
       <p className="mt-2 text-sm font-medium text-slate-600 sm:text-base">{description}</p>

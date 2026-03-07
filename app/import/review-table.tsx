@@ -10,8 +10,8 @@ export function ImportReviewTable({
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
 }) {
   return (
-    <div className="surface-card overflow-hidden rounded-[2rem]">
-      <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/90 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.2)]">
+      <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/80 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Save Preview</p>
           <p className="mt-1 text-sm font-bold text-slate-500">Everything shown below is editable and will be inserted on save.</p>
@@ -22,7 +22,7 @@ export function ImportReviewTable({
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 bg-slate-50/95 border-b border-slate-200 backdrop-blur-sm">
+          <thead className="sticky top-0 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
             <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
               <th className="p-4 w-10 text-center"></th>
               <th className="p-4 min-w-[100px]">Status</th>
@@ -40,7 +40,7 @@ export function ImportReviewTable({
               </tr>
             ) : (
               analyzedData.map((item) => (
-                <tr key={item.id} className="group transition-colors hover:bg-blue-50/30">
+                <tr key={item.id} className="group transition-colors hover:bg-slate-50/80">
                   <td className="p-4 text-center">
                     <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
                       ✖

@@ -20,7 +20,7 @@ function WizardSection({
 }) {
   return (
     <section className="animate-in fade-in duration-500">
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{eyebrow}</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
@@ -110,26 +110,24 @@ export function ImportUploadPanel({
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="surface-card rounded-[2rem] p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">How It Works</p>
-            <div className="mt-4 space-y-4">
-              <div>
-                <p className="font-black text-slate-950">1. Upload a raw list</p>
-                <p className="mt-1 text-sm font-medium text-slate-600">Use a simple CSV with a required `word` column.</p>
-              </div>
-              <div>
-                <p className="font-black text-slate-950">2. Let AI structure it</p>
-                <p className="mt-1 text-sm font-medium text-slate-600">Meanings, POS, examples, and root hints are filled where possible.</p>
-              </div>
-              <div>
-                <p className="font-black text-slate-950">3. Review before save</p>
-                <p className="mt-1 text-sm font-medium text-slate-600">Only rows that remain in the review list will be written to your library.</p>
-              </div>
+        <div className="surface-muted rounded-[2rem] p-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Workflow Notes</p>
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="font-black text-slate-950">1. Upload a raw list</p>
+              <p className="mt-1 text-sm font-medium text-slate-600">Use a simple CSV with a required `word` column.</p>
+            </div>
+            <div>
+              <p className="font-black text-slate-950">2. Let AI structure it</p>
+              <p className="mt-1 text-sm font-medium text-slate-600">Meanings, POS, examples, and root hints are filled where possible.</p>
+            </div>
+            <div>
+              <p className="font-black text-slate-950">3. Review before save</p>
+              <p className="mt-1 text-sm font-medium text-slate-600">Only rows that remain in the review list will be written to your library.</p>
             </div>
           </div>
 
-          <div className="surface-muted rounded-[2rem] p-6">
+          <div className="mt-5 border-t border-slate-200 pt-5">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Good To Know</p>
             <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
               Duplicate words are skipped during analysis, so the review step stays focused on new rows worth importing.
@@ -171,7 +169,7 @@ export function ImportProgressPanel({
       description={isAnalyzing ? "The import is being structured into editable rows. Keep this window open while the wizard prepares the review step." : "Only the rows currently approved in the review step will be written to your library."}
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="surface-card rounded-[2.5rem] p-8 text-center sm:p-12">
+        <div className="rounded-[2.5rem] border border-slate-200/80 bg-white/85 p-8 text-center shadow-[0_26px_50px_-40px_rgba(15,23,42,0.22)] sm:p-12">
           <div className="mb-6 text-6xl animate-pulse">{isAnalyzing ? "🧠" : "💾"}</div>
           <h2 className="mb-2 text-3xl font-black text-slate-950">{isAnalyzing ? "Analyzing words..." : "Saving valid rows..."}</h2>
           <p className="mb-8 font-bold text-slate-500">{isAnalyzing ? "The next step will open an editable review workspace." : "The wizard is writing your approved rows to the library."}</p>
@@ -246,18 +244,18 @@ export function ImportReviewPanel({
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
         <div className="space-y-6">
-          <SummaryGrid>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <ImportCountCard label="Analyzed" value={parsedCount} tone="blue" helper={fileName || undefined} />
-            <ImportCountCard label="Ready To Save" value={readyToSaveCount} tone="emerald" helper="Rows in the table" />
+            <ImportCountCard label="Ready" value={readyToSaveCount} tone="emerald" helper="Rows in table" />
             <ImportCountCard label="Skipped" value={skippedCount} tone="amber" helper="Usually duplicates" />
-            <ImportCountCard label="Failed" value={failedCount} tone="rose" helper="Needs retry or fix" />
-          </SummaryGrid>
+            <ImportCountCard label="Failed" value={failedCount} tone="rose" helper="Needs review" />
+          </div>
 
           <ImportReviewTable analyzedData={analyzedData} onRemove={onRemove} onEditChange={onEditChange} />
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-32">
-          <div className="surface-card rounded-[2rem] p-6">
+          <div className="surface-muted rounded-[2rem] p-6">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Save Summary</p>
             <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Ready to commit</h3>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
@@ -270,7 +268,7 @@ export function ImportReviewPanel({
               <button onClick={onSave} disabled={analyzedData.length === 0} className="w-full rounded-2xl bg-blue-600 px-5 py-4 font-black text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
                 Save Valid Rows
               </button>
-              <Link href="/library" className="block w-full rounded-2xl border border-slate-200 bg-white px-5 py-4 text-center font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">
+              <Link href="/library" className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 text-center font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">
                 Open Library
               </Link>
             </div>
@@ -311,9 +309,9 @@ export function ImportDonePanel({
     <WizardSection
       eyebrow="Step 5"
       title="Import complete"
-      description="Your library has been updated. The next best move is to review the new material or return to your broader library workflow."
+      description="Your library has been updated. The next best move is to review the new material calmly, then return to broader library cleanup only if needed."
     >
-      <div className="surface-card rounded-[2.5rem] p-10 text-center animate-in zoom-in-95 duration-500 sm:p-12">
+      <div className="rounded-[2.5rem] border border-slate-200/80 bg-white/85 p-10 text-center shadow-[0_26px_50px_-40px_rgba(15,23,42,0.22)] animate-in zoom-in-95 duration-500 sm:p-12">
         <div className="mb-6 text-7xl">🎉</div>
         <h2 className="mb-4 text-4xl font-black text-slate-950">Import Successful!</h2>
         <p className="mb-8 text-lg font-bold text-slate-500">Your vocabulary library has grown.</p>
@@ -323,10 +321,16 @@ export function ImportDonePanel({
           <ImportCountCard label="Skipped" value={skippedCount} tone="amber" />
           <ImportCountCard label="Failed" value={failedCount} tone="rose" />
         </SummaryGrid>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <button onClick={onReset} className="rounded-2xl bg-slate-100 px-8 py-4 font-black text-slate-600 transition-colors hover:bg-slate-200">Import More</button>
-          <Link href={`/study/${selectedLang}`} className="rounded-2xl bg-blue-600 px-8 py-4 font-black text-white shadow-xl transition-colors hover:bg-blue-700">Go to Study Hub</Link>
-          <Link href="/library" className="rounded-2xl border border-slate-200 bg-white px-8 py-4 font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">Open Library</Link>
+        <div className="mx-auto max-w-3xl rounded-[2rem] border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Next Step</p>
+          <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+            Go straight into the language hub if you want to review what you just added, or return to the library if you want to keep organizing.
+          </p>
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link href={`/study/${selectedLang}`} className="rounded-2xl bg-blue-600 px-8 py-4 font-black text-white shadow-xl transition-colors hover:bg-blue-700">Go to Study Hub</Link>
+            <Link href="/library" className="rounded-2xl border border-slate-200 bg-white px-8 py-4 font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">Open Library</Link>
+            <button onClick={onReset} className="rounded-2xl bg-slate-100 px-8 py-4 font-black text-slate-600 transition-colors hover:bg-slate-200">Import More</button>
+          </div>
         </div>
       </div>
     </WizardSection>

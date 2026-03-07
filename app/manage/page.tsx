@@ -1,8 +1,10 @@
 "use client";
+
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import CreateCardForm from "../components/CreateCardForm";
 import AppHeader from "../components/AppHeader";
+import { AppMain, AppShell, PageIntro, Surface } from "../components/layout/AppShell";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
 const supabase = getSupabaseBrowserClient();
@@ -34,7 +36,7 @@ export default function ManageLibrary() {
     e.preventDefault();
     const input = langInput.trim();
     if (!input) return;
-    
+
     setIsSubmittingLang(true);
     const lowerInput = input.toLowerCase();
     const matchedData = LANGUAGE_AUTO_MAP[lowerInput];
@@ -58,75 +60,79 @@ export default function ManageLibrary() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
+    <AppShell className="pb-24">
       <AppHeader primarySection={null} backHref="/" backLabel="Dashboard" />
 
-      <main className="max-w-4xl mx-auto px-4 md:px-8 pt-12 md:pt-16 flex flex-col gap-10">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
-            Manage Library
-          </h1>
-          <p className="text-sm md:text-xl text-gray-500 font-medium italic">
-            Expand your horizons. Add new words and languages.
-          </p>
-        </header>
+      <AppMain width="lg" className="section-stack">
+        <PageIntro
+          eyebrow="Manage"
+          title="Maintain your study system"
+          description="Use this page for setup and maintenance: add words manually, bulk import, or add a new language. It supports the main study flow rather than replacing it."
+        />
 
-        <section className="w-full">
-          <CreateCardForm />
-        </section>
-
-        {/* 🌟 新機能：AI一括インポートへの巨大リンク */}
-        <section className="w-full">
-          <Link 
-            href="/import" 
-            className="flex items-center justify-between bg-purple-50 border-2 border-purple-100 p-6 md:p-8 rounded-3xl hover:border-purple-400 hover:shadow-md transition-all group"
-          >
-            <div className="flex items-center gap-5 md:gap-6">
-              <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-2xl flex items-center justify-center text-3xl md:text-4xl group-hover:scale-110 transition-transform shadow-sm">
-                🪄
-              </div>
-              <div>
-                <p className="text-[10px] md:text-xs font-black text-purple-400 uppercase tracking-widest">AI-Powered Magic</p>
-                <h2 className="text-xl md:text-2xl font-black text-purple-900 mt-1">Bulk Import (CSV)</h2>
-              </div>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(18rem,0.82fr)] xl:items-start">
+          <section className="space-y-6">
+            <div>
+              <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Manual Entry</p>
+              <CreateCardForm />
             </div>
-            <span className="text-purple-300 font-black group-hover:text-purple-600 transition-colors mr-2 text-2xl md:text-3xl">→</span>
-          </Link>
-        </section>
+          </section>
 
-        <section className="w-full">
-          <div className="bg-white rounded-3xl p-6 md:p-8 border-2 border-gray-200 shadow-sm transition-all hover:shadow-md">
-            <h2 className="text-[10px] md:text-xs font-bold tracking-widest text-gray-400 uppercase mb-6 flex items-center gap-2">
-              <span className="text-lg">🌍</span> Quick Add Language
-            </h2>
+          <aside className="space-y-6">
+            <Surface tone="muted" className="p-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Bulk Setup</p>
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Import larger batches</h2>
+              <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+                Use the import wizard when you want AI-assisted structure, duplicate checks, and review before saving.
+              </p>
+              <Link
+                href="/import"
+                className="mt-6 flex items-center justify-between rounded-[1.75rem] border border-purple-100 bg-purple-50/80 px-5 py-5 transition-all hover:border-purple-300 hover:bg-purple-50"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-[1.25rem] bg-white text-2xl shadow-sm">🪄</div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-purple-400">AI-Assisted</p>
+                    <p className="mt-1 font-black text-purple-900">Bulk Import CSV</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-black text-purple-300">→</span>
+              </Link>
+            </Surface>
 
-            <form onSubmit={handleAddLanguage} className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4">
+            <Surface tone="muted" className="p-6">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Language Setup</p>
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Quick add a language</h2>
+              <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+                Add a language once, then it becomes available across study, import, search, and the library.
+              </p>
+
+              <form onSubmit={handleAddLanguage} className="mt-6 space-y-4">
                 <input
                   type="text"
                   placeholder="Type a language (e.g. French...)"
                   value={langInput}
                   onChange={(e) => setLangInput(e.target.value)}
-                  className="w-full md:flex-1 p-4 md:p-5 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-gray-900 placeholder-gray-300 outline-none focus:border-green-400 transition-all text-base md:text-lg"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 font-bold text-slate-950 outline-none transition-all placeholder:text-slate-300 focus:border-green-400"
                   required
                 />
-                
+
                 <button
                   type="submit"
                   disabled={isSubmittingLang}
-                  className="w-full md:w-auto px-8 py-4 md:py-5 bg-green-500 text-white font-black text-sm md:text-lg rounded-2xl shadow-lg shadow-green-100 hover:bg-green-600 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
+                  className="w-full rounded-2xl bg-green-500 px-6 py-4 font-black text-white transition-all hover:bg-green-600 disabled:opacity-50"
                 >
                   {isSubmittingLang ? "Adding..." : langSuccessMsg || "+ Add Language"}
                 </button>
-              </div>
-              <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest mt-2">
-                ✨ Flags and codes will be added automatically.
-              </p>
-            </form>
-          </div>
-        </section>
 
-      </main>
-    </div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                  Flags and codes are added automatically.
+                </p>
+              </form>
+            </Surface>
+          </aside>
+        </div>
+      </AppMain>
+    </AppShell>
   );
 }

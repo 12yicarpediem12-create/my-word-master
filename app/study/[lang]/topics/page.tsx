@@ -1,17 +1,19 @@
 "use client";
-import { useState, useEffect, Suspense, useMemo, useCallback } from "react";
+
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AppHeader from "@/app/components/AppHeader";
+import { AppMain, AppShell, PageIntro, Surface } from "@/app/components/layout/AppShell";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 
 const supabase = getSupabaseBrowserClient();
 
 const TopicLink = ({ langCode, topic }: { langCode: string; topic: any }) => (
-  <Link 
-    href={`/study/${langCode}/topics/${topic.id}`} 
+  <Link
+    href={`/study/${langCode}/topics/${topic.id}`}
     id={`topic-${topic.id}`}
-    className="bg-white border-2 border-gray-100 px-5 py-2.5 rounded-xl text-sm font-bold text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:shadow-md transition-all active:scale-95"
+    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition-all hover:border-blue-200 hover:text-blue-600"
   >
     {topic.name}
   </Link>
@@ -19,7 +21,7 @@ const TopicLink = ({ langCode, topic }: { langCode: string; topic: any }) => (
 
 const SubTopicSection = ({ langCode, subTopic, childrenTopics }: { langCode: string; subTopic: any; childrenTopics: any[] }) => (
   <div id={`topic-${subTopic.id}`} className="animate-in fade-in slide-in-from-top-2 duration-300 p-2">
-    <h3 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-4 ml-2 border-l-4 border-blue-200 pl-3">
+    <h3 className="mb-4 border-l-4 border-blue-200 pl-3 text-xs font-black uppercase tracking-widest text-blue-400">
       {subTopic.name}
     </h3>
     <div className="flex flex-wrap gap-2">
@@ -30,45 +32,43 @@ const SubTopicSection = ({ langCode, subTopic, childrenTopics }: { langCode: str
   </div>
 );
 
-const MainTopicCard = ({ 
-  topic, 
-  isExpanded, 
-  onToggle, 
-  subTopics, 
-  getChildren, 
-  langCode 
-}: { 
-  topic: any; 
-  isExpanded: boolean; 
-  onToggle: () => void; 
-  subTopics: any[]; 
-  getChildren: (id: number) => any[]; 
-  langCode: string 
+const MainTopicCard = ({
+  topic,
+  isExpanded,
+  onToggle,
+  subTopics,
+  getChildren,
+  langCode,
+}: {
+  topic: any;
+  isExpanded: boolean;
+  onToggle: () => void;
+  subTopics: any[];
+  getChildren: (id: number) => any[];
+  langCode: string;
 }) => (
-  <div id={`topic-${topic.id}`} className="bg-white border-2 border-gray-200 rounded-[2.5rem] overflow-hidden shadow-sm transition-all hover:shadow-md">
-    <button 
+  <div id={`topic-${topic.id}`} className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]">
+    <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between p-6 sm:p-8 hover:bg-gray-50 transition-colors text-left"
+      className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-slate-50 sm:p-6"
     >
-      <div className="flex items-center gap-4 sm:gap-6">
-        <span className="text-3xl sm:text-4xl filter drop-shadow-sm">📁</span>
-        <h2 className="text-xl sm:text-2xl font-black text-gray-900">{topic.name}</h2>
+      <div className="flex items-center gap-4">
+        <span className="text-3xl">📁</span>
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Main Topic</p>
+          <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 sm:text-2xl">{topic.name}</h2>
+        </div>
       </div>
-      <span className={`text-xl font-black text-gray-300 transform transition-transform duration-300 ${isExpanded ? "rotate-180 text-blue-500" : ""}`}>
+      <span className={`text-xl font-black text-slate-300 transition-transform duration-300 ${isExpanded ? "rotate-180 text-blue-500" : ""}`}>
         ↓
       </span>
     </button>
 
     {isExpanded && (
-      <div className="px-6 sm:px-8 pb-10 bg-gray-50/50 border-t-2 border-gray-100">
-        <div className="mt-8 space-y-8 sm:space-y-10">
+      <div className="border-t border-slate-200 bg-slate-50/60 px-5 pb-8 pt-6 sm:px-6">
+        <div className="space-y-8">
           {subTopics.map((sub) => (
-            <SubTopicSection 
-              key={sub.id} 
-              langCode={langCode} 
-              subTopic={sub} 
-              childrenTopics={getChildren(sub.id)} 
-            />
+            <SubTopicSection key={sub.id} langCode={langCode} subTopic={sub} childrenTopics={getChildren(sub.id)} />
           ))}
         </div>
       </div>
@@ -79,8 +79,8 @@ const MainTopicCard = ({
 function TopicsContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const langCode = params?.lang as string; 
-  
+  const langCode = params?.lang as string;
+
   const openTopicId = searchParams.get("open");
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -102,7 +102,7 @@ function TopicsContent() {
   useEffect(() => {
     if (openTopicId && !isLoading) {
       setExpandedTopic(openTopicId);
-      
+
       setTimeout(() => {
         const hash = window.location.hash;
         if (hash) {
@@ -123,23 +123,24 @@ function TopicsContent() {
   const hubPath = langCode ? `/study/${langCode}` : "#";
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <AppShell className="pb-24">
       <AppHeader primarySection="study" backHref={hubPath} backLabel="Study Hub" />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <header className="mb-8 sm:mb-12">
-          <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">Topics</h1>
-          <p className="text-gray-500 mt-2 sm:mt-4 font-medium text-base sm:text-lg">Explore your vocabulary by themes.</p>
-        </header>
+      <AppMain width="lg" className="section-stack">
+        <PageIntro
+          eyebrow="Topics"
+          title="Browse vocabulary by topic"
+          description="Use topics to explore one language by theme. This is a supporting browse page that feeds back into the language hub and word records."
+        />
 
         {isLoading ? (
-          <div className="text-center py-20 font-black text-gray-300 animate-pulse uppercase tracking-widest">
-            Loading Taxonomy...
+          <div className="rounded-[2rem] border border-slate-200 bg-slate-50/70 px-6 py-20 text-center font-black uppercase tracking-widest text-slate-400 animate-pulse">
+            Loading taxonomy...
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:gap-6">
+          <div className="grid gap-4">
             {mainTopics.map((topic) => (
-              <MainTopicCard 
+              <MainTopicCard
                 key={topic.id}
                 topic={topic}
                 isExpanded={String(expandedTopic) === String(topic.id)}
@@ -151,14 +152,16 @@ function TopicsContent() {
             ))}
           </div>
         )}
-      </main>
-    </div>
+      </AppMain>
+    </AppShell>
   );
 }
 
 export default function LanguageTopicsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-gray-400 tracking-widest uppercase">Loading...</div>}>
+    <Suspense
+      fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center font-bold text-slate-400 tracking-widest uppercase">Loading...</div>}
+    >
       <TopicsContent />
     </Suspense>
   );

@@ -41,9 +41,9 @@ export default function AppHeader({
   const activePrimary = primarySection ?? inferPrimarySection(pathname);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-[rgba(248,251,255,0.78)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-[rgba(248,251,255,0.72)] backdrop-blur-xl">
       <PageFrame as="div" width="xl">
-        <div className="py-4 sm:py-5">
+        <div className="py-3 sm:py-4">
           <div className="flex items-center justify-between gap-4">
             <Link href="/" className="shrink-0 text-[1.75rem] sm:text-[2rem] font-black tracking-[-0.08em] text-slate-950 hover:opacity-80 transition-opacity">
               WordMaster<span className="text-blue-600">.</span>
@@ -52,7 +52,7 @@ export default function AppHeader({
             <div className="flex items-center gap-3 shrink-0">{utility}</div>
           </div>
 
-          <div className="mt-4 flex flex-col gap-4 border-t border-slate-200/70 pt-4 sm:mt-5 sm:pt-5">
+          <div className="mt-3 flex flex-col gap-3 border-t border-slate-200/60 pt-3 sm:mt-4 sm:pt-4">
             <nav className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {PRIMARY_LINKS.map((link) => {
                 const isActive = activePrimary === link.key;
@@ -61,10 +61,10 @@ export default function AppHeader({
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`px-4 py-2.5 rounded-2xl text-sm font-black whitespace-nowrap transition-all border ${
+                    className={`rounded-2xl border px-4 py-2 text-sm font-black whitespace-nowrap transition-all ${
                       isActive
-                        ? "bg-blue-600 text-white border-blue-600 shadow-[0_14px_30px_-20px_rgba(37,99,235,0.8)]"
-                        : "bg-white/80 text-slate-600 border-slate-200 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                        ? "border-blue-600 bg-blue-600 text-white shadow-[0_12px_24px_-18px_rgba(37,99,235,0.72)]"
+                        : "border-slate-200 bg-white/70 text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
                     }`}
                   >
                     {link.label}
@@ -75,7 +75,7 @@ export default function AppHeader({
 
             {(searchSlot || backHref) && (
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                {searchSlot ? <div className="w-full lg:max-w-2xl">{searchSlot}</div> : <div />}
+                {searchSlot ? <div className="w-full lg:max-w-2xl">{searchSlot}</div> : <div className="h-0" />}
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
                   {backHref && (

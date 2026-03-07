@@ -89,13 +89,13 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
     <div ref={searchRef} className="relative w-full z-[100]">
       <form 
         onSubmit={handleManualSearch}
-        className="flex items-center rounded-[1.35rem] border border-slate-200 bg-white/88 pr-2 shadow-[0_20px_45px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl transition-all focus-within:border-blue-300 focus-within:shadow-[0_26px_60px_-34px_rgba(37,99,235,0.28)]"
+        className="flex items-center rounded-[1.35rem] border border-slate-200 bg-white pr-2 shadow-[0_18px_38px_-30px_rgba(15,23,42,0.22)] transition-all focus-within:border-blue-300 focus-within:shadow-[0_24px_50px_-34px_rgba(37,99,235,0.24)]"
       >
         {!forcedLang ? (
           <select
             value={selectedLang}
             onChange={(e) => setSelectedLang(e.target.value)}
-            className="h-full appearance-none rounded-l-[1.35rem] border-r border-slate-200 bg-transparent py-3 pl-4 pr-2 font-bold text-slate-600 outline-none transition-colors hover:bg-slate-50 cursor-pointer"
+            className="h-full cursor-pointer appearance-none rounded-l-[1.35rem] border-r border-slate-200 bg-slate-50/85 py-3 pl-4 pr-2 font-bold text-slate-600 outline-none transition-colors hover:bg-slate-100"
           >
             <option value="all">🌍 All</option>
             {languages.map((l) => (
@@ -123,13 +123,13 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
           />
         </div>
 
-        <button type="submit" className="rounded-xl bg-blue-600 p-2.5 text-white transition-all hover:bg-blue-700 shadow-[0_14px_30px_-20px_rgba(37,99,235,0.8)]">
+        <button type="submit" className="rounded-xl bg-blue-600 p-2.5 text-white transition-all hover:bg-blue-700 shadow-[0_12px_24px_-18px_rgba(37,99,235,0.8)]">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </button>
       </form>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 max-h-96 overflow-y-auto divide-y divide-slate-100 rounded-[1.5rem] border border-slate-200 bg-white/96 shadow-[0_30px_70px_-42px_rgba(15,23,42,0.35)] backdrop-blur-xl animate-fade-in">
+        <div className="absolute top-full left-0 right-0 mt-2 max-h-96 overflow-y-auto divide-y divide-slate-100 rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_26px_60px_-38px_rgba(15,23,42,0.3)] animate-fade-in">
           {results.map((vocab) => (
             <Link href={`/word/${vocab.id}`} key={vocab.id} onClick={() => setIsOpen(false)} className="group block p-4 hover:bg-slate-50/90 flex justify-between items-center">
               <div className="flex items-center gap-4">

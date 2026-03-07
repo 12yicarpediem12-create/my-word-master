@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --wm-bg: #f3f6fb;
-  --wm-bg-top: #f8fbff;
-  --wm-paper: rgba(255, 255, 255, 0.92);
-  --wm-paper-strong: rgba(255, 255, 255, 0.97);
-  --wm-paper-muted: rgba(246, 249, 253, 0.9);
-  --wm-border: rgba(203, 213, 225, 0.9);
-  --wm-border-strong: rgba(191, 219, 254, 0.95);
+  --wm-bg: #f4f7fb;
+  --wm-bg-top: #f9fbfe;
+  --wm-paper: rgba(255, 255, 255, 0.84);
+  --wm-paper-strong: rgba(255, 255, 255, 0.95);
+  --wm-paper-muted: rgba(248, 251, 255, 0.72);
+  --wm-border: rgba(203, 213, 225, 0.72);
+  --wm-border-strong: rgba(191, 219, 254, 0.82);
   --wm-text: #0f172a;
   --wm-text-muted: #526074;
   --wm-brand: #2563eb;
   --wm-brand-soft: rgba(219, 234, 254, 0.95);
-  --wm-shadow-sm: 0 20px 45px -32px rgba(15, 23, 42, 0.22), 0 8px 20px -18px rgba(15, 23, 42, 0.18);
-  --wm-shadow: 0 28px 90px -44px rgba(15, 23, 42, 0.28), 0 14px 34px -26px rgba(37, 99, 235, 0.16);
+  --wm-shadow-sm: 0 18px 36px -32px rgba(15, 23, 42, 0.16), 0 8px 18px -18px rgba(15, 23, 42, 0.08);
+  --wm-shadow: 0 26px 72px -46px rgba(15, 23, 42, 0.22), 0 14px 28px -26px rgba(37, 99, 235, 0.12);
 }
 
 html {
@@ -27,7 +27,7 @@ body {
   color: var(--wm-text);
   background-color: var(--wm-bg);
   background-image:
-    radial-gradient(circle at top, rgba(37, 99, 235, 0.08), transparent 34rem),
+    radial-gradient(circle at top, rgba(37, 99, 235, 0.06), transparent 34rem),
     linear-gradient(180deg, var(--wm-bg-top) 0%, var(--wm-bg) 100%);
 }
 
@@ -60,45 +60,51 @@ body {
   }
 
   .page-stack {
-    padding-top: 2.5rem;
+    padding-top: 2.25rem;
     padding-bottom: 6rem;
   }
 
   .section-stack {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.75rem;
   }
 
   .surface-card {
     background: var(--wm-paper);
     border: 1px solid var(--wm-border);
-    border-radius: 2rem;
+    border-radius: 1.75rem;
     box-shadow: var(--wm-shadow-sm);
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(12px);
   }
 
   .surface-hero {
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(240, 247, 255, 0.94));
+      linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(244, 248, 255, 0.9));
     border: 1px solid var(--wm-border-strong);
-    border-radius: 2.5rem;
+    border-radius: 2.25rem;
     box-shadow: var(--wm-shadow);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(14px);
   }
 
   .surface-muted {
     background: var(--wm-paper-muted);
-    border: 1px solid rgba(226, 232, 240, 0.95);
+    border: 1px solid rgba(226, 232, 240, 0.72);
     border-radius: 1.75rem;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  }
+
+  .page-intro-frame {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.32));
+    border: 1px solid rgba(226, 232, 240, 0.62);
+    border-radius: 1.75rem;
   }
 
   .page-intro {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    padding: 1.75rem;
+    gap: 1rem;
+    padding: 1.5rem 1.25rem;
   }
 
   .page-intro-center {
@@ -111,28 +117,28 @@ body {
   }
 
   .page-eyebrow {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     color: var(--wm-brand);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 0.24em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
   }
 
   .page-title {
     color: var(--wm-text);
-    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    font-size: clamp(2.15rem, 4.8vw, 4rem);
     font-weight: 900;
     letter-spacing: -0.04em;
-    line-height: 0.95;
+    line-height: 0.96;
   }
 
   .page-subtitle {
     max-width: 42rem;
     color: var(--wm-text-muted);
-    font-size: 1rem;
+    font-size: 0.98rem;
     font-weight: 500;
-    line-height: 1.7;
+    line-height: 1.65;
   }
 
   .page-intro-actions {
@@ -149,20 +155,20 @@ body {
   }
 
   .page-stack {
-    padding-top: 3rem;
+    padding-top: 2.75rem;
     padding-bottom: 7rem;
   }
 
   .section-stack {
-    gap: 2.5rem;
+    gap: 2.25rem;
   }
 
   .page-intro {
-    padding: 2rem;
+    padding: 1.75rem 1.5rem;
   }
 
   .page-subtitle {
-    font-size: 1.05rem;
+    font-size: 1.02rem;
   }
 }
 
@@ -172,19 +178,19 @@ body {
   }
 
   .page-stack {
-    padding-top: 3.5rem;
+    padding-top: 3rem;
     padding-bottom: 8rem;
   }
 
   .section-stack {
-    gap: 3rem;
+    gap: 2.5rem;
   }
 
   .page-intro {
     flex-direction: row;
     align-items: flex-end;
-    gap: 2rem;
-    padding: 2.25rem 2.5rem;
+    gap: 1.75rem;
+    padding: 2rem 2.1rem;
   }
 
   .page-intro-center {

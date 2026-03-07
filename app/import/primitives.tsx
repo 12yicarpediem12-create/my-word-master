@@ -12,18 +12,18 @@ export function ImportCountCard({
   helper?: string;
 }) {
   const toneMap = {
-    gray: "bg-gray-50 border-gray-100 text-gray-900",
-    blue: "bg-blue-50 border-blue-100 text-blue-900",
-    emerald: "bg-emerald-50 border-emerald-100 text-emerald-900",
-    amber: "bg-amber-50 border-amber-100 text-amber-900",
-    rose: "bg-rose-50 border-rose-100 text-rose-900",
+    gray: "bg-white/80 border-slate-200 text-slate-900",
+    blue: "bg-blue-50/80 border-blue-100 text-blue-900",
+    emerald: "bg-emerald-50/80 border-emerald-100 text-emerald-900",
+    amber: "bg-amber-50/80 border-amber-100 text-amber-900",
+    rose: "bg-rose-50/80 border-rose-100 text-rose-900",
   };
 
   return (
-    <div className={`rounded-[1.5rem] border p-4 ${toneMap[tone]}`}>
-      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
-      <p className="text-3xl font-black mt-2">{value}</p>
-      {helper && <p className="text-xs font-bold mt-2 opacity-60">{helper}</p>}
+    <div className={`rounded-[1.5rem] border p-4 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.2)] ${toneMap[tone]}`}>
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">{label}</p>
+      <p className="mt-2 text-3xl font-black">{value}</p>
+      {helper && <p className="mt-2 text-xs font-bold opacity-60">{helper}</p>}
     </div>
   );
 }
@@ -64,7 +64,7 @@ export function ImportWizardStepper({ phase }: { phase: Phase }) {
   const activeIndex = getPhaseStepIndex(phase);
 
   return (
-    <div className="surface-card rounded-[2rem] p-4 sm:p-5">
+    <div className="rounded-[2rem] border border-slate-200/80 bg-white/75 p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)] sm:p-5">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {WIZARD_STEPS.map((step, index) => {
           const isActive = index === activeIndex;
@@ -75,10 +75,10 @@ export function ImportWizardStepper({ phase }: { phase: Phase }) {
               key={step.title}
               className={`rounded-[1.5rem] border px-4 py-4 transition-all ${
                 isActive
-                  ? "border-blue-200 bg-blue-50/80 shadow-sm"
+                  ? "border-blue-200 bg-blue-50/70 shadow-sm"
                   : isComplete
-                    ? "border-emerald-200 bg-emerald-50/70"
-                    : "border-slate-200 bg-white/80"
+                    ? "border-emerald-200 bg-emerald-50/60"
+                    : "border-slate-200 bg-white/60"
               }`}
             >
               <div className="flex items-center justify-between gap-3">
@@ -118,7 +118,7 @@ export function LogSummaryPanel({ logs }: { logs: ImportLog[] }) {
   if (logs.length === 0) return null;
 
   return (
-    <div className="surface-card rounded-[2rem] p-6 sm:p-8">
+    <div className="surface-muted rounded-[2rem] p-6 sm:p-7">
       <div className="flex items-center justify-between gap-4 mb-5">
         <div>
           <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Issues & Skips</p>
@@ -129,7 +129,7 @@ export function LogSummaryPanel({ logs }: { logs: ImportLog[] }) {
 
       <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
         {logs.map((log, index) => (
-          <div key={`${log.word}-${log.status}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+          <div key={`${log.word}-${log.status}-${index}`} className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="min-w-0">
                 <p className="break-words font-black text-slate-950">{log.word}</p>

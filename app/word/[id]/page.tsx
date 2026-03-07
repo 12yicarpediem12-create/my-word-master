@@ -79,7 +79,7 @@ export default function WordDetail() {
     <AppShell className="pb-20">
       <AppHeader primarySection="library" backHref={`/study/${vocab.language_code}`} backLabel="Study Hub" />
 
-      <AppMain width="lg" className="transition-all">
+      <AppMain width="xl" className="section-stack transition-all">
         {errorMsg && <div className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-4 font-bold text-red-600">{errorMsg}</div>}
 
         {isEditing ? (

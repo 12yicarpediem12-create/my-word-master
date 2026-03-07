@@ -1,8 +1,10 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import SearchBar from "../components/SearchBar";
 import AppHeader from "../components/AppHeader";
+import { AppMain, AppShell, PageIntro, Surface } from "../components/layout/AppShell";
 import { summarizeActivity } from "../lib/activity-summary";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 import type { Language, VocabItem } from "@/app/lib/types";
@@ -16,34 +18,63 @@ type HistoryCardProps = {
 
 const supabase = getSupabaseBrowserClient();
 
-const TabButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-  <button
-    onClick={onClick}
-    className={`px-5 py-2 rounded-xl text-xs font-black uppercase transition-all ${active ? "bg-white text-blue-600 shadow-sm" : "text-gray-400"}`}
-  >
-    {children}
-  </button>
-);
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
+        active ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
 
-const DateDivider = ({ date }: { date: string }) => (
-  <div className="flex items-center gap-4 mb-6">
-    <h3 className="font-black text-gray-400 uppercase text-xs tracking-[0.2em] whitespace-nowrap">{date}</h3>
-    <div className="h-px bg-gray-200 w-full"></div>
-  </div>
-);
-
-const HistoryCard = ({ vocab, langInfo }: HistoryCardProps) => (
-  <Link href={`/word/${vocab.id}`} className="bg-white border-2 border-gray-100 p-5 rounded-[2rem] hover:border-blue-500 hover:shadow-xl transition-all flex items-center justify-between group">
+function DateDivider({ date }: { date: string }) {
+  return (
     <div className="flex items-center gap-4">
-      <span className="text-2xl">{langInfo?.emoji}</span>
-      <div>
-        <p className="font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
-        <p className="text-xs text-gray-400 font-bold">{vocab.translation}</p>
-      </div>
+      <h3 className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{date}</h3>
+      <div className="h-px w-full bg-slate-200" />
     </div>
-    <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
-  </Link>
-);
+  );
+}
+
+function StatCard({ label, value, helper }: { label: string; value: string | number; helper?: string }) {
+  return (
+    <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 px-5 py-4 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)]">
+      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>
+      {helper && <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-400">{helper}</p>}
+    </div>
+  );
+}
+
+function HistoryCard({ vocab, langInfo }: HistoryCardProps) {
+  return (
+    <Link
+      href={`/word/${vocab.id}`}
+      className="group flex items-center justify-between rounded-[1.75rem] border border-slate-200/80 bg-white/85 px-5 py-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_20px_40px_-32px_rgba(15,23,42,0.22)]"
+    >
+      <div className="flex items-center gap-4">
+        <span className="text-2xl">{langInfo?.emoji || "🌍"}</span>
+        <div className="min-w-0">
+          <p className="font-black text-slate-950 transition-colors group-hover:text-blue-600">{vocab.word}</p>
+          <p className="mt-1 text-sm font-medium text-slate-500">{vocab.translation}</p>
+        </div>
+      </div>
+      <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
+    </Link>
+  );
+}
 
 export default function HistoryPage() {
   const [results, setResults] = useState<VocabItem[]>([]);
@@ -119,75 +150,75 @@ export default function HistoryPage() {
   const activitySummary = useMemo(() => summarizeActivity(results), [results]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      <AppHeader primarySection="study" searchSlot={<SearchBar />} backHref="/" backLabel="Dashboard" />
+    <AppShell className="pb-24">
+      <AppHeader primarySection="study" searchSlot={<SearchBar />} backHref="/study" backLabel="Study Home" />
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <header className="mb-10">
-          <h1 className="text-5xl font-black tracking-tight mb-4">Learning History</h1>
-          <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-3xl border-2 border-gray-100 shadow-sm">
-            <div className="flex bg-gray-100 p-1 rounded-2xl">
-              <TabButton active={range === "7days"} onClick={() => setRange("7days")}>7 Days</TabButton>
-              <TabButton active={range === "30days"} onClick={() => setRange("30days")}>30 Days</TabButton>
-              <TabButton active={range === "month"} onClick={() => setRange("month")}>Archive</TabButton>
+      <AppMain width="lg" className="section-stack">
+        {errorMsg && <div className="rounded-2xl border-2 border-red-200 bg-red-50 p-4 font-bold text-red-600">{errorMsg}</div>}
+
+        <PageIntro
+          eyebrow="History"
+          title="Review your learning rhythm"
+          description="Use history to reflect on activity patterns and reopen words you studied recently. This is a supporting page, not the main study workspace."
+        />
+
+        <Surface tone="muted" className="p-4 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-[1.25rem] border border-slate-200 bg-white p-1">
+                <TabButton active={range === "7days"} onClick={() => setRange("7days")}>7 Days</TabButton>
+                <TabButton active={range === "30days"} onClick={() => setRange("30days")}>30 Days</TabButton>
+                <TabButton active={range === "month"} onClick={() => setRange("month")}>Archive</TabButton>
+              </div>
+
+              {range === "month" && (
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="rounded-[1.25rem] border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-blue-600 outline-none transition-colors focus:border-blue-300"
+                />
+              )}
             </div>
 
-            {range === "month" && (
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-gray-50 border-2 border-gray-100 px-4 py-2 rounded-xl font-bold text-sm text-blue-600 outline-none"
-              />
-            )}
-
-            <div className="ml-auto pr-4 hidden sm:block">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mastery Rate: </span>
-              <span className="text-sm font-black text-green-500">{stats.rate}%</span>
-            </div>
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+              {stats.rate}% mastery
+            </span>
           </div>
+        </Surface>
 
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Active Days</p>
-              <p className="text-2xl font-black mt-2">{activitySummary.activeDays}</p>
-            </div>
-            <div className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Current Rhythm</p>
-              <p className="text-2xl font-black mt-2">{activitySummary.streak} day{activitySummary.streak === 1 ? "" : "s"}</p>
-            </div>
-            <div className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Last Review</p>
-              <p className="text-2xl font-black mt-2">{activitySummary.lastActivityLabel || "None"}</p>
-            </div>
-          </div>
-        </header>
-
-        {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard label="Reviewed" value={stats.total} helper="selected range" />
+          <StatCard label="Mastered" value={stats.mastered} helper="remembered" />
+          <StatCard label="Active Days" value={activitySummary.activeDays} helper="with activity" />
+          <StatCard label="Current Rhythm" value={`${activitySummary.streak} day${activitySummary.streak === 1 ? "" : "s"}`} helper={activitySummary.lastActivityLabel || "no recent review"} />
+        </div>
 
         {isLoading ? (
-          <div className="text-center py-20 font-bold text-gray-400 animate-pulse tracking-widest uppercase">Fetching Records...</div>
+          <div className="rounded-[2rem] border border-slate-200 bg-slate-50/70 px-6 py-20 text-center font-bold uppercase tracking-widest text-slate-400 animate-pulse">
+            Fetching records...
+          </div>
         ) : Object.keys(groupedByDate).length > 0 ? (
-          <div className="space-y-12">
+          <div className="space-y-10">
             {Object.keys(groupedByDate).map((date) => (
-              <div key={date}>
+              <section key={date} className="space-y-5">
                 <DateDivider date={date} />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
                   {groupedByDate[date].map((vocab) => (
                     <HistoryCard key={vocab.id} vocab={vocab} langInfo={languages.find((l) => l.code === vocab.language_code)} />
                   ))}
                 </div>
-              </div>
+              </section>
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-[3rem] p-20 border-2 border-gray-200 text-center">
-            <div className="text-6xl mb-6">🏜️</div>
-            <h2 className="text-2xl font-black text-gray-300 uppercase">No Activity Found</h2>
-            <p className="text-gray-400 mt-2 font-medium">Try selecting a different period.</p>
-          </div>
+          <Surface tone="muted" className="rounded-[2.5rem] p-12 text-center sm:p-16">
+            <div className="text-6xl opacity-40">🏜️</div>
+            <h2 className="mt-6 text-2xl font-black tracking-tight text-slate-950">No activity found</h2>
+            <p className="mt-2 text-sm font-medium text-slate-500 sm:text-base">Try selecting a different period.</p>
+          </Surface>
         )}
-      </main>
-    </div>
+      </AppMain>
+    </AppShell>
   );
 }

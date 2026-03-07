@@ -84,7 +84,7 @@ export function PageIntro({
   return (
     <section
       className={cn(
-        framed && "surface-hero",
+        framed && "page-intro-frame",
         "page-intro",
         align === "center" && "page-intro-center",
         Boolean(actions) && "page-intro-with-actions",
