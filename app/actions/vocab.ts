@@ -59,11 +59,13 @@ function parseAccessTokenFromCookieValue(rawValue: string): string | null {
 
 async function requireAuthenticatedUserId(): Promise<string> {
   const cookieStore = await cookies();
+  const directTokenCookie = cookieStore.get("wm-access-token");
   const authCookie = cookieStore
     .getAll()
     .find((cookie) => cookie.name.startsWith("sb-") && cookie.name.endsWith("-auth-token"));
 
-  const token = authCookie ? parseAccessTokenFromCookieValue(authCookie.value) : null;
+  const directToken = directTokenCookie?.value ? decodeURIComponent(directTokenCookie.value) : null;
+  const token = directToken || (authCookie ? parseAccessTokenFromCookieValue(authCookie.value) : null);
   if (!token) {
     throw new Error("Authentication required.");
   }

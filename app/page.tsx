@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [streak, setStreak] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -147,6 +148,13 @@ export default function Dashboard() {
     else document.body.style.overflow = "unset";
   }, [isSettingsOpen]);
 
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    await supabase.auth.signOut();
+    setIsSigningOut(false);
+    window.location.href = "/login";
+  };
+
   if (!isMounted) return null;
 
   return (
@@ -178,6 +186,13 @@ export default function Dashboard() {
             <Link href="/root" className="px-5 py-4 bg-gray-50 hover:bg-rose-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center">
               🌱 Origins Library
             </Link>
+            <button
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="px-5 py-4 bg-gray-50 hover:bg-red-50 border-2 border-gray-100 rounded-2xl font-bold transition-all text-center disabled:opacity-50"
+            >
+              {isSigningOut ? "Signing out..." : "↩ Sign Out"}
+            </button>
           </div>
         </div>
       </div>
