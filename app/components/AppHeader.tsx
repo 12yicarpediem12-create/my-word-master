@@ -57,7 +57,28 @@ export default function AppHeader({
               WordMaster<span className="text-blue-600">.</span>
             </Link>
 
-            <div className="flex items-center gap-3 shrink-0">{utility}</div>
+            <div className="flex items-center gap-4 shrink-0">
+              {secondaryLinks.length > 0 && (
+                <div className="hidden lg:flex items-center gap-3">
+                  {secondaryLinks.map((link) => {
+                    const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`text-[11px] font-black uppercase tracking-[0.18em] transition-colors ${
+                          isActive ? "text-slate-900" : "text-slate-400 hover:text-blue-600"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">{utility}</div>
+            </div>
           </div>
 
           <div className="mt-4 flex flex-col gap-4 border-t border-slate-200/70 pt-4 sm:mt-5 sm:pt-5">
@@ -81,31 +102,11 @@ export default function AppHeader({
               })}
             </nav>
 
-            {(searchSlot || secondaryLinks.length > 0 || backHref) && (
+            {(searchSlot || backHref) && (
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 {searchSlot ? <div className="w-full lg:max-w-2xl">{searchSlot}</div> : <div />}
 
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-                  {secondaryLinks.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">Tools</span>
-                      {secondaryLinks.map((link) => {
-                        const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-                        return (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className={`text-[10px] font-black uppercase tracking-[0.18em] transition-colors ${
-                              isActive ? "text-slate-900" : "text-slate-400 hover:text-blue-600"
-                            }`}
-                          >
-                            {link.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-
                   {backHref && (
                     <Link
                       href={backHref}

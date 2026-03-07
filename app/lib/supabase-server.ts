@@ -23,10 +23,15 @@ function getSupabaseServerUrl(): string {
   return url;
 }
 
-function getSupabaseServiceRoleKey(): string {
-  const key =
+function getOptionalSupabaseServiceRoleKey(): string | null {
+  return (
     getNonEmptyEnvValue(process.env.SUPABASE_SERVICE_ROLE_KEY) ||
-    getNonEmptyEnvValue(process.env.SUPABASE_SERVICE_KEY);
+    getNonEmptyEnvValue(process.env.SUPABASE_SERVICE_KEY)
+  );
+}
+
+function getSupabaseServiceRoleKey(): string {
+  const key = getOptionalSupabaseServiceRoleKey();
 
   if (!key) {
     throw new Error(
@@ -70,4 +75,24 @@ export function getSupabaseServerPublicClient(): SupabaseClient {
   });
 
   return publicClient;
+}
+
+export function getSupabaseServerWriteClient(accessToken: string): SupabaseClient {
+  const serviceRoleKey = getOptionalSupabaseServiceRoleKey();
+  if (serviceRoleKey) {
+    return getSupabaseServerAdminClient();
+  }
+
+  const anonKey = getSupabaseAnonKey();
+  return createClient(getSupabaseServerUrl(), anonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }

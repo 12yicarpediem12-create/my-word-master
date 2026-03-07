@@ -2,14 +2,14 @@
 
 import { cookies } from "next/headers";
 import {
-  getSupabaseServerAdminClient,
   getSupabaseServerPublicClient,
+  getSupabaseServerWriteClient,
 } from "@/app/lib/supabase-server";
 
 type ActionResult = { error?: string };
 
-function getServerSupabase() {
-  return getSupabaseServerAdminClient();
+function getServerSupabase(accessToken: string) {
+  return getSupabaseServerWriteClient(accessToken);
 }
 
 function parseAccessTokenFromCookieValue(rawValue: string): string | null {
@@ -50,7 +50,7 @@ function parseAccessTokenFromCookieValue(rawValue: string): string | null {
   return null;
 }
 
-async function requireAuthenticatedUserId(): Promise<string> {
+async function requireAuthenticatedUser(): Promise<{ userId: string; accessToken: string }> {
   const cookieStore = await cookies();
   const directTokenCookie = cookieStore.get("wm-access-token");
   const authCookie = cookieStore
@@ -68,7 +68,7 @@ async function requireAuthenticatedUserId(): Promise<string> {
   if (error || !data.user) {
     throw new Error("Authentication required.");
   }
-  return data.user.id;
+  return { userId: data.user.id, accessToken: token };
 }
 
 export type VocabWritePayload = {
@@ -93,8 +93,8 @@ export async function addVocabWord(payload: VocabWritePayload): Promise<ActionRe
       return { error: "Missing required fields." };
     }
 
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const { error } = await supabase.from("vocab").insert([
       {
         user_id: userId,
@@ -129,8 +129,8 @@ export async function bulkInsertVocabWords(languageCode: string, items: Omit<Voc
       return { error: "Each item must include both word and translation." };
     }
 
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const rows = items.map((item) => ({
       user_id: userId,
       language_code: languageCode,
@@ -162,8 +162,8 @@ export async function bulkDeleteVocab(ids: string[]): Promise<ActionResult> {
     const normalizedIds = ids.map((id) => id.trim()).filter(Boolean);
     if (normalizedIds.length === 0) return {};
 
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const { data, error } = await supabase
       .from("vocab")
       .delete()
@@ -199,8 +199,8 @@ export async function updateVocabWord(wordId: string, payload: VocabUpdatePayloa
   try {
     if (!wordId) return { error: "Missing word id." };
 
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const { data, error } = await supabase
       .from("vocab")
       .update({
@@ -232,8 +232,8 @@ export async function updateVocabWord(wordId: string, payload: VocabUpdatePayloa
 export async function setVocabRemembered(wordId: string, isRemembered: boolean): Promise<ActionResult> {
   try {
     if (!wordId) return { error: "Missing word id." };
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const { data, error } = await supabase
       .from("vocab")
       .update({ is_remembered: isRemembered })
@@ -253,8 +253,8 @@ export async function setVocabRemembered(wordId: string, isRemembered: boolean):
 export async function deleteVocabWord(wordId: string): Promise<ActionResult> {
   try {
     if (!wordId) return { error: "Missing word id." };
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const { data, error } = await supabase
       .from("vocab")
       .delete()
@@ -286,8 +286,8 @@ export async function applyStudyResult(payload: StudyResultPayload): Promise<Act
   try {
     if (!payload.wordId) return { error: "Missing word id." };
 
-    const userId = await requireAuthenticatedUserId();
-    const supabase = getServerSupabase();
+    const { userId, accessToken } = await requireAuthenticatedUser();
+    const supabase = getServerSupabase(accessToken);
     const { data, error } = await supabase
       .from("vocab")
       .update({

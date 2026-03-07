@@ -33,6 +33,12 @@ export function DashboardLanguageOverview({
   primaryLanguageCode?: string;
 }) {
   const activeLanguages = vocabStats.filter((stat) => stat.total > 0);
+  const primaryLanguage =
+    activeLanguages.find((stat) => stat.code === primaryLanguageCode) ??
+    activeLanguages[0] ??
+    vocabStats[0];
+  const dueNowCount = activeLanguages.reduce((sum, stat) => sum + stat.dueToday, 0);
+  const learningCount = activeLanguages.reduce((sum, stat) => sum + stat.learning, 0);
 
   return (
     <div className="flex h-full flex-col gap-5">
@@ -59,52 +65,58 @@ export function DashboardLanguageOverview({
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Languages</p>
             <p className="mt-2 text-3xl font-black text-slate-950">{activeLanguages.length}</p>
           </div>
+          <div className="surface-muted px-4 py-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{dueNowCount}</p>
+          </div>
+          <div className="surface-muted px-4 py-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning</p>
+            <p className="mt-2 text-3xl font-black text-slate-950">{learningCount}</p>
+          </div>
         </div>
 
         <div className="mt-6 space-y-3">
-          {activeLanguages.length > 0 ? (
-            activeLanguages.slice(0, 3).map((stat) => (
-              <div
-                key={stat.code}
-                className="rounded-[1.5rem] border border-slate-200 bg-white/85 px-4 py-4"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
-                    {stat.emoji || "🌍"}
+          {primaryLanguage ? (
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 px-4 py-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                  {primaryLanguage.emoji || "🌍"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-black text-slate-950">{primaryLanguage.name}</p>
+                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                        Main language right now
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${primaryLanguage.dueToday > 0 ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+                      {formatDueLabel(primaryLanguage.dueToday)}
+                    </span>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-base font-black text-slate-950">{stat.name}</p>
-                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                          {formatMasteryLabel(stat.remembered, stat.total)}
-                        </p>
-                      </div>
-                      <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-                        {formatDueLabel(stat.dueToday)}
-                      </span>
-                    </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Link
-                        href={`/study/${stat.code}`}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
-                      >
-                        Open Hub
-                      </Link>
-                      <Link
-                        href={`/study/${stat.code}/topics`}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
-                      >
-                        Topics
-                      </Link>
-                    </div>
+                  <p className="mt-3 text-sm font-medium text-slate-600">
+                    {formatMasteryLabel(primaryLanguage.remembered, primaryLanguage.total)} with {primaryLanguage.learning} still in active learning.
+                  </p>
+                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${primaryLanguage.percentage}%` }} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href={`/study/${primaryLanguage.code}`}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                    >
+                      Open Hub
+                    </Link>
+                    <Link
+                      href={`/study/${primaryLanguage.code}/topics`}
+                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                    >
+                      Topics
+                    </Link>
                   </div>
                 </div>
               </div>
-            ))
+            </div>
           ) : (
             <div className="surface-muted px-5 py-6">
               <p className="text-sm font-medium text-slate-600">Add your first language to start building a study routine.</p>
