@@ -40,7 +40,7 @@ function StudyLanguageCard({
   const primaryLabel = hasWords ? "Start review" : "Open hub";
 
   return (
-    <article className="rounded-[2rem] border border-slate-200/80 bg-white/80 p-5 shadow-[0_22px_45px_-38px_rgba(15,23,42,0.28)] transition-all hover:border-blue-200 hover:bg-white sm:p-6">
+    <article className="rounded-[1.9rem] border border-slate-200/80 bg-white/74 p-5 transition-all hover:border-blue-200 hover:bg-white sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-slate-100 text-3xl">
@@ -69,8 +69,8 @@ function StudyLanguageCard({
         </span>
       </div>
 
-      <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      <div className="mt-5 border-t border-slate-200/75 pt-4">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Mastery</p>
             <div className="mt-2 flex items-end gap-2">
@@ -78,18 +78,12 @@ function StudyLanguageCard({
               <p className="pb-1 text-sm font-medium text-slate-600">{total} words</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
-            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-right">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak</p>
-              <p className="mt-1 text-xl font-black text-slate-950">{weakWords}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-right">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning</p>
-              <p className="mt-1 text-xl font-black text-slate-950">{learning}</p>
-            </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-slate-600 sm:justify-end">
+            <span><span className="font-black text-slate-950">{weakWords}</span> weak</span>
+            <span><span className="font-black text-slate-950">{learning}</span> learning</span>
           </div>
         </div>
-        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
+        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${percentage}%` }} />
         </div>
       </div>
@@ -169,16 +163,16 @@ export default function StudyHomePage() {
                       </p>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4">
+                    <div className="grid gap-x-4 gap-y-4 border-y border-slate-200/70 py-4 sm:grid-cols-3">
+                      <div>
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
                         <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.dueToday}</p>
                       </div>
-                      <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4">
+                      <div className="sm:border-l sm:border-slate-200/65 sm:pl-4">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak Points</p>
                         <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.weakWords}</p>
                       </div>
-                      <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4">
+                      <div className="sm:border-l sm:border-slate-200/65 sm:pl-4">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Mastery</p>
                         <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.percentage}%</p>
                       </div>
@@ -230,30 +224,30 @@ export default function StudyHomePage() {
                 )}
               </Surface>
 
-              <Surface tone="muted" className="p-6 sm:p-7">
+              <section className="section-open">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Across Study</p>
-                <div className="mt-5 grid gap-3">
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
+                <div className="mt-5 grid gap-x-4 gap-y-4 border-y border-slate-200/75 py-4">
+                  <div>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Languages</p>
                     <p className="mt-2 text-3xl font-black text-slate-950">{vocabStats.length}</p>
                   </div>
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
+                  <div className="border-t border-slate-200/70 pt-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Across Study</p>
                     <p className="mt-2 text-3xl font-black text-slate-950">{totalDue}</p>
                   </div>
-                  <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
+                  <div className="border-t border-slate-200/70 pt-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak Points</p>
                     <p className="mt-2 text-3xl font-black text-slate-950">{totalWeak}</p>
                   </div>
                   <Link
                     href="/history"
-                    className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600"
+                    className="border-t border-slate-200/70 pt-4 font-black text-slate-950 transition-colors hover:text-blue-600"
                   >
                     Review history
                     <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">See past learning activity</p>
                   </Link>
                 </div>
-              </Surface>
+              </section>
             </section>
 
             <section className="pt-2">

@@ -147,6 +147,11 @@ body {
     align-items: center;
     gap: 0.75rem;
   }
+
+  .section-open {
+    border-top: 1px solid rgba(226, 232, 240, 0.82);
+    padding-top: 1.5rem;
+  }
 }
 
 @media (min-width: 640px) {
@@ -169,6 +174,10 @@ body {
 
   .page-subtitle {
     font-size: 1.02rem;
+  }
+
+  .section-open {
+    padding-top: 1.75rem;
   }
 }
 
@@ -201,6 +210,10 @@ body {
   .page-intro-actions {
     margin-left: auto;
     justify-content: flex-end;
+  }
+
+  .section-open {
+    padding-top: 2rem;
   }
 }
 

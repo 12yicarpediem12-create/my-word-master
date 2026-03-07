@@ -12,7 +12,7 @@ import {
   DashboardLanguageOverview,
   DashboardProgressSection,
 } from "./components/dashboard/DashboardSections";
-import { AppMain, AppShell, PageIntro, Surface } from "./components/layout/AppShell";
+import { AppMain, AppShell, PageIntro } from "./components/layout/AppShell";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { getHabitNudge } from "./lib/activity-summary";
 import { getSupabaseBrowserClient } from "./lib/supabase-browser";
@@ -110,7 +110,7 @@ export default function Dashboard() {
           <DashboardProgressSection vocabStats={vocabStats} />
         </section>
 
-        <section className="border-t border-slate-200/70 pt-8 sm:pt-10">
+        <section className="section-open">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="page-eyebrow">Build Library</p>
@@ -119,24 +119,22 @@ export default function Dashboard() {
                 The study loop stays above. This area is for slower library growth, cleanup, and import work when you need it.
               </p>
             </div>
-            <Surface tone="muted" className="p-4 sm:p-5">
-              <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 border-t border-slate-200/75 pt-4 sm:grid-cols-2 sm:border-none sm:pt-0">
               <Link
                 href="/import"
-                className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+                className="rounded-[1.5rem] border border-slate-200/80 bg-white/72 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:bg-white hover:text-blue-600"
               >
                 Bulk import
                 <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Bring in a bigger list</p>
               </Link>
               <Link
                 href="/manage"
-                className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+                className="rounded-[1.5rem] border border-slate-200/80 bg-white/72 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:bg-white hover:text-blue-600"
               >
                 Manage setup
                 <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Adjust languages and categories</p>
               </Link>
-              </div>
-            </Surface>
+            </div>
           </div>
 
           <div className="max-w-5xl">

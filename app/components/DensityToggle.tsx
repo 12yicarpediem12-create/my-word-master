@@ -9,7 +9,7 @@ type DensityToggleProps = {
 
 export default function DensityToggle({ value, onChange }: DensityToggleProps) {
   return (
-    <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-white p-1 shadow-[0_14px_28px_-22px_rgba(15,23,42,0.22)]">
+    <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200/80 bg-white/75 p-1">
       <button
         onClick={() => onChange("rich")}
         className={`rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${

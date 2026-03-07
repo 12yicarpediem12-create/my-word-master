@@ -36,8 +36,8 @@ export function DashboardLanguageOverview({
   const learningCount = activeLanguages.reduce((sum, stat) => sum + stat.learning, 0);
 
   return (
-    <section className="flex h-full flex-col justify-between rounded-[2rem] border border-slate-200/70 bg-white/55 p-5 shadow-[0_18px_40px_-36px_rgba(15,23,42,0.18)] backdrop-blur-sm sm:p-6">
-      <div>
+    <section className="flex h-full flex-col justify-between border-t border-slate-200/80 pt-5 sm:pt-6 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+      <div className="min-w-0">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Overview</p>
@@ -51,22 +51,22 @@ export function DashboardLanguageOverview({
           </span>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-4">
+        <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-slate-200/75 py-4 sm:grid-cols-4">
+          <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Words</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{totalWords}</p>
+            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{totalWords}</p>
           </div>
-          <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-4">
+          <div className="min-w-0 sm:border-l sm:border-slate-200/65 sm:pl-4">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Languages</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{activeLanguages.length}</p>
+            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{activeLanguages.length}</p>
           </div>
-          <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-4">
+          <div className="min-w-0 sm:border-l sm:border-slate-200/65 sm:pl-4">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{dueNowCount}</p>
+            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{dueNowCount}</p>
           </div>
-          <div className="rounded-[1.35rem] border border-slate-200/80 bg-white/80 px-4 py-4">
+          <div className="min-w-0 sm:border-l sm:border-slate-200/65 sm:pl-4">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{learningCount}</p>
+            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{learningCount}</p>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export function DashboardLanguageOverview({
                 {spotlightStats.map((stat) => (
                   <article
                     key={stat.code}
-                    className="rounded-[1.4rem] border border-slate-200/80 bg-white/88 p-4 transition-all hover:-translate-y-0.5 hover:border-blue-200"
+                    className="rounded-[1.5rem] border border-slate-200/80 bg-white/72 p-4 transition-all hover:border-blue-200 hover:bg-white/88"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3">
@@ -110,15 +110,15 @@ export function DashboardLanguageOverview({
                       {stat.remembered} mastered · {stat.learning} learning
                     </p>
 
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100/90">
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
                       <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="text-sm font-black text-slate-950">{stat.percentage}%</p>
+                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-3">
+                      <p className="text-sm font-black text-slate-950">{stat.percentage}% mastery</p>
                       <Link
                         href={`/study/${stat.code}`}
-                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                        className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-600 transition-colors hover:text-blue-600"
                       >
                         Study
                       </Link>
@@ -128,40 +128,40 @@ export function DashboardLanguageOverview({
               </div>
             </>
           ) : (
-            <div className="rounded-[1.5rem] border border-slate-200/80 bg-white/80 px-5 py-6">
+            <div className="border-t border-slate-200/75 pt-4">
               <p className="text-sm font-medium text-slate-600">Add your first language to start building a study routine.</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="mt-5 border-t border-slate-200/70 pt-5">
+      <div className="mt-6 border-t border-slate-200/75 pt-5">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Next Actions</p>
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
           <Link
             href="/study"
-            className="rounded-[1.4rem] border border-slate-200 bg-white/88 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+            className="font-black text-slate-900 transition-colors hover:text-blue-600"
           >
             Study home
             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Choose a language intentionally</p>
           </Link>
           <Link
             href="/library"
-            className="rounded-[1.4rem] border border-slate-200 bg-white/88 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+            className="font-black text-slate-900 transition-colors hover:text-blue-600"
           >
             Library
             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Browse and clean up words</p>
           </Link>
           <Link
             href="/import"
-            className="rounded-[1.4rem] border border-slate-200 bg-white/88 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+            className="font-black text-slate-900 transition-colors hover:text-blue-600"
           >
             Import
             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Bring in a larger vocab list</p>
           </Link>
           <Link
             href="/manage"
-            className="rounded-[1.4rem] border border-slate-200 bg-white/88 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
+            className="font-black text-slate-900 transition-colors hover:text-blue-600"
           >
             Manage
             <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Languages, categories, and setup</p>
@@ -179,7 +179,7 @@ export function DashboardLanguageListSection({ vocabStats }: { vocabStats: Dashb
   const totalLearning = displayedStats.reduce((sum, stat) => sum + stat.learning, 0);
 
   return (
-    <section className="surface-card p-6 sm:p-8">
+    <section className="section-open">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Overview</p>
@@ -188,16 +188,16 @@ export function DashboardLanguageListSection({ vocabStats }: { vocabStats: Dashb
             Keep every active language visible with its current workload, mastery progress, and direct next actions.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div className="surface-muted px-4 py-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-slate-200/75 py-4 sm:grid-cols-3">
+          <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Languages</p>
             <p className="mt-2 text-2xl font-black text-slate-950">{displayedStats.length}</p>
           </div>
-          <div className="surface-muted px-4 py-4">
+          <div className="sm:border-l sm:border-slate-200/65 sm:pl-4">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
             <p className="mt-2 text-2xl font-black text-slate-950">{totalDue}</p>
           </div>
-          <div className="surface-muted px-4 py-4 col-span-2 sm:col-span-1">
+          <div className="col-span-2 sm:col-span-1 sm:border-l sm:border-slate-200/65 sm:pl-4">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Still Learning</p>
             <p className="mt-2 text-2xl font-black text-slate-950">{totalLearning}</p>
           </div>
@@ -210,7 +210,7 @@ export function DashboardLanguageListSection({ vocabStats }: { vocabStats: Dashb
             {displayedStats.map((stat) => (
               <article
                 key={stat.code}
-                className="rounded-[1.9rem] border border-slate-200 bg-white/95 p-5 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.25)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_28px_70px_-40px_rgba(37,99,235,0.2)]"
+                className="rounded-[1.75rem] border border-slate-200 bg-white/78 p-5 transition-all hover:border-blue-200 hover:bg-white/92"
               >
                 <div className="flex h-full flex-col gap-5">
                   <div className="flex items-start justify-between gap-4">
@@ -235,7 +235,7 @@ export function DashboardLanguageListSection({ vocabStats }: { vocabStats: Dashb
                     </span>
                   </div>
 
-                  <div className="surface-muted px-4 py-4">
+                  <div className="border-t border-slate-200/70 pt-4">
                     <div className="flex items-end justify-between gap-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Mastery</p>
@@ -244,25 +244,14 @@ export function DashboardLanguageListSection({ vocabStats }: { vocabStats: Dashb
                           <p className="pb-1 text-sm font-medium text-slate-600">{stat.learning} learning</p>
                         </div>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-right">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due</p>
-                        <p className="mt-1 text-xl font-black text-slate-950">{stat.dueToday}</p>
-                      </div>
+                      <p className="text-sm font-black text-slate-950">{stat.dueToday} due</p>
                     </div>
-                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
+                    <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
                       <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Remembered</p>
-                      <p className="mt-1 text-xl font-black text-slate-950">{stat.remembered}</p>
-                    </div>
-                    <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">In Review</p>
-                      <p className="mt-1 text-xl font-black text-slate-950">{stat.learning}</p>
-                    </div>
+                    <p className="mt-3 text-sm font-medium text-slate-600">
+                      {stat.remembered} remembered · {stat.learning} in review
+                    </p>
                   </div>
 
                   <div className="mt-auto flex flex-wrap gap-2">

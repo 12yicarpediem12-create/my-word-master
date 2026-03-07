@@ -217,7 +217,7 @@ export default function LibraryPage() {
           actions={undefined}
         />
 
-        <WorkspacePanel className="p-6 sm:p-7">
+        <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Vocabulary Workspace"
             title="Workspace controls"
@@ -247,7 +247,7 @@ export default function LibraryPage() {
             }
           />
 
-          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="space-y-5">
               <WorkspaceFilterGroup label="Language">
                   <WorkspaceChipButton active={selectedLang === "all"} onClick={() => setSelectedLang("all")}>
@@ -288,6 +288,7 @@ export default function LibraryPage() {
             </div>
 
             <WorkspaceUtilityPanel
+              tone="open"
               eyebrow="Display"
               title="View density"
               description={densityMode === "rich" ? "Larger cards with more breathing room." : "Tighter rows for faster scanning and bulk selection."}
@@ -297,7 +298,7 @@ export default function LibraryPage() {
           </div>
         </WorkspacePanel>
 
-        <WorkspacePanel className="p-5 sm:p-6">
+        <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Results"
             title="Library results"
@@ -309,9 +310,9 @@ export default function LibraryPage() {
             }
           />
 
-          <div className="mt-5">
+          <div className="mt-5 border-t border-slate-200/75 pt-5">
             {isLoading ? (
-              <div className="rounded-[2rem] border border-slate-200 bg-slate-50/70 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
+              <div className="rounded-[2rem] border border-slate-200/70 bg-white/55 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
                 Loading your library...
               </div>
             ) : filteredVocab.length > 0 ? (

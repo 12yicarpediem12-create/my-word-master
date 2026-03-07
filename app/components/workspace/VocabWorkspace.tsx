@@ -9,6 +9,7 @@ function cn(...values: Array<string | false | null | undefined>) {
 const PANEL_TONE_CLASS = {
   card: "surface-card",
   muted: "surface-muted",
+  open: "",
 } as const;
 
 export function WorkspacePanel({
@@ -20,7 +21,7 @@ export function WorkspacePanel({
   tone?: keyof typeof PANEL_TONE_CLASS;
   className?: string;
 }) {
-  return <section className={cn(PANEL_TONE_CLASS[tone], className)}>{children}</section>;
+  return <section className={cn(PANEL_TONE_CLASS[tone], tone === "open" && "section-open", className)}>{children}</section>;
 }
 
 export function WorkspaceHeader({
@@ -66,12 +67,14 @@ export function WorkspaceFilterGroup({
 }
 
 export function WorkspaceUtilityPanel({
+  tone = "muted",
   eyebrow,
   title,
   description,
   children,
   className,
 }: {
+  tone?: "muted" | "open";
   eyebrow?: string;
   title: string;
   description?: string;
@@ -79,7 +82,14 @@ export function WorkspaceUtilityPanel({
   className?: string;
 }) {
   return (
-    <aside className={cn("surface-muted flex flex-col justify-between gap-4 rounded-[1.75rem] p-4 sm:p-5", className)}>
+    <aside
+      className={cn(
+        tone === "muted"
+          ? "surface-muted flex flex-col justify-between gap-4 rounded-[1.75rem] p-4 sm:p-5"
+          : "flex flex-col justify-between gap-4 border-t border-slate-200/80 pt-4 sm:pt-5 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0",
+        className
+      )}
+    >
       <div>
         {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{eyebrow}</p>}
         <h3 className="mt-2 text-base font-black tracking-tight text-slate-950">{title}</h3>

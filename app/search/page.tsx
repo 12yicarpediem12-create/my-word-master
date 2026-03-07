@@ -84,14 +84,14 @@ const LanguageGroupCard = ({
   langInfo: any;
   densityMode: DensityMode;
 }) => (
-  <section className={`rounded-[2rem] border border-slate-200/80 bg-white/80 ${densityMode === "rich" ? "p-6 sm:p-8" : "p-4 sm:p-5"}`}>
-    <div className={`flex items-center gap-4 border-b border-slate-100 ${densityMode === "rich" ? "mb-6 pb-4" : "mb-4 pb-3"}`}>
+  <section className={`border-t border-slate-200/75 ${densityMode === "rich" ? "pt-6 sm:pt-8" : "pt-4 sm:pt-5"}`}>
+    <div className={`flex items-center gap-4 ${densityMode === "rich" ? "mb-6 pb-4" : "mb-4 pb-3"} border-b border-slate-200/70`}>
       <span className="text-4xl">{langInfo?.emoji || "🌍"}</span>
       <div>
         <h2 className="text-2xl font-black tracking-tight text-gray-900">{langInfo?.name || langCode.toUpperCase()}</h2>
         <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{langCode.toUpperCase()}</p>
       </div>
-      <span className="ml-auto rounded-full bg-gray-100 px-3 py-1 text-xs font-black text-gray-500">{words.length}</span>
+      <span className="ml-auto text-xs font-black uppercase tracking-[0.18em] text-slate-500">{words.length} words</span>
     </div>
     <div className={densityMode === "rich" ? "divide-y-2 divide-gray-100" : "space-y-2"}>
       {words.map((vocab: any) => (
@@ -167,7 +167,7 @@ function SearchContent() {
           }
         />
 
-        <WorkspacePanel className="p-6 sm:p-7">
+        <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Vocabulary Workspace"
             title="Workspace controls"
@@ -179,7 +179,7 @@ function SearchContent() {
             }
           />
 
-          <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
             <div className="space-y-5">
               <WorkspaceFilterGroup label="Query">
                 <span className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700">
@@ -195,6 +195,7 @@ function SearchContent() {
             </div>
 
             <WorkspaceUtilityPanel
+              tone="open"
               eyebrow="Display"
               title="View density"
               description={densityMode === "rich" ? "More spacing and larger scan targets." : "Denser grouped rows for faster scanning."}
@@ -204,7 +205,7 @@ function SearchContent() {
           </div>
         </WorkspacePanel>
 
-        <WorkspacePanel className="p-5 sm:p-6">
+        <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Results"
             title="Search results"
@@ -216,9 +217,9 @@ function SearchContent() {
             }
           />
 
-          <div className="mt-5">
+          <div className="mt-5 border-t border-slate-200/75 pt-5">
             {isLoading ? (
-              <div className="rounded-[2rem] border border-slate-200 bg-slate-50/70 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
+              <div className="rounded-[2rem] border border-slate-200/70 bg-white/55 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
                 Searching...
               </div>
             ) : results.length > 0 ? (
