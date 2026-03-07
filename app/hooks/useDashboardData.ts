@@ -3,18 +3,16 @@
 import { useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import { summarizeActivity } from "@/app/lib/activity-summary";
-import type { DashboardActivityMeta, DashboardVocabStat } from "@/app/lib/dashboard";
+import {
+  buildDashboardVocabStats,
+  buildLanguageVocabMap,
+  sortLanguagesByRecentActivity,
+  type DashboardActivityMeta,
+  type DashboardVocabStat,
+} from "@/app/lib/dashboard";
 import type { HeatmapValue, Language, VocabItem } from "@/app/lib/types";
 
 const supabase = getSupabaseBrowserClient();
-
-function buildLanguageVocabMap(vocab: VocabItem[]) {
-  return vocab.reduce<Record<string, VocabItem[]>>((acc, item) => {
-    if (!acc[item.language_code]) acc[item.language_code] = [];
-    acc[item.language_code].push(item);
-    return acc;
-  }, {});
-}
 
 function buildHeatmapValues(vocab: VocabItem[]) {
   const counts = vocab.reduce<Record<string, number>>((acc, word) => {
@@ -30,45 +28,6 @@ function buildHeatmapValues(vocab: VocabItem[]) {
     date,
     count: counts[date],
   }));
-}
-
-function getLatestActivityTime(language: Language, vocab: VocabItem[]) {
-  return vocab.reduce((max, item) => {
-    const dateStr = item.last_reviewed || item.created_at;
-    const time = dateStr ? new Date(dateStr).getTime() : 0;
-    return time > max ? time : max;
-  }, (language.created_at ? new Date(language.created_at).getTime() : 0));
-}
-
-function sortLanguagesByRecentActivity(languages: Language[], vocabByLanguage: Record<string, VocabItem[]>) {
-  return [...languages].sort((a, b) => {
-    const aLatest = getLatestActivityTime(a, vocabByLanguage[a.code] || []);
-    const bLatest = getLatestActivityTime(b, vocabByLanguage[b.code] || []);
-    return bLatest - aLatest;
-  });
-}
-
-function buildVocabStats(languages: Language[], vocabByLanguage: Record<string, VocabItem[]>): DashboardVocabStat[] {
-  const today = new Date().toISOString().split("T")[0];
-
-  return languages.map((lang) => {
-    const langVocab = vocabByLanguage[lang.code] || [];
-    const total = langVocab.length;
-    const remembered = langVocab.filter((item) => item.is_remembered).length;
-    const dueToday = langVocab.filter((item) => {
-      if (!item.next_review_date) return false;
-      return item.next_review_date.split("T")[0] <= today;
-    }).length;
-
-    return {
-      ...lang,
-      total,
-      remembered,
-      learning: Math.max(total - remembered, 0),
-      dueToday,
-      percentage: total === 0 ? 0 : Math.round((remembered / total) * 100),
-    };
-  });
 }
 
 export function useDashboardData() {
@@ -88,7 +47,7 @@ export function useDashboardData() {
       setErrorMsg(null);
       const [{ data: langs, error: langsError }, { data: allVocab, error: vocabError }] = await Promise.all([
         supabase.from("languages").select("*"),
-        supabase.from("vocab").select("id, language_code, is_remembered, created_at, last_reviewed, next_review_date"),
+        supabase.from("vocab").select("id, language_code, is_remembered, created_at, last_reviewed, next_review_date, mistake_count"),
       ]);
 
       if (langsError || vocabError) {
@@ -126,7 +85,7 @@ export function useDashboardData() {
       const sortedLangs = sortLanguagesByRecentActivity(loadedLangs, vocabByLanguage);
 
       setLanguages(sortedLangs);
-      setVocabStats(buildVocabStats(sortedLangs, vocabByLanguage));
+      setVocabStats(buildDashboardVocabStats(sortedLangs, vocabByLanguage));
     }
 
     loadDashboard();

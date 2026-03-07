@@ -103,7 +103,6 @@ export default function Dashboard() {
           <DashboardLanguageOverview
             vocabStats={vocabStats}
             totalWords={totalWords}
-            primaryLanguageCode={primaryLanguage?.code}
           />
         </section>
 

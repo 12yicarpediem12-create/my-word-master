@@ -51,7 +51,7 @@ export default function DailyStudyHero({
 
       <div className="relative flex flex-col gap-8 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.8fr)] xl:items-start">
         <div>
-          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-blue-600 sm:text-xs">Today&apos;s Study</p>
+          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-blue-600 sm:text-xs">Today's Study</p>
           <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
             {doneForToday ? "Done for today." : dueTodayCount > 0 ? `${dueTodayCount} cards are ready.` : "You are caught up for now."}
           </h2>
@@ -100,14 +100,14 @@ export default function DailyStudyHero({
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Primary Action</p>
             <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
-              {doneForToday ? "Keep the habit warm." : "Start your daily review."}
+              {doneForToday ? "Keep the recent language warm." : "Continue your recent language."}
             </h3>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
               {primaryLanguage
                 ? doneForToday
                   ? `All due cards are cleared in ${primaryLanguage.emoji || "🌍"} ${primaryLanguage.name}.`
-                  : `Using ${primaryLanguage.emoji || "🌍"} ${primaryLanguage.name} first keeps your daily flow simple.`
-                : "Add a language to begin your daily review flow."}
+                  : `${primaryLanguage.emoji || "🌍"} ${primaryLanguage.name} is your most recently active study language, so this is the fastest way back into review.`
+                : "Add a language to begin your daily review flow, or open Study to choose one intentionally."}
             </p>
           </div>
 
@@ -122,14 +122,14 @@ export default function DailyStudyHero({
               href={primaryLanguage ? (doneForToday ? `/study/${primaryLanguage.code}` : `/study/${primaryLanguage.code}/session?mode=review&direction=recognition`) : "/manage"}
               className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-center font-black text-white shadow-[0_18px_40px_-22px_rgba(37,99,235,0.75)] transition-all hover:bg-blue-700"
             >
-              {doneForToday ? "Review Complete" : "Start Today&apos;s Review"}
+              {doneForToday ? "Open Recent Hub" : "Continue Recent Review"}
             </Link>
             {primaryLanguage && (
               <Link
                 href={`/study/${primaryLanguage.code}/session`}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600"
               >
-                Open custom study modes
+                Recent language modes
               </Link>
             )}
           </div>

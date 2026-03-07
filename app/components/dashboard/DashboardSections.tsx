@@ -26,15 +26,11 @@ function formatDueLabel(dueToday: number) {
 export function DashboardLanguageOverview({
   vocabStats,
   totalWords,
-  primaryLanguageCode,
 }: {
   vocabStats: DashboardVocabStat[];
   totalWords: number;
-  primaryLanguageCode?: string;
 }) {
   const activeLanguages = vocabStats.filter((stat) => stat.total > 0);
-  const primaryLanguage =
-    activeLanguages.find((stat) => stat.code === primaryLanguageCode) ?? activeLanguages[0] ?? vocabStats[0];
   const spotlightStats = (activeLanguages.length > 0 ? activeLanguages : vocabStats).slice(0, 4);
   const dueNowCount = activeLanguages.reduce((sum, stat) => sum + stat.dueToday, 0);
   const learningCount = activeLanguages.reduce((sum, stat) => sum + stat.learning, 0);
@@ -79,14 +75,12 @@ export function DashboardLanguageOverview({
             <>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Language Cards</p>
-                {primaryLanguage && (
-                  <Link
-                    href={`/study/${primaryLanguage.code}`}
-                    className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-blue-600"
-                  >
-                    Open main hub
-                  </Link>
-                )}
+                <Link
+                  href="/study"
+                  className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-blue-600"
+                >
+                  Open study home
+                </Link>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -145,11 +139,11 @@ export function DashboardLanguageOverview({
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Next Actions</p>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Link
-            href={primaryLanguageCode ? `/study/${primaryLanguageCode}` : "/manage"}
+            href="/study"
             className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
           >
-            Study hub
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Open your main language</p>
+            Study home
+            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Choose a language intentionally</p>
           </Link>
           <Link
             href="/library"
