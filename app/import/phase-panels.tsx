@@ -1,5 +1,6 @@
 import type { ChangeEvent, ReactNode } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import type { Language } from "@/app/lib/types";
 import { ImportCountCard, LogSummaryPanel } from "./primitives";
 import { ImportReviewTable } from "./review-table";
@@ -274,6 +275,8 @@ export function ImportReviewPanel({
   onRemove: (id: number) => void;
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
 }) {
+  const [focusNeedsHintSignal, setFocusNeedsHintSignal] = useState(0);
+
   return (
     <WizardSection
       eyebrow="Step 3"
@@ -295,7 +298,12 @@ export function ImportReviewPanel({
             <ImportCountCard label="Failed" value={failedCount} tone="rose" helper="Analysis error" />
           </div>
 
-          <ImportReviewTable analyzedData={analyzedData} onRemove={onRemove} onEditChange={onEditChange} />
+          <ImportReviewTable
+            analyzedData={analyzedData}
+            onRemove={onRemove}
+            onEditChange={onEditChange}
+            focusNeedsHintSignal={focusNeedsHintSignal}
+          />
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-32">
@@ -308,9 +316,17 @@ export function ImportReviewPanel({
                 : "There are no valid rows left to save."}
             </p>
             {needsHintCount > 0 && (
-              <p className="mt-3 text-sm leading-relaxed text-amber-700">
-                {needsHintCount} row{needsHintCount !== 1 ? "s still need" : " still needs"} one clear part of speech and meaning before they can be saved.
-              </p>
+              <div className="mt-3 rounded-[1.35rem] border border-amber-200 bg-amber-50/75 p-4">
+                <p className="text-sm leading-relaxed text-amber-800">
+                  {needsHintCount} row{needsHintCount !== 1 ? "s still need" : " still needs"} one clear part of speech and meaning before they can be saved.
+                </p>
+                <button
+                  onClick={() => setFocusNeedsHintSignal((value) => value + 1)}
+                  className="mt-3 rounded-full border border-amber-200 bg-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100"
+                >
+                  Review unresolved rows
+                </button>
+              </div>
             )}
 
             <div className="mt-6 space-y-3">

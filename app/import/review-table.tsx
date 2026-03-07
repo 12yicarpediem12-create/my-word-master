@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { AnalyzedWord } from "./types";
 
 function getReviewStatus(item: AnalyzedWord) {
@@ -22,22 +23,81 @@ export function ImportReviewTable({
   analyzedData,
   onRemove,
   onEditChange,
+  focusNeedsHintSignal = 0,
 }: {
   analyzedData: AnalyzedWord[];
   onRemove: (id: number) => void;
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
+  focusNeedsHintSignal?: number;
 }) {
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  const [showNeedsHintOnly, setShowNeedsHintOnly] = useState(false);
+
+  const rowsWithStatus = useMemo(
+    () =>
+      analyzedData.map((item) => ({
+        item,
+        status: getReviewStatus(item),
+      })),
+    [analyzedData]
+  );
+
+  const unresolvedRows = rowsWithStatus.filter(({ status }) => status.label === "Needs Hint");
+  const displayedRows = showNeedsHintOnly ? unresolvedRows : rowsWithStatus;
+
+  useEffect(() => {
+    if (!focusNeedsHintSignal || unresolvedRows.length === 0) return;
+
+    setShowNeedsHintOnly(true);
+
+    requestAnimationFrame(() => {
+      const firstUnresolvedRow = tableRef.current?.querySelector<HTMLTableRowElement>("[data-needs-hint='true']");
+      firstUnresolvedRow?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [focusNeedsHintSignal, unresolvedRows.length]);
+
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.2)]">
+    <div ref={tableRef} className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.2)]">
       <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/80 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Save Preview</p>
           <p className="mt-1 text-sm font-bold text-slate-500">Everything shown below is editable. Only rows with one clear POS and meaning will be inserted on save.</p>
         </div>
-        <span className="inline-flex items-center self-start rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700 sm:self-auto">
-          Review Rows: {analyzedData.length}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {unresolvedRows.length > 0 && (
+            <button
+              onClick={() => setShowNeedsHintOnly((current) => !current)}
+              className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest transition-colors ${
+                showNeedsHintOnly
+                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-amber-200 hover:text-amber-700"
+              }`}
+            >
+              {showNeedsHintOnly ? "Show all rows" : `Needs Hint only (${unresolvedRows.length})`}
+            </button>
+          )}
+          <span className="inline-flex items-center self-start rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700 sm:self-auto">
+            Review Rows: {displayedRows.length}
+          </span>
+        </div>
       </div>
+      {unresolvedRows.length > 0 && (
+        <div className="border-b border-amber-100 bg-amber-50/65 px-6 py-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="support-label text-amber-600">Unresolved rows</p>
+              <p className="mt-1 text-sm font-medium leading-relaxed text-amber-800">
+                {unresolvedRows.length} row{unresolvedRows.length === 1 ? "" : "s"} still need one clear part of speech and meaning before save.
+              </p>
+            </div>
+            {showNeedsHintOnly && (
+              <span className="rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                Focused view
+              </span>
+            )}
+          </div>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead className="sticky top-0 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
@@ -52,18 +112,23 @@ export function ImportReviewTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {analyzedData.length === 0 ? (
+            {displayedRows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-10 text-center font-bold text-slate-400">No words to import. (All duplicates or errors)</td>
+                <td colSpan={7} className="p-10 text-center font-bold text-slate-400">
+                  {analyzedData.length === 0
+                    ? "No words to import. (All duplicates or errors)"
+                    : "No unresolved rows left in this filtered view."}
+                </td>
               </tr>
             ) : (
-              analyzedData.map((item) => {
-                const status = getReviewStatus(item);
+              displayedRows.map(({ item, status }) => {
+                const isNeedsHint = status.label === "Needs Hint";
 
                 return (
                 <tr
                   key={item.id}
-                  className={`group transition-colors hover:bg-slate-50/80 ${status.label === "Needs Hint" ? "bg-amber-50/35" : ""}`}
+                  data-needs-hint={isNeedsHint ? "true" : "false"}
+                  className={`group scroll-mt-32 transition-colors hover:bg-slate-50/80 ${isNeedsHint ? "bg-amber-50/45 ring-1 ring-inset ring-amber-100" : ""}`}
                 >
                   <td className="p-4 text-center">
                     <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
