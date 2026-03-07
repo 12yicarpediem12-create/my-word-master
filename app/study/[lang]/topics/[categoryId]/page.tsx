@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import AppHeader from "@/app/components/AppHeader";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -103,20 +104,7 @@ export default function TopicDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-        <Link href="/" className="text-2xl sm:text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
-          WordMaster.
-        </Link>
-
-        <Link
-          href={topicsPath}
-          className={`text-[10px] sm:text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${
-            !langCode ? "text-gray-200 cursor-not-allowed" : "text-gray-400 hover:text-blue-600"
-          }`}
-        >
-          <span>←</span> BACK TO TOPICS
-        </Link>
-      </nav>
+      <AppHeader primarySection="study" backHref={topicsPath} backLabel="Topics" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {isLoading ? (

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import AppHeader from "@/app/components/AppHeader";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,18 +70,9 @@ export default function RootMindMapPage() {
         }}
       ></div>
 
-      {/* 🌟 ツールバー風のナビゲーション */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-4 flex justify-between items-center z-50 shadow-sm relative">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors">
-            ←
-          </button>
-          <div>
-            <Link href="/" className="text-xl font-black text-gray-800 tracking-tight">WordMaster.</Link>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Etymology Canvas</p>
-          </div>
-        </div>
-      </nav>
+      <div className="relative z-50">
+        <AppHeader primarySection={null} backHref="/root" backLabel="Roots" />
+      </div>
 
       {/* 🌟 無限キャンバスエリア（スクロール可能） */}
       <main className="relative z-10 flex-1 overflow-auto p-10 md:p-20 flex items-center justify-start xl:justify-center">

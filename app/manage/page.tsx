@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import CreateCardForm from "../components/CreateCardForm";
+import AppHeader from "../components/AppHeader";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,14 +62,7 @@ export default function ManageLibrary() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-4 md:px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-        <Link href="/" className="text-2xl md:text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80 transition-opacity">
-          WordMaster.
-        </Link>
-        <Link href="/" className="text-[10px] md:text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors uppercase tracking-widest flex items-center gap-2">
-          <span>←</span> Back
-        </Link>
-      </nav>
+      <AppHeader primarySection={null} backHref="/" backLabel="Dashboard" />
 
       <main className="max-w-4xl mx-auto px-4 md:px-8 pt-12 md:pt-16 flex flex-col gap-10">
         <header className="flex flex-col gap-2">

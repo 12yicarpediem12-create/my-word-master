@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import SearchBar from "../components/SearchBar";
+import AppHeader from "../components/AppHeader";
+import { summarizeActivity } from "../lib/activity-summary";
 import type { Language, VocabItem } from "@/app/lib/types";
 
 type ViewRange = "7days" | "30days" | "month";
@@ -48,7 +49,6 @@ const HistoryCard = ({ vocab, langInfo }: HistoryCardProps) => (
 );
 
 export default function HistoryPage() {
-  const router = useRouter();
   const [results, setResults] = useState<VocabItem[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,20 +119,11 @@ export default function HistoryPage() {
     const mastered = results.filter((v) => v.is_remembered).length;
     return { total, mastered, rate: total === 0 ? 0 : Math.round((mastered / total) * 100) };
   }, [results]);
+  const activitySummary = useMemo(() => summarizeActivity(results), [results]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
-        <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600">
-          WordMaster.
-        </Link>
-        <div className="w-full md:flex-1 md:max-w-2xl md:mx-8">
-          <SearchBar />
-        </div>
-        <button onClick={() => router.back()} className="text-sm font-bold text-gray-500 hover:text-blue-600 uppercase tracking-widest flex items-center gap-2">
-          <span>←</span> Dashboard
-        </button>
-      </nav>
+      <AppHeader primarySection="study" searchSlot={<SearchBar />} backHref="/" backLabel="Dashboard" />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <header className="mb-10">
@@ -156,6 +147,21 @@ export default function HistoryPage() {
             <div className="ml-auto pr-4 hidden sm:block">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mastery Rate: </span>
               <span className="text-sm font-black text-green-500">{stats.rate}%</span>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Active Days</p>
+              <p className="text-2xl font-black mt-2">{activitySummary.activeDays}</p>
+            </div>
+            <div className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Current Rhythm</p>
+              <p className="text-2xl font-black mt-2">{activitySummary.streak} day{activitySummary.streak === 1 ? "" : "s"}</p>
+            </div>
+            <div className="bg-white border-2 border-gray-100 rounded-2xl px-5 py-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Last Review</p>
+              <p className="text-2xl font-black mt-2">{activitySummary.lastActivityLabel || "None"}</p>
             </div>
           </div>
         </header>

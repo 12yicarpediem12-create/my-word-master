@@ -3,6 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import AppHeader from "../components/AppHeader";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -61,12 +62,7 @@ export default function RootIndexPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-        <Link href="/" className="text-2xl font-black text-blue-600 tracking-tighter">WordMaster.</Link>
-        <button onClick={() => router.back()} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition-colors">
-          ← Back
-        </button>
-      </nav>
+      <AppHeader primarySection={null} backHref="/" backLabel="Dashboard" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12">
         <header className="mb-10 text-center sm:text-left">

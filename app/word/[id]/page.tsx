@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { getWordNuance, generateWordDetails } from "../../actions/ai";
 import { deleteVocabWord, setVocabRemembered, updateVocabWord } from "../../actions/vocab";
+import AppHeader from "@/app/components/AppHeader";
 import type { Category, VocabDetail, VocabItem } from "@/app/lib/types";
 import { buildEditFormFromVocab, EditFormData, normalizeRootWord, resolveCategoryHierarchy } from "@/app/lib/word-detail";
 
@@ -33,6 +34,48 @@ const FieldWrapper = ({ label, color = "gray", children }: { label: string, colo
     {children}
   </div>
 );
+
+const DetailSection = ({
+  eyebrow,
+  title,
+  accentClass,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  accentClass: string;
+  children: React.ReactNode;
+}) => (
+  <section className="bg-white rounded-[2rem] p-6 sm:p-8 border-2 border-gray-200 shadow-sm">
+    <p className={`text-[10px] font-black uppercase tracking-widest mb-3 ${accentClass}`}>{eyebrow}</p>
+    <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900 mb-5">{title}</h2>
+    {children}
+  </section>
+);
+
+const QuickFact = ({
+  label,
+  value,
+  tone = "gray",
+}: {
+  label: string;
+  value: string;
+  tone?: "gray" | "blue" | "emerald" | "rose";
+}) => {
+  const toneMap = {
+    gray: "bg-gray-50 border-gray-100 text-gray-900",
+    blue: "bg-blue-50 border-blue-100 text-blue-900",
+    emerald: "bg-emerald-50 border-emerald-100 text-emerald-900",
+    rose: "bg-rose-50 border-rose-100 text-rose-900",
+  };
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 ${toneMap[tone]}`}>
+      <p className="text-[9px] font-black uppercase tracking-widest opacity-50 mb-1">{label}</p>
+      <p className="text-sm sm:text-base font-black break-words">{value}</p>
+    </div>
+  );
+};
 
 export default function WordDetail() {
   const params = useParams();
@@ -305,10 +348,7 @@ export default function WordDetail() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-20">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-5 flex justify-between items-center sticky top-0 z-50">
-        <Link href="/" className="text-2xl font-black text-blue-600 tracking-tighter">WordMaster.</Link>
-        <button onClick={() => router.back()} className="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition-colors">← Back</button>
-      </nav>
+      <AppHeader primarySection="library" backHref={`/study/${vocab.language_code}`} backLabel="Study Hub" />
 
       <main className="max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-8 lg:py-12 transition-all">
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 lg:p-14 border-2 border-gray-200 shadow-lg relative overflow-hidden transition-all">
@@ -319,60 +359,155 @@ export default function WordDetail() {
           </div>
 
           {!isEditing ? (
-            <div className="space-y-10 mt-6 lg:mt-8">
-              <div className="text-center">
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">Word</p>
-                <div className="flex items-center justify-center gap-4 flex-wrap">
-                  <h1 className="text-4xl sm:text-6xl font-black break-all leading-tight">{vocab.word}</h1>
-                  <button onClick={() => speak(vocab.word)} className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-50 rounded-full flex items-center justify-center text-lg hover:bg-blue-50 transition-all shadow-sm"> 🔊 </button>
-                </div>
-              </div>
+            <div className="space-y-8 mt-6 lg:mt-8">
+              <section className="bg-gradient-to-br from-gray-50 to-white rounded-[2.2rem] border-2 border-gray-200 p-6 sm:p-8 lg:p-10 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Study Focus</p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <h1 className="text-4xl sm:text-6xl font-black break-all leading-tight tracking-tight">{vocab.word}</h1>
+                      <button onClick={() => speak(vocab.word)} className="w-11 h-11 sm:w-12 sm:h-12 bg-white rounded-full border-2 border-gray-100 flex items-center justify-center text-lg hover:bg-blue-50 hover:border-blue-100 transition-all shadow-sm">
+                        🔊
+                      </button>
+                    </div>
+                    <p className="mt-4 text-2xl sm:text-3xl font-bold text-blue-600 leading-tight break-words">{vocab.translation}</p>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                        {vocab.part_of_speech || "Word"}
+                      </span>
+                      <button
+                        onClick={handleToggleRemembered}
+                        className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${vocab.is_remembered ? "bg-emerald-500 text-white border-emerald-500" : "bg-orange-50 text-orange-600 border-orange-100"}`}
+                      >
+                        {vocab.is_remembered ? "Mastered" : "Learning"}
+                      </button>
+                      {vocab.categories?.name && (
+                        <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                          {vocab.categories.name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              {vocab.conjugation && (
-                <div className="bg-amber-50 rounded-[2rem] p-6 sm:p-8 border-2 border-amber-100">
-                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-4 flex items-center gap-2"><span>⚡</span> Conjugation Guide</p>
-                  <p className="text-base sm:text-lg font-bold text-amber-900 whitespace-pre-wrap leading-relaxed italic">{vocab.conjugation}</p>
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+                    <button
+                      onClick={() => {
+                        setEditForm(buildEditFormFromVocab(vocab));
+                        updateCategoryHierarchy(vocab.category_id, categories);
+                        setIsEditing(true);
+                      }}
+                      className="bg-gray-900 text-white font-black px-5 py-3 rounded-2xl hover:bg-gray-800 transition-all shadow-sm"
+                    >
+                      Edit Details
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="bg-red-50 text-red-500 border border-red-100 font-black px-5 py-3 rounded-2xl hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              <div className="text-center border-t-2 border-gray-50 pt-10">
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-3">Meaning</p>
-                <h2 className="text-2xl sm:text-4xl font-bold text-blue-600 leading-tight">{vocab.translation}</h2>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 mt-8">
+                  <QuickFact label="Part of Speech" value={vocab.part_of_speech || "---"} tone="blue" />
+                  <QuickFact label="Mastery" value={vocab.is_remembered ? "Mastered" : "Learning"} tone={vocab.is_remembered ? "emerald" : "gray"} />
+                  {vocab.gender && <QuickFact label="Gender" value={vocab.gender} tone="emerald" />}
+                  {vocab.verb_type && <QuickFact label="Verb Type" value={vocab.verb_type} tone="emerald" />}
+                  {vocab.root_word && <QuickFact label="Root" value={vocab.root_word.replace(/^\*/, "")} tone="rose" />}
+                  {vocab.categories?.name && <QuickFact label="Topic" value={vocab.categories.name} tone="gray" />}
+                </div>
+              </section>
 
               {(vocab.example_sentence || vocab.example_translation) && (
-                <div className="bg-blue-50 p-6 sm:p-8 rounded-[2rem] border-2 border-blue-100">
-                  <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-4 text-center">Context & Example</p>
-                  {vocab.example_sentence && (
-                    <div className="flex flex-col items-center gap-4">
-                      <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 text-center leading-relaxed italic">"{vocab.example_sentence}"</p>
-                      <button onClick={() => speak(vocab.example_sentence || "")} className="bg-white/80 px-4 py-2 rounded-2xl shadow-sm hover:bg-white transition-all text-[10px] font-bold text-blue-600"> 🔊 Play Example</button>
-                    </div>
-                  )}
-                  {vocab.example_translation && <p className="text-xs lg:text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
-                </div>
+                <DetailSection eyebrow="See It In Context" title="Example Sentence" accentClass="text-blue-400">
+                  <div className="bg-blue-50 rounded-[1.75rem] border-2 border-blue-100 p-5 sm:p-7">
+                    {vocab.example_sentence && (
+                      <div className="flex flex-col items-start gap-4">
+                        <p className="text-lg sm:text-xl font-bold text-gray-900 leading-relaxed italic">
+                          "{vocab.example_sentence}"
+                        </p>
+                        <button
+                          onClick={() => speak(vocab.example_sentence || "")}
+                          className="bg-white px-4 py-2 rounded-2xl shadow-sm hover:bg-blue-100 transition-all text-[10px] font-black uppercase tracking-widest text-blue-600"
+                        >
+                          Play Example
+                        </button>
+                      </div>
+                    )}
+                    {vocab.example_translation && (
+                      <div className="mt-5 pt-5 border-t border-blue-100">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-300 mb-2">Meaning</p>
+                        <p className="text-sm sm:text-base font-medium text-gray-600 leading-relaxed">
+                          {vocab.example_translation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </DetailSection>
               )}
 
+              <DetailSection eyebrow="Quick Review" title="Grammar & Recall Notes" accentClass="text-emerald-500">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {vocab.conjugation && (
+                    <div className="bg-emerald-50 rounded-[1.75rem] border-2 border-emerald-100 p-5 sm:p-6">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-3">Conjugation</p>
+                      <p className="text-sm sm:text-base font-medium text-emerald-900 whitespace-pre-wrap leading-relaxed">
+                        {vocab.conjugation}
+                      </p>
+                    </div>
+                  )}
+                  <div className="bg-gray-50 rounded-[1.75rem] border-2 border-gray-100 p-5 sm:p-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Notes</p>
+                    <p className="text-sm sm:text-base font-medium text-gray-700 whitespace-pre-wrap leading-relaxed italic">
+                      {vocab.notes || "No grammar notes added."}
+                    </p>
+                  </div>
+                </div>
+              </DetailSection>
+
+              <DetailSection eyebrow="Meaning In Use" title="Usage & Nuance" accentClass="text-indigo-500">
+                <div className="flex items-center justify-between gap-4 mb-5">
+                  <div>
+                    <p className="text-sm font-bold text-gray-700">Ask AI for extra nuance or usage detail.</p>
+                    <p className="text-xs text-gray-400 mt-1">This is helpful for subtle meanings or context differences.</p>
+                  </div>
+                  <button onClick={handleAskNuance} disabled={isAskingAI} className="text-[9px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50">
+                    {isAskingAI ? "Analyzing..." : "Ask AI"}
+                  </button>
+                </div>
+                {tempNuance && (
+                  <div className="bg-indigo-50/50 rounded-[2rem] p-6 sm:p-8 border-2 border-dashed border-indigo-100 animate-in fade-in duration-500">
+                    <p className="text-sm lg:text-base font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{tempNuance}</p>
+                    <p className="text-[8px] font-bold text-indigo-300 mt-4 uppercase">※ Insight not saved in library.</p>
+                  </div>
+                )}
+                {!tempNuance && !isAskingAI && (
+                  <div className="rounded-[1.75rem] border-2 border-dashed border-gray-200 bg-gray-50 px-5 py-6">
+                    <p className="text-sm font-medium text-gray-500">No AI nuance yet. Use the button above when you want extra usage context.</p>
+                  </div>
+                )}
+              </DetailSection>
+
               {vocab.root_word && (
-                <div className="border-t-2 border-gray-50 pt-10">
-                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4 flex items-center gap-2"><span>🌱</span> Historical Roots</p>
-                  <div className="bg-rose-50 rounded-[2rem] p-6 sm:p-8 border-2 border-rose-100">
-                    <p className="text-sm font-black text-rose-400 uppercase tracking-widest mb-2">Origin</p>
-                    
-                    <Link 
-                      href={`/root/${encodeURIComponent(encodeURIComponent(vocab.root_word).replace(/\*/g, '%2A').replace(/\(/g, '%28').replace(/\)/g, '%29'))}`}
-                      className="inline-block text-base sm:text-lg font-bold text-rose-700 hover:text-rose-500 hover:underline transition-all mt-1 cursor-pointer"
+                <DetailSection eyebrow="Word History" title="Etymology & Root" accentClass="text-rose-500">
+                  <div className="bg-rose-50 rounded-[1.75rem] p-5 sm:p-7 border-2 border-rose-100">
+                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-2">Origin</p>
+                    <Link
+                      href={`/root/${encodeURIComponent(encodeURIComponent(vocab.root_word).replace(/\*/g, "%2A").replace(/\(/g, "%28").replace(/\)/g, "%29"))}`}
+                      className="inline-block text-base sm:text-lg font-bold text-rose-700 hover:text-rose-500 hover:underline transition-all"
                     >
-                      {vocab.root_word.replace(/^\*/, '')}
+                      {vocab.root_word.replace(/^\*/, "")}
                     </Link>
-                    
+
                     {relatedWords.length > 0 && (
                       <div className="mt-6 border-t-2 border-rose-100 pt-6">
                         <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-4">Words sharing this root</p>
                         <div className="flex flex-wrap gap-3">
-                          {relatedWords.map(rw => (
-                            <Link 
-                              href={`/word/${rw.id}`} 
+                          {relatedWords.map((rw) => (
+                            <Link
+                              href={`/word/${rw.id}`}
                               key={rw.id}
                               className="bg-white border-2 border-rose-100 px-4 py-2 rounded-xl hover:border-rose-400 transition-all group flex flex-col"
                             >
@@ -387,85 +522,31 @@ export default function WordDetail() {
                       </div>
                     )}
                   </div>
-                </div>
+                </DetailSection>
               )}
 
-              <div className="border-t-2 border-gray-50 pt-10">
-                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-4">Notes / Grammar Pattern</p>
-                <div className="bg-gray-50 rounded-[2rem] p-6 sm:p-8 border-2 border-gray-100">
-                  <p className="text-sm lg:text-base font-medium text-gray-700 whitespace-pre-wrap leading-relaxed italic">
-                    {vocab.notes || "No grammar notes added."}
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-t-2 border-gray-50 pt-10">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Usage & Nuance</p>
-                  <button onClick={handleAskNuance} disabled={isAskingAI} className="text-[9px] font-black bg-blue-50 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-100 transition-all disabled:opacity-50">
-                    {isAskingAI ? "✨ ANALYZING..." : "🪄 ASK AI"}
-                  </button>
-                </div>
-                {tempNuance && (
-                  <div className="bg-indigo-50/50 rounded-[2rem] p-6 sm:p-8 border-2 border-dashed border-indigo-100 animate-in fade-in duration-500">
-                    <p className="text-sm lg:text-base font-medium text-gray-700 whitespace-pre-wrap leading-relaxed">{tempNuance}</p>
-                    <p className="text-[8px] font-bold text-indigo-300 mt-4 uppercase">※ Insight not saved in library.</p>
+              {vocab.categories && (
+                <DetailSection eyebrow="Where It Fits" title="Category & Navigation" accentClass="text-indigo-500">
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-4">
+                    <div className="bg-indigo-50 p-5 sm:p-6 rounded-[1.75rem] border border-indigo-100">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Topic Path</p>
+                      <p className="font-bold text-indigo-900 text-sm sm:text-base break-words leading-relaxed">
+                        {vocab.categories.full_path}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/study/${vocab.language_code}/topics/${vocab.category_id}`}
+                      className="bg-white p-5 sm:p-6 rounded-[1.75rem] border-2 border-gray-200 hover:border-indigo-300 transition-all group"
+                    >
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Study More Like This</p>
+                      <p className="font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                        Open {getMainTopicName()}
+                      </p>
+                      <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mt-4">Go to topic list</p>
+                    </Link>
                   </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-4 border-t-2 border-gray-50 pt-10">
-                {vocab.categories && (
-                  <Link 
-                    href={`/study/${vocab.language_code}/topics/${vocab.category_id}`}
-                    className="flex-1 min-w-[140px] bg-indigo-50 p-5 rounded-3xl border border-indigo-100 group hover:border-indigo-400 transition-all overflow-hidden"
-                  >
-                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-tight mb-2 whitespace-nowrap">Topic</p>
-                    <p className="font-bold text-indigo-900 text-sm sm:text-base break-words leading-tight group-hover:text-indigo-600 transition-colors">
-                      {getMainTopicName()}
-                    </p>
-                    <p className="text-[8px] font-bold text-indigo-300 mt-2 uppercase">Go to Sub-list →</p>
-                  </Link>
-                )}
-
-                <div className="flex-1 min-w-[140px] bg-gray-50 p-5 rounded-3xl border border-gray-100 overflow-hidden">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-tight mb-2 whitespace-nowrap">Part of Speech</p>
-                  <p className="font-bold text-gray-800 text-sm break-words leading-tight">{vocab.part_of_speech || "---"}</p>
-                </div>
-
-                {vocab.part_of_speech === 'Verb' ? (
-                  <div className="flex-1 min-w-[140px] bg-emerald-50 p-5 rounded-3xl border border-emerald-100 overflow-hidden">
-                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tight mb-2 whitespace-nowrap">Verb Type</p>
-                    <p className="font-bold text-emerald-800 text-[11px] sm:text-sm break-all leading-tight">{vocab.verb_type || "---"}</p>
-                  </div>
-                ) : vocab.part_of_speech === 'Noun' ? (
-                  <div className="flex-1 min-w-[140px] bg-emerald-50 p-5 rounded-3xl border border-emerald-100 overflow-hidden">
-                    <p className="text-[9px] font-black text-emerald-500 uppercase tracking-tight mb-2 whitespace-nowrap">Gender</p>
-                    <p className="font-bold text-emerald-800 text-sm sm:text-base break-words leading-tight">{vocab.gender || "---"}</p>
-                  </div>
-                ) : null}
-
-                <div className="flex-1 min-w-[120px] bg-gray-50 p-5 rounded-3xl border border-gray-100 flex flex-col items-center justify-center">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Mastery</p>
-                  <button onClick={handleToggleRemembered} className={`w-full py-2 px-3 rounded-2xl font-black text-[10px] transition-all uppercase tracking-widest shadow-sm ${vocab.is_remembered ? "bg-green-500 text-white shadow-lg" : "bg-orange-100 text-orange-600"}`}>
-                    {vocab.is_remembered ? "Mastered" : "Learning"}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t-2 border-gray-50">
-                <button 
-                  onClick={() => {
-                    setEditForm(buildEditFormFromVocab(vocab));
-                    updateCategoryHierarchy(vocab.category_id, categories);
-                    setIsEditing(true);
-                  }} 
-                  className="flex-1 bg-gray-900 text-white font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-gray-800 transition-all shadow-xl active:scale-[0.98]"
-                >
-                  ✏️ Edit Details
-                </button>
-                <button onClick={handleDelete} disabled={isDeleting} className="w-full sm:w-auto px-8 bg-red-50 text-red-500 font-black py-4 rounded-2xl sm:rounded-[2rem] hover:bg-red-100 transition-colors">🗑️ Delete</button>
-              </div>
+                </DetailSection>
+              )}
             </div>
           ) : (
             <div className="space-y-6 mt-10 lg:mt-12 animate-in fade-in duration-300">

@@ -8,11 +8,35 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+function getGeminiApiKey(): string {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("AI is not configured. Set GEMINI_API_KEY in .env.local.");
+  }
+  return apiKey;
+}
+
+function toSafeAiErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : "Unknown AI error";
+
+  if (/GEMINI_API_KEY|API Key is missing|AI is not configured/i.test(raw)) {
+    return "AI is not configured. Set GEMINI_API_KEY in .env.local.";
+  }
+  if (/API_KEY_INVALID|invalid api key|401|403/i.test(raw)) {
+    return "AI request failed. Check GEMINI_API_KEY.";
+  }
+  if (/quota|rate limit|429/i.test(raw)) {
+    return "AI is temporarily unavailable (rate limit/quota). Please try again.";
+  }
+  if (/empty response|unexpected response format/i.test(raw)) {
+    return "AI returned an unexpected response. Please try again.";
+  }
+  return "AI request failed. Please try again.";
+}
+
 export async function generateVocabInfo(word: string, langCode: string) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("API Key is missing in environment variables.");
-
+    const apiKey = getGeminiApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const { data: categories, error: dbError } = await supabase
@@ -81,22 +105,24 @@ export async function generateVocabInfo(word: string, langCode: string) {
 
     const result = await model.generateContent(prompt);
     const content = result.response.text();
-    
+
     if (!content) throw new Error("Gemini returned an empty response");
 
-    return JSON.parse(content);
+    try {
+      return JSON.parse(content);
+    } catch {
+      throw new Error("Gemini returned an unexpected response format");
+    }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Gemini AI Generation Error:", error);
-    return { error: error.message || "Unknown Gemini API error occurred." };
+    return { error: toSafeAiErrorMessage(error) };
   }
 }
 
 export async function getWordNuance(word: string, langCode: string, translation: string) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error("API Key missing");
-
+    const apiKey = getGeminiApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -113,9 +139,9 @@ export async function getWordNuance(word: string, langCode: string, translation:
     const result = await model.generateContent(prompt);
     return result.response.text();
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Nuance AI Error:", error);
-    return "Could not fetch nuance details.";
+    return toSafeAiErrorMessage(error);
   }
 }
 

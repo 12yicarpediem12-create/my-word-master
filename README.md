@@ -1,37 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WordMaster
 
-## Getting Started
+Personal language-learning app built with Next.js + Supabase.
 
-First, run the development server:
+## Setup
+
+1. Install dependencies:
+```bash
+npm install
+```
+2. Create `.env.local` in the project root.
+3. Add all required environment variables (see below).
+4. Start the app:
+```bash
+npm run dev
+```
+5. Open `http://localhost:3000`.
+
+## Required Environment Variables
+
+Add these to `.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+GEMINI_API_KEY=...
+```
+
+Notes:
+- `NEXT_PUBLIC_*` values are used by browser/client code.
+- `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` are used by server actions (`app/actions/vocab.ts`).
+- `GEMINI_API_KEY` is required for AI-powered vocabulary generation (`app/actions/ai.ts`).
+
+## Supabase Requirements
+
+Minimum expected setup:
+
+- Auth enabled (email/password is used by current login page).
+- `vocab` table has a `user_id` column (linked to auth user identity).
+- New vocab writes are owned by the authenticated user (`user_id` is set in server actions).
+- Row Level Security (RLS) should be enabled for `vocab`.
+
+Recommended `vocab` RLS policy model:
+- `SELECT`: `user_id = auth.uid()`
+- `INSERT`: `WITH CHECK user_id = auth.uid()`
+- `UPDATE`: `USING user_id = auth.uid()` + `WITH CHECK user_id = auth.uid()`
+- `DELETE`: `USING user_id = auth.uid()`
+
+## Run Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Optional checks:
+```bash
+npm run lint
+npm run build
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Known Limitations / Future Improvements
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# my-word-master
+- Route protection is currently client-side via `AuthGate`; middleware/server-side auth gating could be stronger.
+- Sign-up/password-reset UI is not implemented yet (login + sign-out only).
+- Some pages still use broad client-side reads and can be narrowed further.
+- Security still depends on correct live Supabase RLS/policy configuration.

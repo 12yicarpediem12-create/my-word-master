@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { bulkDeleteVocab } from "../actions/vocab";
+import AppHeader from "../components/AppHeader";
+import DensityToggle, { type DensityMode } from "../components/DensityToggle";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -79,13 +80,69 @@ const VocabCard = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, o
   </div>
 );
 
+const CompactVocabRow = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, onToggle: (id: string) => void }) => (
+  <div className={`relative rounded-[1.75rem] border-2 transition-all ${isSelected ? "border-red-300 bg-red-50/50" : "border-gray-100 bg-white hover:border-blue-200"}`}>
+    <button
+      onClick={() => onToggle(v.id)}
+      className={`absolute left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-xl border-2 flex items-center justify-center transition-all ${
+        isSelected
+          ? "bg-red-500 border-red-500 text-white shadow-sm"
+          : "bg-white border-gray-200 text-gray-300 hover:border-red-300"
+      }`}
+      aria-label={isSelected ? "Deselect word" : "Select word"}
+    >
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      </svg>
+    </button>
+
+    <Link href={`/word/${v.id}`} className="block pl-16 sm:pl-20 pr-5 py-4 sm:py-5">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">
+              {v.language_code}
+            </span>
+            <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest border ${v.is_remembered ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"}`}>
+              {v.is_remembered ? "Mastered" : "Learning"}
+            </span>
+            {v.part_of_speech && (
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
+                {v.part_of_speech}
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+            <p className="text-lg sm:text-xl font-black text-gray-900 break-words">{v.word}</p>
+            <p className="text-sm sm:text-base font-bold text-gray-500 break-words">{v.translation}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap lg:justify-end">
+          {v.gender && (
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+              {v.gender}
+            </span>
+          )}
+          {v.verb_type && (
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+              {v.verb_type}
+            </span>
+          )}
+          <span className="text-gray-300 font-black text-sm uppercase tracking-widest">Open →</span>
+        </div>
+      </div>
+    </Link>
+  </div>
+);
+
 export default function LibraryPage() {
-  const router = useRouter();
   const [vocab, setVocab] = useState<any[]>([]);
   const [languages, setLanguages] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLang, setSelectedLang] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [densityMode, setDensityMode] = useState<DensityMode>("rich");
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -151,14 +208,7 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-32 relative">
-      <nav className="bg-white border-b-2 border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-40 shadow-sm">
-        <Link href="/" className="text-3xl font-black tracking-tighter text-blue-600 hover:opacity-80">
-          WordMaster.
-        </Link>
-        <button onClick={() => router.back()} className="text-sm font-bold text-gray-500 hover:text-blue-600 flex items-center gap-2 uppercase tracking-widest">
-          <span>←</span> Back
-        </button>
-      </nav>
+      <AppHeader primarySection="library" backHref="/" backLabel="Dashboard" />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
         {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
@@ -170,7 +220,7 @@ export default function LibraryPage() {
             </p>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3">
             {filteredVocab.length > 0 && (
               <button 
                 onClick={handleSelectAll}
@@ -233,6 +283,16 @@ export default function LibraryPage() {
               </FilterButton>
             </div>
           </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-[1.5rem] bg-gray-50 border border-gray-100 px-4 py-3">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">View Density</p>
+              <p className="text-sm font-bold text-gray-500 mt-1">
+                {densityMode === "rich" ? "Larger cards with more breathing room." : "Tighter rows for fast review and bulk selection."}
+              </p>
+            </div>
+            <DensityToggle value={densityMode} onChange={setDensityMode} />
+          </div>
         </div>
 
         {isLoading ? (
@@ -240,16 +300,29 @@ export default function LibraryPage() {
             Loading your library...
           </div>
         ) : filteredVocab.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVocab.map((v) => (
-              <VocabCard 
-                key={v.id} 
-                v={v} 
-                isSelected={selectedIds.includes(v.id)} 
-                onToggle={toggleSelection} 
-              />
-            ))}
-          </div>
+          densityMode === "rich" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredVocab.map((v) => (
+                <VocabCard 
+                  key={v.id} 
+                  v={v} 
+                  isSelected={selectedIds.includes(v.id)} 
+                  onToggle={toggleSelection} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredVocab.map((v) => (
+                <CompactVocabRow
+                  key={v.id}
+                  v={v}
+                  isSelected={selectedIds.includes(v.id)}
+                  onToggle={toggleSelection}
+                />
+              ))}
+            </div>
+          )
         ) : (
           <div className="bg-white rounded-[3rem] p-16 border-2 border-gray-200 shadow-sm text-center">
             <div className="text-6xl mb-6 opacity-50">📭</div>
