@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { AnalyzedWord } from "./types";
 
 function getReviewStatus(item: AnalyzedWord) {
-  const hasRequiredFields = item.translation.trim() && item.part_of_speech.trim();
-
-  if (!hasRequiredFields) {
+  if (item.ai_status === "needs_hint") {
     return {
       label: "Needs Hint",
       tone: "bg-amber-50 text-amber-700 border-amber-100",
@@ -23,11 +21,15 @@ export function ImportReviewTable({
   analyzedData,
   onRemove,
   onEditChange,
+  onRerunRow,
+  rerunningRowId = null,
   focusNeedsHintSignal = 0,
 }: {
   analyzedData: AnalyzedWord[];
   onRemove: (id: number) => void;
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
+  onRerunRow: (id: number) => void;
+  rerunningRowId?: number | null;
   focusNeedsHintSignal?: number;
 }) {
   const tableRef = useRef<HTMLDivElement | null>(null);
@@ -42,7 +44,7 @@ export function ImportReviewTable({
     [analyzedData]
   );
 
-  const unresolvedRows = rowsWithStatus.filter(({ status }) => status.label === "Needs Hint");
+  const unresolvedRows = rowsWithStatus.filter(({ item }) => item.ai_status === "needs_hint");
   const displayedRows = showNeedsHintOnly ? unresolvedRows : rowsWithStatus;
 
   useEffect(() => {
@@ -56,12 +58,18 @@ export function ImportReviewTable({
     });
   }, [focusNeedsHintSignal, unresolvedRows.length]);
 
+  useEffect(() => {
+    if (showNeedsHintOnly && unresolvedRows.length === 0) {
+      setShowNeedsHintOnly(false);
+    }
+  }, [showNeedsHintOnly, unresolvedRows.length]);
+
   return (
     <div ref={tableRef} className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.2)]">
       <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/80 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Save Preview</p>
-          <p className="mt-1 text-sm font-bold text-slate-500">Everything shown below is editable. Only rows with one clear POS and meaning will be inserted on save.</p>
+          <p className="mt-1 text-sm font-bold text-slate-500">Everything shown below is editable. Only rows marked Ready will be inserted on save.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {unresolvedRows.length > 0 && (
@@ -81,6 +89,7 @@ export function ImportReviewTable({
           </span>
         </div>
       </div>
+
       {unresolvedRows.length > 0 && (
         <div className="border-b border-amber-100 bg-amber-50/65 px-6 py-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -91,24 +100,33 @@ export function ImportReviewTable({
               </p>
             </div>
             {showNeedsHintOnly && (
-              <span className="rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">
-                Focused view
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700">
+                  Focused view
+                </span>
+                <button
+                  onClick={() => setShowNeedsHintOnly(false)}
+                  className="rounded-full border border-amber-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-100"
+                >
+                  Show all rows
+                </button>
+              </div>
             )}
           </div>
         </div>
       )}
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
             <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              <th className="p-4 w-10 text-center"></th>
-              <th className="p-4 min-w-[100px]">Status</th>
-              <th className="p-4 min-w-[150px]">Word</th>
-              <th className="p-4 min-w-[150px]">Meaning</th>
-              <th className="p-4 min-w-[120px]">POS</th>
-              <th className="p-4 min-w-[120px]">Gender</th>
-              <th className="p-4 min-w-[150px]">Root (Origin)</th>
+              <th className="w-10 p-4 text-center"></th>
+              <th className="min-w-[100px] p-4">Status</th>
+              <th className="min-w-[150px] p-4">Word</th>
+              <th className="min-w-[150px] p-4">Meaning</th>
+              <th className="min-w-[120px] p-4">POS</th>
+              <th className="min-w-[120px] p-4">Gender</th>
+              <th className="min-w-[150px] p-4">Root (Origin)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -122,48 +140,110 @@ export function ImportReviewTable({
               </tr>
             ) : (
               displayedRows.map(({ item, status }) => {
-                const isNeedsHint = status.label === "Needs Hint";
+                const isNeedsHint = item.ai_status === "needs_hint";
+                const isRerunning = rerunningRowId === item.id;
 
                 return (
-                <tr
-                  key={item.id}
-                  data-needs-hint={isNeedsHint ? "true" : "false"}
-                  className={`group scroll-mt-32 transition-colors hover:bg-slate-50/80 ${isNeedsHint ? "bg-amber-50/45 ring-1 ring-inset ring-amber-100" : ""}`}
-                >
-                  <td className="p-4 text-center">
-                    <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
-                      ✖
-                    </button>
-                  </td>
-                  <td className="p-4">
-                    <div className="space-y-2">
-                      <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${status.tone}`}>
-                        {status.label}
-                      </span>
-                      {status.message && (
-                        <p className="max-w-[14rem] text-[11px] font-medium leading-relaxed text-slate-500">
-                          {status.message}
-                        </p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.word} onChange={(e) => onEditChange(item.id, "word", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-slate-950 outline-none transition-colors focus:border-blue-400" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.translation} onChange={(e) => onEditChange(item.id, "translation", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-blue-600 outline-none transition-colors focus:border-blue-400" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.part_of_speech} onChange={(e) => onEditChange(item.id, "part_of_speech", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-slate-600 outline-none transition-colors focus:border-blue-400" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.gender} onChange={(e) => onEditChange(item.id, "gender", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-emerald-600 outline-none transition-colors focus:border-emerald-400" />
-                  </td>
-                  <td className="p-2">
-                    <input type="text" value={item.root_word} onChange={(e) => onEditChange(item.id, "root_word", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-rose-600 outline-none transition-colors focus:border-rose-400" />
-                  </td>
-                </tr>
-              )})
+                  <Fragment key={item.id}>
+                    <tr
+                      data-needs-hint={isNeedsHint ? "true" : "false"}
+                      className={`group scroll-mt-32 transition-colors hover:bg-slate-50/80 ${isNeedsHint ? "bg-amber-50/45 ring-1 ring-inset ring-amber-100" : ""}`}
+                    >
+                      <td className="p-4 text-center align-top">
+                        <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
+                          ✖
+                        </button>
+                      </td>
+                      <td className="p-4 align-top">
+                        <div className="space-y-2">
+                          <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${status.tone}`}>
+                            {status.label}
+                          </span>
+                          {status.message && (
+                            <p className="max-w-[14rem] text-[11px] font-medium leading-relaxed text-slate-500">{status.message}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-2 align-top">
+                        <input
+                          type="text"
+                          value={item.word}
+                          onChange={(e) => onEditChange(item.id, "word", e.target.value)}
+                          className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-slate-950 outline-none transition-colors focus:border-blue-400"
+                        />
+                      </td>
+                      <td className="p-2 align-top">
+                        <input
+                          type="text"
+                          value={item.translation}
+                          onChange={(e) => onEditChange(item.id, "translation", e.target.value)}
+                          className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-blue-600 outline-none transition-colors focus:border-blue-400"
+                        />
+                      </td>
+                      <td className="p-2 align-top">
+                        <input
+                          type="text"
+                          value={item.part_of_speech}
+                          onChange={(e) => onEditChange(item.id, "part_of_speech", e.target.value)}
+                          className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-slate-600 outline-none transition-colors focus:border-blue-400"
+                        />
+                      </td>
+                      <td className="p-2 align-top">
+                        <input
+                          type="text"
+                          value={item.gender}
+                          onChange={(e) => onEditChange(item.id, "gender", e.target.value)}
+                          className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-emerald-600 outline-none transition-colors focus:border-emerald-400"
+                        />
+                      </td>
+                      <td className="p-2 align-top">
+                        <input
+                          type="text"
+                          value={item.root_word}
+                          onChange={(e) => onEditChange(item.id, "root_word", e.target.value)}
+                          className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-rose-600 outline-none transition-colors focus:border-rose-400"
+                        />
+                      </td>
+                    </tr>
+                    {isNeedsHint && (
+                      <tr className="border-b border-amber-100 bg-amber-50/25">
+                        <td className="p-4"></td>
+                        <td className="p-4 align-top" colSpan={6}>
+                          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_13rem_auto] lg:items-end">
+                            <div>
+                              <label className="support-label text-amber-700">AI disambiguation hint</label>
+                              <input
+                                type="text"
+                                value={item.ai_hint || ""}
+                                onChange={(e) => onEditChange(item.id, "ai_hint", e.target.value)}
+                                placeholder="Example: adjective — Italian nationality word"
+                                className="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-amber-400"
+                              />
+                            </div>
+                            <div>
+                              <label className="support-label text-amber-700">Intended POS</label>
+                              <input
+                                type="text"
+                                value={item.part_of_speech}
+                                onChange={(e) => onEditChange(item.id, "part_of_speech", e.target.value)}
+                                placeholder="Noun, Verb, Adjective..."
+                                className="mt-2 w-full rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-amber-400"
+                              />
+                            </div>
+                            <button
+                              onClick={() => onRerunRow(item.id)}
+                              disabled={isRerunning}
+                              className="rounded-2xl border border-amber-200 bg-white px-5 py-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {isRerunning ? "Re-running..." : "Re-run AI fill"}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

@@ -262,6 +262,8 @@ export function ImportReviewPanel({
   onSave,
   onRemove,
   onEditChange,
+  onRerunRow,
+  rerunningRowId,
 }: {
   fileName: string | null;
   parsedCount: number;
@@ -274,6 +276,8 @@ export function ImportReviewPanel({
   onSave: () => void;
   onRemove: (id: number) => void;
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
+  onRerunRow: (id: number) => void;
+  rerunningRowId: number | null;
 }) {
   const [focusNeedsHintSignal, setFocusNeedsHintSignal] = useState(0);
 
@@ -302,6 +306,8 @@ export function ImportReviewPanel({
             analyzedData={analyzedData}
             onRemove={onRemove}
             onEditChange={onEditChange}
+            onRerunRow={onRerunRow}
+            rerunningRowId={rerunningRowId}
             focusNeedsHintSignal={focusNeedsHintSignal}
           />
         </div>

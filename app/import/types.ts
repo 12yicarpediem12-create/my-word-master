@@ -17,6 +17,7 @@ export interface AnalyzedWord {
   example_translation: string;
   conjugation: string;
   notes: string;
+  ai_hint?: string;
   ai_status?: "ready" | "needs_hint";
   ai_message?: string;
 }

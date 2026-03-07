@@ -27,6 +27,7 @@ export default function ImportPage() {
     handleFileUpload,
     handleAnalyzeData,
     handleEditChange,
+    handleRerunRow,
     handleRemoveFromReview,
     handleSaveToDatabase,
     percentComplete,
@@ -36,6 +37,7 @@ export default function ImportPage() {
     readyToSaveCount,
     needsHintCount,
     analyzedCount,
+    rerunningRowId,
   } = useImportWorkflow();
 
   return (
@@ -95,6 +97,8 @@ export default function ImportPage() {
             onSave={handleSaveToDatabase}
             onRemove={handleRemoveFromReview}
             onEditChange={handleEditChange}
+            onRerunRow={handleRerunRow}
+            rerunningRowId={rerunningRowId}
           />
         )}
 

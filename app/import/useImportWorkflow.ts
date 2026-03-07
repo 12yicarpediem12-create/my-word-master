@@ -43,6 +43,7 @@ function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnTyp
     example_translation: aiData?.example_translation || "",
     conjugation: aiData?.conjugation || "",
     notes: aiData?.notes || "",
+    ai_hint: "",
     ai_status: isNeedsHint ? "needs_hint" : "ready",
     ai_message: isNeedsHint ? aiData.error : "",
   };
@@ -63,6 +64,7 @@ export function useImportWorkflow() {
   });
   const [logs, setLogs] = useState<ImportLog[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [rerunningRowId, setRerunningRowId] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchLanguages() {
@@ -217,12 +219,114 @@ export function useImportWorkflow() {
     setAnalyzedData((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
+  const handleRerunRow = async (id: number) => {
+    const row = analyzedData.find((item) => item.id === id);
+    if (!row || !selectedLang) return;
+
+    setRerunningRowId(id);
+    setAnalyzedData((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              ai_message: "Re-running AI with the current hint and part of speech...",
+            }
+          : item
+      )
+    );
+
+    try {
+      const aiData = await generateVocabInfo({
+        word: row.word,
+        langCode: selectedLang,
+        hint: row.ai_hint,
+        intendedPos: row.part_of_speech,
+        intendedMeaning: row.translation,
+        source: "import",
+      });
+
+      if (aiData.status === "error") {
+        setAnalyzedData((prev) =>
+          prev.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  ai_status: "needs_hint",
+                  ai_message: aiData.error,
+                }
+              : item
+          )
+        );
+        setLogs((prev) => [{ word: row.word, status: "error", message: aiData.error }, ...prev]);
+        return;
+      }
+
+      setAnalyzedData((prev) =>
+        prev.map((item) => {
+          if (item.id !== id) return item;
+
+          const nextRow = toAnalyzedWord(id, { word: row.word, translation: row.translation, pos: row.part_of_speech }, aiData);
+
+          return {
+            ...item,
+            word: nextRow.word,
+            translation: nextRow.translation,
+            part_of_speech: nextRow.part_of_speech,
+            gender: nextRow.gender,
+            root_word: nextRow.root_word,
+            verb_type: nextRow.verb_type,
+            category_id: nextRow.category_id,
+            example_sentence: nextRow.example_sentence,
+            example_translation: nextRow.example_translation,
+            conjugation: nextRow.conjugation,
+            notes: nextRow.notes,
+            ai_status: nextRow.ai_status,
+            ai_message:
+              nextRow.ai_status === "needs_hint"
+                ? nextRow.ai_message || "This row still needs one clear part of speech and meaning."
+                : "",
+            ai_hint: item.ai_hint || "",
+          };
+        })
+      );
+
+      setLogs((prev) => [
+        {
+          word: row.word,
+          status: aiData.status === "needs_hint" ? "needs_hint" : "success",
+          message:
+            aiData.status === "needs_hint"
+              ? "Still needs a clearer hint or part of speech."
+              : `Re-prepared as ${aiData.part_of_speech}${aiData.translation ? ` · ${aiData.translation}` : ""}`,
+        },
+        ...prev,
+      ]);
+    } catch {
+      setAnalyzedData((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                ai_status: "needs_hint",
+                ai_message: "AI re-run failed. Update the hint or part of speech and try again.",
+              }
+            : item
+        )
+      );
+      setLogs((prev) => [{ word: row.word, status: "error", message: "AI re-run failed." }, ...prev]);
+    } finally {
+      setRerunningRowId(null);
+    }
+  };
+
   const handleRemoveFromReview = (id: number) => {
     setAnalyzedData((prev) => prev.filter((item) => item.id !== id));
   };
 
   const handleSaveToDatabase = async () => {
-    const validRows = analyzedData.filter((item) => item.translation.trim() && item.part_of_speech.trim());
+    const validRows = analyzedData.filter(
+      (item) => item.ai_status !== "needs_hint" && item.translation.trim() && item.part_of_speech.trim()
+    );
     if (validRows.length === 0) return;
 
     setPhase("saving");
@@ -281,11 +385,11 @@ export function useImportWorkflow() {
   const skippedCount = useMemo(() => logs.filter((log) => log.status === "skipped").length, [logs]);
   const failedCount = useMemo(() => logs.filter((log) => log.status === "error").length, [logs]);
   const readyToSaveCount = useMemo(
-    () => analyzedData.filter((item) => item.translation.trim() && item.part_of_speech.trim()).length,
+    () => analyzedData.filter((item) => item.ai_status !== "needs_hint" && item.translation.trim() && item.part_of_speech.trim()).length,
     [analyzedData]
   );
   const needsHintCount = useMemo(
-    () => analyzedData.filter((item) => !item.translation.trim() || !item.part_of_speech.trim() || item.ai_status === "needs_hint").length,
+    () => analyzedData.filter((item) => item.ai_status === "needs_hint").length,
     [analyzedData]
   );
   const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
@@ -311,6 +415,7 @@ export function useImportWorkflow() {
     handleFileUpload,
     handleAnalyzeData,
     handleEditChange,
+    handleRerunRow,
     handleRemoveFromReview,
     handleSaveToDatabase,
     percentComplete,
@@ -320,5 +425,6 @@ export function useImportWorkflow() {
     readyToSaveCount,
     needsHintCount,
     analyzedCount,
+    rerunningRowId,
   };
 }
