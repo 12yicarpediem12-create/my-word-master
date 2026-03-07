@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { bulkDeleteVocab } from "../actions/vocab";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -88,13 +89,17 @@ export default function LibraryPage() {
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       const [{ data: langs }, { data: words }] = await Promise.all([
         supabase.from("languages").select("*"),
-        supabase.from("vocab").select("*").order("created_at", { ascending: false })
+        supabase
+          .from("vocab")
+          .select("id, language_code, word, translation, part_of_speech, gender, verb_type, is_remembered")
+          .order("created_at", { ascending: false })
       ]);
       
       if (langs) setLanguages(langs);
@@ -132,16 +137,14 @@ export default function LibraryPage() {
     if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} words? This action cannot be undone.`)) return;
     
     setIsDeleting(true);
-    const { error } = await supabase
-      .from("vocab")
-      .delete()
-      .in("id", selectedIds);
+    setErrorMsg(null);
+    const { error } = await bulkDeleteVocab(selectedIds);
 
     if (!error) {
       setVocab(prev => prev.filter(v => !selectedIds.includes(v.id)));
       setSelectedIds([]);
     } else {
-      alert("Error deleting words: " + error.message);
+      setErrorMsg("Error deleting words: " + error);
     }
     setIsDeleting(false);
   };
@@ -158,6 +161,7 @@ export default function LibraryPage() {
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
         <header className="mb-10 sm:mb-12 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
           <div>
             <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-4">Your Library</h1>

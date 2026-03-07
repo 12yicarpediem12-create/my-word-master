@@ -4,11 +4,17 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { getWordNuance, generateWordDetails } from "../../actions/ai";
+import { deleteVocabWord, setVocabRemembered, updateVocabWord } from "../../actions/vocab";
+import type { Category, VocabDetail, VocabItem } from "@/app/lib/types";
+import { buildEditFormFromVocab, EditFormData, normalizeRootWord, resolveCategoryHierarchy } from "@/app/lib/word-detail";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+const WORD_DETAIL_COLUMNS =
+  "id, language_code, word, translation, part_of_speech, gender, verb_type, category_id, example_sentence, example_translation, conjugation, notes, root_word, is_remembered, created_at, last_reviewed, next_review_date, mistake_count, repetition, efactor, interval";
 
 const colorTheme = {
   gray: { label: "text-gray-400", input: "bg-gray-50 border-gray-100 text-gray-900 focus:border-blue-400" },
@@ -33,12 +39,13 @@ export default function WordDetail() {
   const router = useRouter();
   const wordId = params.id as string;
   
-  const [vocab, setVocab] = useState<any>(null);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [relatedWords, setRelatedWords] = useState<any[]>([]); 
+  const [vocab, setVocab] = useState<VocabDetail | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [relatedWords, setRelatedWords] = useState<VocabItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
   const [isAskingAI, setIsAskingAI] = useState(false);
   const [tempNuance, setTempNuance] = useState<string | null>(null);
@@ -48,7 +55,7 @@ export default function WordDetail() {
   const [selL2, setSelL2] = useState<string>("");
   const [selL3, setSelL3] = useState<string>("");
 
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<EditFormData>({
     word: "", hint: "", translation: "", pos: "", notes: "", example: "",
     exampleTranslation: "", categoryId: "", conjugation: "", gender: "", verbType: "", rootWord: "" 
   });
@@ -57,30 +64,12 @@ export default function WordDetail() {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateCategoryHierarchy = useCallback((categoryId: string | number | null, allCats: any[]) => {
-    if (!categoryId) {
-      setSelL1(""); setSelL2(""); setSelL3("");
-      setEditForm(prev => ({ ...prev, categoryId: "" }));
-      return;
-    }
-    
-    let current = allCats.find(c => String(c.id) === String(categoryId));
-    let l1 = "", l2 = "", l3 = "";
-
-    if (current?.level === 3) {
-      l3 = String(current.id);
-      current = allCats.find(c => String(c.id) === String(current.parent_id));
-    }
-    if (current?.level === 2) {
-      l2 = String(current.id);
-      current = allCats.find(c => String(c.id) === String(current.parent_id));
-    }
-    if (current?.level === 1) {
-      l1 = String(current.id);
-    }
-    
-    setSelL1(l1); setSelL2(l2); setSelL3(l3);
-    setEditForm(prev => ({ ...prev, categoryId: String(categoryId) }));
+  const updateCategoryHierarchy = useCallback((categoryId: string | number | null, allCats: Category[]) => {
+    const { l1, l2, l3 } = resolveCategoryHierarchy(categoryId, allCats);
+    setSelL1(l1);
+    setSelL2(l2);
+    setSelL3(l3);
+    setEditForm((prev) => ({ ...prev, categoryId: categoryId ? String(categoryId) : "" }));
   }, []);
 
   const handleL1Change = (val: string) => {
@@ -101,42 +90,49 @@ export default function WordDetail() {
   useEffect(() => {
     async function fetchData() {
       if (!wordId) return;
+      setErrorMsg(null);
       const [vocabRes, catRes] = await Promise.all([
-        supabase.from("vocab").select(`*, categories:category_id ( id, name, full_path )`).eq("id", wordId).single(),
-        supabase.from("categories").select("*").order("full_path") // 🌟 select("*") に変更して全情報を取得
+        supabase
+          .from("vocab")
+          .select(`${WORD_DETAIL_COLUMNS}, categories:category_id ( id, name, full_path )`)
+          .eq("id", wordId)
+          .single(),
+        supabase.from("categories").select("*").order("full_path")
       ]);
-      
-      if (catRes.data) setCategories(catRes.data);
 
-      if (vocabRes.data) {
-        setVocab(vocabRes.data);
-        setEditForm({
-          word: vocabRes.data.word || "",
-          hint: "",
-          translation: vocabRes.data.translation || "",
-          pos: vocabRes.data.part_of_speech || "",
-          notes: vocabRes.data.notes || "",
-          example: vocabRes.data.example_sentence || "",
-          exampleTranslation: vocabRes.data.example_translation || "",
-          categoryId: vocabRes.data.category_id || "",
-          conjugation: vocabRes.data.conjugation || "",
-          gender: vocabRes.data.gender || "",
-          verbType: vocabRes.data.verb_type || "",
-          rootWord: vocabRes.data.root_word || "" 
-        });
+      if (catRes.error) {
+        setErrorMsg(catRes.error.message);
+        setIsLoading(false);
+        return;
+      }
+      const loadedCategories = (catRes.data || []) as Category[];
+      setCategories(loadedCategories);
 
-        if (catRes.data && vocabRes.data.category_id) {
-          updateCategoryHierarchy(vocabRes.data.category_id, catRes.data);
-        }
+      if (vocabRes.error || !vocabRes.data) {
+        setErrorMsg(vocabRes.error?.message || "Word not found.");
+        setIsLoading(false);
+        return;
+      }
 
-        if (vocabRes.data.root_word) {
-          const { data: related } = await supabase
-            .from("vocab")
-            .select("id, word, language_code, translation")
-            .eq("root_word", vocabRes.data.root_word)
-            .neq("id", wordId); 
-          
-          if (related) setRelatedWords(related);
+      const loadedVocab = vocabRes.data as unknown as VocabDetail;
+      setVocab(loadedVocab);
+      setEditForm(buildEditFormFromVocab(loadedVocab));
+
+      if (loadedVocab.category_id) {
+        updateCategoryHierarchy(loadedVocab.category_id, loadedCategories);
+      }
+
+      if (loadedVocab.root_word) {
+        const { data: related, error: relatedError } = await supabase
+          .from("vocab")
+          .select("id, word, language_code, translation")
+          .eq("root_word", loadedVocab.root_word)
+          .neq("id", wordId);
+
+        if (relatedError) {
+          setErrorMsg(relatedError.message);
+        } else if (related) {
+          setRelatedWords(related as VocabItem[]);
         }
       }
       setIsLoading(false);
@@ -151,19 +147,22 @@ export default function WordDetail() {
     const langMap: Record<string, string> = { 
       it: "it-IT", fr: "fr-FR", es: "es-ES", de: "de-DE", pt: "pt-PT", ja: "ja-JP", ko: "ko-KR", ru: "ru-RU", zh: "zh-CN", en: "en-US",
     };
-    utterance.lang = langMap[vocab?.language_code] || "en-US";
+    const languageCode = vocab?.language_code || "en";
+    utterance.lang = langMap[languageCode] || "en-US";
     window.speechSynthesis.speak(utterance);
   }, [vocab]);
 
   const handleAskNuance = async () => {
     if (!vocab) return;
+    setErrorMsg(null);
     setIsAskingAI(true);
     setTempNuance(null);
     try {
       const nuance = await getWordNuance(vocab.word, vocab.language_code, vocab.translation);
       setTempNuance(String(nuance).replace(/\*\*/g, ''));
-    } catch (err) { 
-      console.error(err); 
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Could not fetch nuance details.");
     } finally { 
       setIsAskingAI(false); 
     }
@@ -171,107 +170,126 @@ export default function WordDetail() {
 
   const handleAutoFill = async () => {
     if (!editForm.word || !vocab) return;
+    setErrorMsg(null);
     setIsAutoFilling(true);
     try {
       const contextHint = editForm.hint 
         ? ` (Hint: ${editForm.hint})` 
         : (editForm.pos || editForm.translation ? ` (Hint: User intends this word to be POS: "${editForm.pos}", meaning related to: "${editForm.translation}")` : "");
 
-      const aiData = await generateWordDetails(editForm.word + contextHint, vocab.language_code);
+      const aiData = await generateWordDetails(editForm.word + contextHint, vocab.language_code) as Record<string, string | number | null | undefined> & { error?: string };
       
       if (!aiData.error) {
         setEditForm(prev => ({
           ...prev,
-          translation: aiData.translation || prev.translation,
-          pos: aiData.part_of_speech || prev.pos,
-          gender: aiData.gender || prev.gender,
-          verbType: aiData.verb_type || prev.verbType,
-          conjugation: aiData.conjugation || prev.conjugation,
-          example: aiData.example_sentence || prev.example,
-          exampleTranslation: aiData.example_translation || prev.exampleTranslation,
-          rootWord: String(aiData.root_word || prev.rootWord).replace(/^\*/, '').replace(/\s*↗$/, ''), 
-          notes: aiData.notes || prev.notes
+          translation: String(aiData.translation || prev.translation),
+          pos: String(aiData.part_of_speech || prev.pos),
+          gender: String(aiData.gender || prev.gender),
+          verbType: String(aiData.verb_type || prev.verbType),
+          conjugation: String(aiData.conjugation || prev.conjugation),
+          example: String(aiData.example_sentence || prev.example),
+          exampleTranslation: String(aiData.example_translation || prev.exampleTranslation),
+          rootWord: normalizeRootWord(String(aiData.root_word || prev.rootWord)),
+          notes: String(aiData.notes || prev.notes)
         }));
 
         if (aiData.category_id) {
           updateCategoryHierarchy(aiData.category_id, categories);
         }
+      } else {
+        setErrorMsg(`AI Auto-Fill failed: ${aiData.error}`);
       }
     } catch (err) {
       console.error(err);
+      setErrorMsg("AI Auto-Fill failed due to an unexpected error.");
     } finally {
       setIsAutoFilling(false);
     }
   };
 
   const handleUpdate = async () => {
-    const { error } = await supabase
-      .from("vocab")
-      .update({
-        word: editForm.word,
-        translation: editForm.translation,
-        part_of_speech: editForm.pos || null,
-        notes: editForm.notes || null,
-        example_sentence: editForm.example || null,
-        example_translation: editForm.exampleTranslation || null,
-        category_id: editForm.categoryId || null,
-        conjugation: editForm.conjugation || null,
-        gender: editForm.gender || null,
-        verb_type: editForm.verbType || null,
-        root_word: editForm.rootWord || null, 
-      })
-      .eq("id", wordId);
+    setErrorMsg(null);
+    const { error } = await updateVocabWord(wordId, {
+      word: editForm.word,
+      translation: editForm.translation,
+      part_of_speech: editForm.pos || null,
+      notes: editForm.notes || null,
+      example_sentence: editForm.example || null,
+      example_translation: editForm.exampleTranslation || null,
+      category_id: editForm.categoryId || null,
+      conjugation: editForm.conjugation || null,
+      gender: editForm.gender || null,
+      verb_type: editForm.verbType || null,
+      root_word: editForm.rootWord || null,
+    });
 
     if (!error) {
       const selectedCategory = categories.find(c => String(c.id) === String(editForm.categoryId));
       
-      setVocab((prev: any) => ({
-        ...prev,
-        word: editForm.word,
-        translation: editForm.translation,
-        part_of_speech: editForm.pos || null,
-        notes: editForm.notes || null,
-        example_sentence: editForm.example || null,
-        example_translation: editForm.exampleTranslation || null,
-        category_id: editForm.categoryId || null,
-        conjugation: editForm.conjugation || null,
-        gender: editForm.gender || null,
-        verb_type: editForm.verbType || null,
-        root_word: editForm.rootWord || null, 
-        categories: selectedCategory ? { id: selectedCategory.id, full_path: selectedCategory.full_path } : null
-      }));
+      setVocab((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          word: editForm.word,
+          translation: editForm.translation,
+          part_of_speech: editForm.pos || null,
+          notes: editForm.notes || null,
+          example_sentence: editForm.example || null,
+          example_translation: editForm.exampleTranslation || null,
+          category_id: editForm.categoryId ? Number(editForm.categoryId) : null,
+          conjugation: editForm.conjugation || null,
+          gender: editForm.gender || null,
+          verb_type: editForm.verbType || null,
+          root_word: editForm.rootWord || null,
+          categories: selectedCategory ? { id: selectedCategory.id, name: selectedCategory.name, full_path: selectedCategory.full_path } : null,
+        };
+      });
       setIsEditing(false);
       
       if (editForm.rootWord) {
-        const { data: related } = await supabase
+        const { data: related, error: relatedError } = await supabase
           .from("vocab")
           .select("id, word, language_code, translation")
           .eq("root_word", editForm.rootWord)
           .neq("id", wordId);
-        if (related) setRelatedWords(related);
+        if (relatedError) {
+          setErrorMsg(relatedError.message);
+        } else if (related) {
+          setRelatedWords(related as VocabItem[]);
+        }
       } else {
         setRelatedWords([]);
       }
       router.refresh(); 
+    } else {
+      setErrorMsg(`Update failed: ${error}`);
     }
   };
 
   const handleToggleRemembered = async () => {
+    if (!vocab) return;
+    setErrorMsg(null);
     const newStatus = !vocab.is_remembered;
-    const { error } = await supabase.from("vocab").update({ is_remembered: newStatus }).eq("id", wordId);
+    const { error } = await setVocabRemembered(wordId, newStatus);
     if (!error) setVocab({ ...vocab, is_remembered: newStatus });
+    else setErrorMsg(`Could not update mastery: ${error}`);
   };
 
   const handleDelete = async () => {
+    if (!vocab) return;
     if (!window.confirm("Are you sure you want to delete this word from your library?")) return;
+    setErrorMsg(null);
     setIsDeleting(true);
-    const { error } = await supabase.from("vocab").delete().eq("id", wordId);
+    const { error } = await deleteVocabWord(wordId);
     if (!error) router.push(`/study/${vocab.language_code}`);
-    else setIsDeleting(false);
+    else {
+      setIsDeleting(false);
+      setErrorMsg(`Delete failed: ${error}`);
+    }
   };
 
   const getMainTopicName = () => {
-    if (!vocab.categories?.full_path) return "General";
+    if (!vocab?.categories?.full_path) return "General";
     return vocab.categories.full_path.split(" > ")[0];
   };
 
@@ -294,6 +312,7 @@ export default function WordDetail() {
 
       <main className="max-w-2xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-8 lg:py-12 transition-all">
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-10 lg:p-14 border-2 border-gray-200 shadow-lg relative overflow-hidden transition-all">
+          {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
           
           <div className="absolute top-0 right-0 bg-blue-50 text-blue-600 font-black uppercase tracking-widest px-6 py-3 border-b-2 border-l-2 border-blue-100 text-[10px]">
             {vocab.language_code}
@@ -327,7 +346,7 @@ export default function WordDetail() {
                   {vocab.example_sentence && (
                     <div className="flex flex-col items-center gap-4">
                       <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 text-center leading-relaxed italic">"{vocab.example_sentence}"</p>
-                      <button onClick={() => speak(vocab.example_sentence)} className="bg-white/80 px-4 py-2 rounded-2xl shadow-sm hover:bg-white transition-all text-[10px] font-bold text-blue-600"> 🔊 Play Example</button>
+                      <button onClick={() => speak(vocab.example_sentence || "")} className="bg-white/80 px-4 py-2 rounded-2xl shadow-sm hover:bg-white transition-all text-[10px] font-bold text-blue-600"> 🔊 Play Example</button>
                     </div>
                   )}
                   {vocab.example_translation && <p className="text-xs lg:text-sm font-medium text-gray-500 mt-6 text-center border-t border-blue-100 pt-4">{vocab.example_translation}</p>}
@@ -437,20 +456,7 @@ export default function WordDetail() {
               <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t-2 border-gray-50">
                 <button 
                   onClick={() => {
-                    setEditForm({
-                      word: vocab.word || "",
-                      hint: "", 
-                      translation: vocab.translation || "",
-                      pos: vocab.part_of_speech || "",
-                      notes: vocab.notes || "",
-                      example: vocab.example_sentence || "",
-                      exampleTranslation: vocab.example_translation || "",
-                      categoryId: vocab.category_id || "",
-                      conjugation: vocab.conjugation || "",
-                      gender: vocab.gender || "",
-                      verbType: vocab.verb_type || "",
-                      rootWord: vocab.root_word || "" 
-                    });
+                    setEditForm(buildEditFormFromVocab(vocab));
                     updateCategoryHierarchy(vocab.category_id, categories);
                     setIsEditing(true);
                   }} 

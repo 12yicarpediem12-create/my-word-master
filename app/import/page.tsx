@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import Papa from "papaparse";
 import { generateVocabInfo } from "../actions/ai";
+import { bulkInsertVocabWords } from "../actions/vocab";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,6 +47,7 @@ export default function ImportPage() {
   
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [logs, setLogs] = useState<{ word: string; status: "success" | "error" | "skipped"; message?: string }[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchLanguages() {
@@ -66,13 +68,14 @@ export default function ImportPage() {
     setPhase("idle");
     setAnalyzedData([]);
     setLogs([]);
+    setErrorMsg(null);
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
         if (results.meta.fields && !results.meta.fields.includes("word")) {
-          alert("CSV must contain a 'word' column header.");
+          setErrorMsg("CSV must contain a 'word' column header.");
           setParsedData([]);
           setFileName(null);
           return;
@@ -87,19 +90,26 @@ export default function ImportPage() {
 
         setParsedData(formattedData);
       },
-      error: (error) => alert("Error parsing CSV: " + error.message)
+      error: (error) => setErrorMsg("Error parsing CSV: " + error.message)
     });
   };
 
-  const checkDuplicate = async (word: string, lang: string) => {
+  const normalizeWord = (word: string) => {
     const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
-    const cleanWord = word.toLowerCase().replace(articlesRegex, "").trim();
+    return word.toLowerCase().replace(articlesRegex, "").trim();
+  };
 
-    const { data } = await supabase.from("vocab").select("word").eq("language_code", lang);
-    if (data) {
-      return data.some(item => item.word.toLowerCase().replace(articlesRegex, "").trim() === cleanWord);
+  const loadDuplicateIndex = async (lang: string) => {
+    const { data, error } = await supabase.from("vocab").select("word").eq("language_code", lang);
+    if (error) {
+      setErrorMsg(`Failed to load duplicates: ${error.message}`);
+      return new Set<string>();
     }
-    return false;
+    const existing = new Set<string>();
+    (data || []).forEach((item) => {
+      existing.add(normalizeWord(item.word));
+    });
+    return existing;
   };
 
   const handleAnalyzeData = async () => {
@@ -107,14 +117,17 @@ export default function ImportPage() {
     setPhase("analyzing");
     setProgress({ current: 0, total: parsedData.length });
     setLogs([]);
+    setErrorMsg(null);
     const tempAnalyzed: AnalyzedWord[] = [];
+    const existingWords = await loadDuplicateIndex(selectedLang);
 
     for (let i = 0; i < parsedData.length; i++) {
       const currentRow = parsedData[i];
       setProgress({ current: i + 1, total: parsedData.length });
 
       try {
-        const isDup = await checkDuplicate(currentRow.word, selectedLang);
+        const normalized = normalizeWord(currentRow.word);
+        const isDup = existingWords.has(normalized);
         if (isDup) {
           setLogs(prev => [{ word: currentRow.word, status: "skipped", message: "Already exists" }, ...prev]);
           continue;
@@ -145,6 +158,7 @@ export default function ImportPage() {
           conjugation: aiData.conjugation || "",
           notes: aiData.notes || "",
         });
+        existingWords.add(normalized);
 
       } catch (err: any) {
         setLogs(prev => [{ word: currentRow.word, status: "error", message: "Unexpected error" }, ...prev]);
@@ -168,13 +182,11 @@ export default function ImportPage() {
     if (analyzedData.length === 0) return;
     setPhase("saving");
     setProgress({ current: 0, total: analyzedData.length });
-    
-    for (let i = 0; i < analyzedData.length; i++) {
-      const item = analyzedData[i];
-      setProgress({ current: i + 1, total: analyzedData.length });
+    setErrorMsg(null);
 
-      await supabase.from("vocab").insert([{
-        language_code: selectedLang,
+    const { error } = await bulkInsertVocabWords(
+      selectedLang,
+      analyzedData.map((item) => ({
         word: item.word,
         translation: item.translation,
         part_of_speech: item.part_of_speech || null,
@@ -187,9 +199,15 @@ export default function ImportPage() {
         notes: item.notes || null,
         root_word: item.root_word || null,
         is_remembered: false,
-      }]);
-    }
+      }))
+    );
 
+    if (error) {
+      setErrorMsg(`Save failed: ${error}`);
+      setPhase("review");
+      return;
+    }
+    setProgress({ current: analyzedData.length, total: analyzedData.length });
     setPhase("done");
   };
 
@@ -205,6 +223,7 @@ export default function ImportPage() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+        {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
         {phase === "idle" && (
           <div className="animate-in fade-in zoom-in-95 duration-500">
             <header className="mb-10 text-center">

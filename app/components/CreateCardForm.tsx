@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { generateVocabInfo } from "../actions/ai";
+import { addVocabWord } from "../actions/vocab";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,6 +49,7 @@ export default function CreateCardForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState(false);
+  const [duplicateIndex, setDuplicateIndex] = useState<{ cleanWord: string; pos: string }[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -65,6 +67,28 @@ export default function CreateCardForm() {
     }
     fetchData();
   }, []);
+
+  useEffect(() => {
+    async function loadDuplicateIndex() {
+      if (!selectedLang) {
+        setDuplicateIndex([]);
+        return;
+      }
+      const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
+      const { data, error } = await supabase.from("vocab").select("word, part_of_speech").eq("language_code", selectedLang);
+      if (error) {
+        setErrorMsg(`Failed to load duplicate index: ${error.message}`);
+        setDuplicateIndex([]);
+        return;
+      }
+      const index = (data || []).map((item) => ({
+        cleanWord: item.word.toLowerCase().replace(articlesRegex, "").trim(),
+        pos: String(item.part_of_speech || "").toLowerCase(),
+      }));
+      setDuplicateIndex(index);
+    }
+    loadDuplicateIndex();
+  }, [selectedLang]);
 
   const handleChange = (field: keyof typeof initialForm, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -115,16 +139,8 @@ export default function CreateCardForm() {
     if (!posToCheck) return false;
     const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
     const cleanInputWord = wordToCheck.toLowerCase().replace(articlesRegex, "").trim();
-
-    const { data } = await supabase.from("vocab").select("word, part_of_speech").eq("language_code", lang);
-    if (data) {
-      return data.some(item => {
-        const itemClean = item.word.toLowerCase().replace(articlesRegex, "").trim();
-        const posMatch = (item.part_of_speech || "").toLowerCase() === posToCheck.toLowerCase();
-        return itemClean === cleanInputWord && posMatch;
-      });
-    }
-    return false;
+    if (lang !== selectedLang) return false;
+    return duplicateIndex.some((item) => item.cleanWord === cleanInputWord && item.pos === posToCheck.toLowerCase());
   };
 
   const handleAIGenerate = async () => {
@@ -182,7 +198,7 @@ export default function CreateCardForm() {
       return;
     }
     
-    const { error } = await supabase.from("vocab").insert([{
+    const { error } = await addVocabWord({
       language_code: selectedLang, word: formData.word.trim(), translation: formData.translation.trim(),
       part_of_speech: formData.pos || null, gender: formData.gender || null, verb_type: formData.verbType || null,
       category_id: formData.categoryId || null, example_sentence: formData.example || null,
@@ -190,18 +206,26 @@ export default function CreateCardForm() {
       notes: formData.notes || null, 
       root_word: formData.rootWord || null, 
       is_remembered: false,
-    }]);
+    });
 
     setIsSubmitting(false);
 
     if (!error) {
+      const articlesRegex = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|der |die |das |el |la |los |las |le |la |les |l')/i;
+      setDuplicateIndex((prev) => [
+        ...prev,
+        {
+          cleanWord: formData.word.toLowerCase().replace(articlesRegex, "").trim(),
+          pos: formData.pos.toLowerCase(),
+        },
+      ]);
       setFormData(initialForm);
       setSelL1(""); setSelL2(""); setSelL3("");
       setSuccessMsg(true);
       router.refresh(); 
       setTimeout(() => setSuccessMsg(false), 3000);
     } else {
-      setErrorMsg("Error: " + error.message);
+      setErrorMsg("Error: " + error);
     }
   };
 

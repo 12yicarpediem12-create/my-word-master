@@ -9,6 +9,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const SEARCH_BAR_COLUMNS = "id, language_code, word, translation, part_of_speech";
+
 export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
   const router = useRouter();
   const [languages, setLanguages] = useState<any[]>([]);
@@ -39,20 +41,23 @@ export default function SearchBar({ forcedLang }: { forcedLang?: string }) {
       return;
     }
 
-    let dbQuery = supabase
-      .from("vocab")
-      .select("*")
-      .or(`word.ilike.%${searchQuery}%,translation.ilike.%${searchQuery}%`)
-      .limit(20);
+    let wordQuery = supabase.from("vocab").select(SEARCH_BAR_COLUMNS).ilike("word", `%${searchQuery}%`).limit(20);
+    let translationQuery = supabase.from("vocab").select(SEARCH_BAR_COLUMNS).ilike("translation", `%${searchQuery}%`).limit(20);
 
     if (selectedLang !== "all") {
-      dbQuery = dbQuery.eq("language_code", selectedLang);
+      wordQuery = wordQuery.eq("language_code", selectedLang);
+      translationQuery = translationQuery.eq("language_code", selectedLang);
     }
 
-    const { data, error } = await dbQuery;
-    if (error) return;
+    const [{ data: words, error: wordError }, { data: translations, error: translationError }] = await Promise.all([
+      wordQuery,
+      translationQuery,
+    ]);
+    if (wordError || translationError) return;
 
-    setResults(data || []);
+    const merged = [...(words || []), ...(translations || [])];
+    const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values()).slice(0, 20);
+    setResults(unique);
     setIsOpen(true);
   };
 

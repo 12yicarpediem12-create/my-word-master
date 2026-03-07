@@ -10,6 +10,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+const SEARCH_RESULT_COLUMNS = "id, language_code, word, translation, part_of_speech, is_remembered, mistake_count";
+
 const SearchWordItem = ({ vocab }: { vocab: any }) => {
   const isWeak = (vocab.mistake_count || 0) > 0;
   return (
@@ -66,18 +68,19 @@ function SearchContent() {
       if (langData) setLanguages(langData);
 
       if (query.trim()) {
-        let dbQuery = supabase
-          .from("vocab")
-          .select("*")
-          .or(`word.ilike.%${query}%,translation.ilike.%${query}%`)
-          .order("language_code", { ascending: true }); 
+        let wordQuery = supabase.from("vocab").select(SEARCH_RESULT_COLUMNS).ilike("word", `%${query}%`);
+        let translationQuery = supabase.from("vocab").select(SEARCH_RESULT_COLUMNS).ilike("translation", `%${query}%`);
 
         if (filterLang !== "all") {
-          dbQuery = dbQuery.eq("language_code", filterLang);
+          wordQuery = wordQuery.eq("language_code", filterLang);
+          translationQuery = translationQuery.eq("language_code", filterLang);
         }
 
-        const { data: vocabData } = await dbQuery;
-        setResults(vocabData || []);
+        const [{ data: wordData }, { data: translationData }] = await Promise.all([wordQuery, translationQuery]);
+        const merged = [...(wordData || []), ...(translationData || [])];
+        const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
+        unique.sort((a, b) => String(a.language_code).localeCompare(String(b.language_code)));
+        setResults(unique);
       } else {
         setResults([]);
       }

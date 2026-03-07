@@ -2,11 +2,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { applyStudyResult } from "../../../actions/vocab";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+const SESSION_WORD_COLUMNS =
+  "id, word, translation, example_sentence, is_remembered, mistake_count, repetition, efactor, interval, next_review_date";
 
 type Mode = "learning" | "review" | "mastered" | "weakpoint" | null;
 type Direction = "recognition" | "production" | "chaos";
@@ -23,6 +27,7 @@ export default function StudySession() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const speak = useCallback((text: string, isEnglish: boolean = false) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -49,8 +54,9 @@ export default function StudySession() {
   const startSession = async (selectedMode: Mode) => {
     setMode(selectedMode);
     setIsLoading(true);
+    setErrorMsg(null);
 
-    let query = supabase.from("vocab").select("*").eq("language_code", langCode);
+    let query = supabase.from("vocab").select(SESSION_WORD_COLUMNS).eq("language_code", langCode);
 
     if (selectedMode === "learning") {
       query = query.eq("is_remembered", false);
@@ -63,7 +69,13 @@ export default function StudySession() {
       query = query.gt("mistake_count", 0).order("mistake_count", { ascending: false });
     }
 
-    const { data } = await query.limit(15);
+    const { data, error } = await query.limit(15);
+    if (error) {
+      setErrorMsg(error.message);
+      setWords([]);
+      setIsLoading(false);
+      return;
+    }
 
     if (data && data.length > 0) {
       const preparedWords = data.sort(() => Math.random() - 0.5).map(w => ({
@@ -121,15 +133,20 @@ export default function StudySession() {
     
     const isRemembered = quality >= 4;
     
-    await supabase.from("vocab").update({ 
+    const { error } = await applyStudyResult({
+      wordId: currentWord.id,
       is_remembered: isRemembered,
       last_reviewed: new Date().toISOString(),
       next_review_date: nextReviewDate.toISOString(),
       repetition: newStats.repetition,
       efactor: newStats.efactor,
       interval: newStats.interval,
-      mistake_count: newStats.mistake_count
-    }).eq("id", currentWord.id);
+      mistake_count: newStats.mistake_count,
+    });
+    if (error) {
+      setErrorMsg(error);
+      return;
+    }
 
     if (currentIndex < words.length - 1) {
       setIsFlipped(false);
@@ -219,6 +236,11 @@ export default function StudySession() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col select-none">
+      {errorMsg && (
+        <div className="mx-auto mt-3 w-full max-w-3xl px-4">
+          <div className="p-3 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-xl text-sm">{errorMsg}</div>
+        </div>
+      )}
       <div className="h-2 bg-gray-200 w-full shrink-0">
         <div className="h-full bg-blue-600 transition-all duration-700" style={{ width: `${progress}%` }} />
       </div>
