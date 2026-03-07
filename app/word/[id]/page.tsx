@@ -44,7 +44,6 @@ export default function WordDetail() {
   const [tempNuance, setTempNuance] = useState<string | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
 
-  // 🌟 カテゴリ階層用のState
   const [selL1, setSelL1] = useState<string>("");
   const [selL2, setSelL2] = useState<string>("");
   const [selL3, setSelL3] = useState<string>("");
@@ -58,7 +57,6 @@ export default function WordDetail() {
     setEditForm(prev => ({ ...prev, [field]: value }));
   };
 
-  // 🌟 カテゴリの階層を更新する関数
   const updateCategoryHierarchy = useCallback((categoryId: string | number | null, allCats: any[]) => {
     if (!categoryId) {
       setSelL1(""); setSelL2(""); setSelL3("");
@@ -127,7 +125,6 @@ export default function WordDetail() {
           rootWord: vocabRes.data.root_word || "" 
         });
 
-        // 🌟 初回ロード時にカテゴリ階層をセット
         if (catRes.data && vocabRes.data.category_id) {
           updateCategoryHierarchy(vocabRes.data.category_id, catRes.data);
         }
@@ -196,7 +193,6 @@ export default function WordDetail() {
           notes: aiData.notes || prev.notes
         }));
 
-        // 🌟 AIからの返答にカテゴリが含まれていれば、階層を同期
         if (aiData.category_id) {
           updateCategoryHierarchy(aiData.category_id, categories);
         }
@@ -285,7 +281,6 @@ export default function WordDetail() {
   const baseInputClass = "w-full p-4 border-2 rounded-2xl font-bold outline-none transition-all";
   const baseTextareaClass = "w-full p-4 border-2 rounded-2xl font-medium outline-none resize-none transition-all";
 
-  // 🌟 カテゴリ用のオプション配列を作成
   const l1Options = categories.filter(c => c.level === 1);
   const l2Options = selL1 ? categories.filter(c => String(c.parent_id) === selL1) : [];
   const l3Options = selL2 ? categories.filter(c => String(c.parent_id) === selL2) : [];
@@ -456,7 +451,6 @@ export default function WordDetail() {
                       verbType: vocab.verb_type || "",
                       rootWord: vocab.root_word || "" 
                     });
-                    // 🌟 編集画面を開くときに階層を再同期
                     updateCategoryHierarchy(vocab.category_id, categories);
                     setIsEditing(true);
                   }} 
@@ -484,7 +478,6 @@ export default function WordDetail() {
 
               <div className="flex flex-col gap-y-6 lg:gap-y-8">
                 
-                {/* 🌟 Wordは1カラムで広く取る */}
                 <div className="grid grid-cols-1 gap-6 lg:gap-8 items-start">
                   <FieldWrapper label="Word">
                     <input type="text" value={editForm.word} onChange={(e) => handleChange("word", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
@@ -492,7 +485,6 @@ export default function WordDetail() {
                   </FieldWrapper>
                 </div>
 
-                {/* 🌟 3階層のカテゴリ選択UIを追加 */}
                 <FieldWrapper label="Category Taxonomy" color="purple">
                   <div className="flex flex-col md:flex-row gap-3 w-full">
                     <select value={selL1} onChange={(e) => handleL1Change(e.target.value)} className={`flex-1 ${baseInputClass} ${colorTheme.purple.input} text-sm`}>

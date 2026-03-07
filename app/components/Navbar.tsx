@@ -3,7 +3,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NavLink = ({ href, currentPath, children }: { href: string; currentPath: string; children: React.ReactNode }) => {
-  // 🌟 トップページ(/)以外は、その下の階層(/root/noctemなど)にいる時もアクティブ状態をキープする
   const isActive = currentPath === href || (href !== "/" && currentPath.startsWith(href));
   
   return (
@@ -38,9 +37,7 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <NavLink href="/" currentPath={pathname}>Dashboard</NavLink>
           <NavLink href="/manage" currentPath={pathname}>Manage</NavLink>
-          {/* 🌟 語源一覧 (Origins Hub) へのリンク */}
           <NavLink href="/root" currentPath={pathname}>Origins</NavLink>
-          {/* 🌟 一括インポート (Bulk Import) へのリンクを追加 */}
           <NavLink href="/import" currentPath={pathname}>Import</NavLink>
           
           <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">

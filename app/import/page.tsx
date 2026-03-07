@@ -17,15 +17,13 @@ interface ParsedRow {
   pos?: string;
 }
 
-// 🌟 AI解析後のデータ構造
 interface AnalyzedWord {
-  id: number; // 一時的なID
+  id: number;
   word: string;
   translation: string;
   part_of_speech: string;
   gender: string;
   root_word: string;
-  // 以下は裏で保持（表示しきれないため）
   verb_type: string;
   category_id: string;
   example_sentence: string;
@@ -104,7 +102,6 @@ export default function ImportPage() {
     return false;
   };
 
-  // 🌟 Phase 1: AIによる解析のみを行い、画面にプレビューを出す
   const handleAnalyzeData = async () => {
     if (parsedData.length === 0 || !selectedLang) return;
     setPhase("analyzing");
@@ -134,7 +131,6 @@ export default function ImportPage() {
           continue;
         }
 
-        // DBにはまだ入れず、Stateに貯める
         tempAnalyzed.push({
           id: i,
           word: aiData.word || currentRow.word,
@@ -157,20 +153,17 @@ export default function ImportPage() {
     }
 
     setAnalyzedData(tempAnalyzed);
-    setPhase("review"); // 解析が終わったら「確認（Review）」フェーズへ
+    setPhase("review");
   };
 
-  // 🌟 確認画面での直接編集を反映する関数
   const handleEditChange = (id: number, field: keyof AnalyzedWord, value: string) => {
     setAnalyzedData(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
   };
 
-  // 🌟 不要な単語を確認画面でリストから削除する関数
   const handleRemoveFromReview = (id: number) => {
     setAnalyzedData(prev => prev.filter(item => item.id !== id));
   };
 
-  // 🌟 Phase 3: 確認し終わったデータをDBに書き込む
   const handleSaveToDatabase = async () => {
     if (analyzedData.length === 0) return;
     setPhase("saving");
@@ -212,10 +205,6 @@ export default function ImportPage() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        
-        {/* =========================================
-            PHASE 1: 初期画面 (ファイル選択〜AI実行) 
-        ===========================================*/}
         {phase === "idle" && (
           <div className="animate-in fade-in zoom-in-95 duration-500">
             <header className="mb-10 text-center">
@@ -255,9 +244,6 @@ export default function ImportPage() {
           </div>
         )}
 
-        {/* =========================================
-            PHASE 2 & 4: 処理中のプログレス表示
-        ===========================================*/}
         {(phase === "analyzing" || phase === "saving") && (
           <div className="bg-white rounded-[2.5rem] p-12 border-2 border-gray-200 shadow-sm text-center animate-in fade-in duration-500 mt-10">
             <div className="text-6xl mb-6 animate-pulse">{phase === "analyzing" ? "🧠" : "💾"}</div>
@@ -277,9 +263,6 @@ export default function ImportPage() {
           </div>
         )}
 
-        {/* =========================================
-            PHASE 3: 確認と編集 (Review & Edit) 
-        ===========================================*/}
         {phase === "review" && (
           <div className="animate-in slide-in-from-bottom-8 duration-500">
             <header className="mb-10 flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -338,9 +321,6 @@ export default function ImportPage() {
           </div>
         )}
 
-        {/* =========================================
-            PHASE 5: 完了画面 (Done) 
-        ===========================================*/}
         {phase === "done" && (
           <div className="bg-white rounded-[2.5rem] p-12 border-2 border-gray-200 shadow-sm text-center animate-in zoom-in-95 duration-500 mt-10">
             <div className="text-7xl mb-6">🎉</div>
