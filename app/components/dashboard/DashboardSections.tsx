@@ -34,9 +34,8 @@ export function DashboardLanguageOverview({
 }) {
   const activeLanguages = vocabStats.filter((stat) => stat.total > 0);
   const primaryLanguage =
-    activeLanguages.find((stat) => stat.code === primaryLanguageCode) ??
-    activeLanguages[0] ??
-    vocabStats[0];
+    activeLanguages.find((stat) => stat.code === primaryLanguageCode) ?? activeLanguages[0] ?? vocabStats[0];
+  const spotlightStats = (activeLanguages.length > 0 ? activeLanguages : vocabStats).slice(0, 4);
   const dueNowCount = activeLanguages.reduce((sum, stat) => sum + stat.dueToday, 0);
   const learningCount = activeLanguages.reduce((sum, stat) => sum + stat.learning, 0);
 
@@ -76,47 +75,64 @@ export function DashboardLanguageOverview({
         </div>
 
         <div className="mt-6 space-y-3">
-          {primaryLanguage ? (
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 px-4 py-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
-                  {primaryLanguage.emoji || "🌍"}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-black text-slate-950">{primaryLanguage.name}</p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
-                        Main language right now
-                      </p>
-                    </div>
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${primaryLanguage.dueToday > 0 ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
-                      {formatDueLabel(primaryLanguage.dueToday)}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm font-medium text-slate-600">
-                    {formatMasteryLabel(primaryLanguage.remembered, primaryLanguage.total)} with {primaryLanguage.learning} still in active learning.
-                  </p>
-                  <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${primaryLanguage.percentage}%` }} />
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                      href={`/study/${primaryLanguage.code}`}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
-                    >
-                      Open Hub
-                    </Link>
-                    <Link
-                      href={`/study/${primaryLanguage.code}/topics`}
-                      className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
-                    >
-                      Topics
-                    </Link>
-                  </div>
-                </div>
+          {spotlightStats.length > 0 ? (
+            <>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Language Cards</p>
+                {primaryLanguage && (
+                  <Link
+                    href={`/study/${primaryLanguage.code}`}
+                    className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-blue-600"
+                  >
+                    Open main hub
+                  </Link>
+                )}
               </div>
-            </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {spotlightStats.map((stat) => (
+                  <article
+                    key={stat.code}
+                    className="rounded-[1.55rem] border border-slate-200 bg-white/92 p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.28)] transition-all hover:-translate-y-0.5 hover:border-blue-200"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                          {stat.emoji || "🌍"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-black text-slate-950">{stat.name}</p>
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            {stat.code}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-widest ${stat.dueToday > 0 ? "border border-amber-200 bg-amber-50 text-amber-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
+                        {stat.dueToday}
+                      </span>
+                    </div>
+
+                    <p className="mt-3 text-sm font-medium text-slate-600">
+                      {stat.remembered} mastered · {stat.learning} learning
+                    </p>
+
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400" style={{ width: `${stat.percentage}%` }} />
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="text-sm font-black text-slate-950">{stat.percentage}%</p>
+                      <Link
+                        href={`/study/${stat.code}`}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                      >
+                        Study
+                      </Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
           ) : (
             <div className="surface-muted px-5 py-6">
               <p className="text-sm font-medium text-slate-600">Add your first language to start building a study routine.</p>
@@ -315,36 +331,42 @@ export function DashboardActivitySection({
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="surface-muted overflow-visible px-4 py-5 sm:px-6">
-          <CalendarHeatmap
-            startDate={startDate}
-            endDate={today}
-            values={heatmapValues}
-            gutterSize={2}
-            classForValue={(value: HeatmapCell) => {
-              const count = value?.count ?? 0;
-              if (count === 0) return "color-empty";
-              const level = Math.min(count, 4);
-              return `color-scale-${level}`;
-            }}
-            tooltipDataAttrs={(value: HeatmapCell) => {
-              const count = value?.count ?? 0;
-              if (!value?.date) {
-                return {
-                  "data-tooltip-id": "heatmap-tooltip",
-                  "data-tooltip-content": "No activity",
-                } as unknown as SVGAttributes<SVGSVGElement>;
-              }
+        <div className="surface-muted px-3 py-4 sm:px-6 sm:py-5">
+          <div className="dashboard-heatmap-shell">
+            <div className="dashboard-heatmap-scroll">
+              <div className="dashboard-heatmap-canvas">
+                <CalendarHeatmap
+                  startDate={startDate}
+                  endDate={today}
+                  values={heatmapValues}
+                  gutterSize={2}
+                  classForValue={(value: HeatmapCell) => {
+                    const count = value?.count ?? 0;
+                    if (count === 0) return "color-empty";
+                    const level = Math.min(count, 4);
+                    return `color-scale-${level}`;
+                  }}
+                  tooltipDataAttrs={(value: HeatmapCell) => {
+                    const count = value?.count ?? 0;
+                    if (!value?.date) {
+                      return {
+                        "data-tooltip-id": "heatmap-tooltip",
+                        "data-tooltip-content": "No activity",
+                      } as unknown as SVGAttributes<SVGSVGElement>;
+                    }
 
-              return {
-                "data-tooltip-id": "heatmap-tooltip",
-                "data-tooltip-content": `${value.date}: ${count} words`,
-              } as unknown as SVGAttributes<SVGSVGElement>;
-            }}
-            showWeekdayLabels={true}
-          />
+                    return {
+                      "data-tooltip-id": "heatmap-tooltip",
+                      "data-tooltip-content": `${value.date}: ${count} words`,
+                    } as unknown as SVGAttributes<SVGSVGElement>;
+                  }}
+                  showWeekdayLabels={true}
+                />
+              </div>
+            </div>
+          </div>
           <Tooltip id="heatmap-tooltip" />
-          <div className="heatmap-legend mt-4 flex items-center text-xs font-bold text-gray-400">
+          <div className="heatmap-legend mt-4 flex flex-wrap items-center justify-center gap-1 text-xs font-bold text-gray-400 sm:justify-start">
             <span className="mr-2">Less</span>
             <div className="legend-box bg-gray-100 w-3 h-3 mx-1 rounded-sm"></div>
             <div className="legend-box bg-green-100 w-3 h-3 mx-1 rounded-sm"></div>

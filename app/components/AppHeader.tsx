@@ -13,7 +13,6 @@ type AppHeaderProps = {
   utility?: ReactNode;
   backHref?: string;
   backLabel?: string;
-  secondaryLinks?: { href: string; label: string }[];
 };
 
 const PRIMARY_LINKS: { href: string; label: string; key: Exclude<PrimarySection, null> }[] = [
@@ -21,12 +20,6 @@ const PRIMARY_LINKS: { href: string; label: string; key: Exclude<PrimarySection,
   { href: "/study", label: "Study", key: "study" },
   { href: "/library", label: "Library", key: "library" },
   { href: "/import", label: "Import", key: "import" },
-];
-
-const DEFAULT_SECONDARY_LINKS = [
-  { href: "/history", label: "History" },
-  { href: "/manage", label: "Manage" },
-  { href: "/root", label: "Roots" },
 ];
 
 function inferPrimarySection(pathname: string): PrimarySection {
@@ -43,7 +36,6 @@ export default function AppHeader({
   utility,
   backHref,
   backLabel = "Back",
-  secondaryLinks = DEFAULT_SECONDARY_LINKS,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const activePrimary = primarySection ?? inferPrimarySection(pathname);
@@ -57,28 +49,7 @@ export default function AppHeader({
               WordMaster<span className="text-blue-600">.</span>
             </Link>
 
-            <div className="flex items-center gap-4 shrink-0">
-              {secondaryLinks.length > 0 && (
-                <div className="hidden lg:flex items-center gap-3">
-                  {secondaryLinks.map((link) => {
-                    const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
-                    return (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className={`text-[11px] font-black uppercase tracking-[0.18em] transition-colors ${
-                          isActive ? "text-slate-900" : "text-slate-400 hover:text-blue-600"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="flex items-center gap-3">{utility}</div>
-            </div>
+            <div className="flex items-center gap-3 shrink-0">{utility}</div>
           </div>
 
           <div className="mt-4 flex flex-col gap-4 border-t border-slate-200/70 pt-4 sm:mt-5 sm:pt-5">
