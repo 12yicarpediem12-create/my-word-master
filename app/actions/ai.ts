@@ -113,7 +113,13 @@ export async function generateVocabInfo(
          - In ambiguous cases, return null.
          - Prefer under-classification over wrong classification.
          - If returning a category, output ONLY the numerical ID (e.g., "45"). Otherwise return null.
-      5. ETYMOLOGY (Shared Roots) - STRICT RULES:
+      5. ETYMOLOGY (Shared Roots) - CONSERVATIVE RULE:
+         - "root_word" is OPTIONAL.
+         - Use "root_word" mainly for single-word entries.
+         - If the entry is a phrase, do NOT force a single shared "root_word" unless one lexical root clearly and naturally represents the whole entry.
+         - In most phrase cases, return "root_word" as null.
+         - If there is useful origin, literal sense, or key-word etymology for a phrase, put it in "notes" instead of forcing "root_word".
+         - Prefer no "root_word" over a weak or artificial one.
          - For Romance languages (French, Italian, Spanish, Portuguese), trace the root back to "Latin" whenever possible.
          - DO NOT use micro-classifications like "Late Latin", "Vulgar Latin", "Medieval Latin", or "Post-Classical Latin". Group them all strictly as "(Latin)".
          - DO NOT trace back to "Proto-Indo-European" unless absolutely necessary. Stop at Latin, Proto-Germanic, Ancient Greek, or Arabic.
