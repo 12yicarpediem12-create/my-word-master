@@ -18,6 +18,10 @@ export function normalizeWordForLookup(word: string | null | undefined): string 
   return String(word || "").toLowerCase().replace(LEADING_ARTICLES_REGEX, "").trim();
 }
 
+export function getComparableLemma(word: string | null | undefined): string {
+  return normalizeWordForLookup(word);
+}
+
 export function normalizePartOfSpeech(value: string | null | undefined): string {
   return String(value || "").toLowerCase().trim();
 }

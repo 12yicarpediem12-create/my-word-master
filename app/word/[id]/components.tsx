@@ -146,260 +146,403 @@ function SidebarSection({
   );
 }
 
-export function WordDetailView({
+function SpellingFamilyHeader({
   vocab,
-  relatedWords,
-  isDeleting,
-  isAskingAI,
-  tempNuance,
-  mainTopicName,
+  siblingCount,
+}: {
+  vocab: VocabDetail;
+  siblingCount: number;
+}) {
+  const totalEntries = siblingCount + 1;
+
+  return (
+    <section className="surface-hero relative overflow-hidden rounded-[2.75rem] p-6 sm:p-8 lg:p-10">
+      <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-blue-200/20 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-36 w-36 rounded-full bg-sky-100/40 blur-3xl" />
+
+      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <MetadataChip tone="blue">{vocab.language_code}</MetadataChip>
+            <MetadataChip tone="default">Spelling Family</MetadataChip>
+            <MetadataChip tone="indigo">
+              {totalEntries} {totalEntries === 1 ? "entry" : "entries"}
+            </MetadataChip>
+          </div>
+
+          <h1 className="mt-5 break-all text-4xl font-black leading-[0.95] tracking-tight text-slate-950 sm:text-6xl">
+            {vocab.word}
+          </h1>
+          <p className="mt-4 max-w-3xl text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
+            Browse the distinct records stored under this spelling. Each entry below stays separate by part of
+            speech and central meaning, even when the surface form is shared.
+          </p>
+        </div>
+
+        <div className="grid max-w-md grid-cols-1 gap-3 sm:grid-cols-3">
+          <QuickFact label="Current Topic" value={vocab.categories?.name || "Uncategorized"} tone="blue" />
+          <QuickFact label="Selected Entry" value={vocab.part_of_speech || "Word"} tone="emerald" />
+          <QuickFact
+            label="Mastery"
+            value={vocab.is_remembered ? "Mastered" : "Learning"}
+            tone={vocab.is_remembered ? "emerald" : "default"}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function WordEntryBlock({
+  entry,
+  entryNumber,
+  isCurrent,
+  isDeleting = false,
+  isAskingAI = false,
+  tempNuance = null,
   onSpeak,
   onToggleRemembered,
   onStartEditing,
   onDelete,
   onAskNuance,
 }: {
-  vocab: VocabDetail;
-  relatedWords: VocabItem[];
+  entry: VocabDetail;
+  entryNumber: number;
+  isCurrent: boolean;
+  isDeleting?: boolean;
+  isAskingAI?: boolean;
+  tempNuance?: string | null;
+  onSpeak: (text: string) => void;
+  onToggleRemembered?: () => void;
+  onStartEditing?: () => void;
+  onDelete?: () => void;
+  onAskNuance?: () => void;
+}) {
+  const canEdit = isCurrent && !!onStartEditing && !!onDelete;
+  const canToggleRemembered = isCurrent && !!onToggleRemembered;
+  const canAskNuance = isCurrent && !!onAskNuance;
+
+  return (
+    <section
+      className={cn(
+        "rounded-[2rem] border bg-white/90 p-6 shadow-[0_18px_40px_-36px_rgba(15,23,42,0.24)] sm:p-7",
+        isCurrent ? "border-blue-200 shadow-[0_24px_44px_-36px_rgba(37,99,235,0.25)]" : "border-slate-200/80"
+      )}
+    >
+      <div className="flex flex-col gap-5 border-b border-slate-200/80 pb-5 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-slate-500">
+              {entryNumber}.
+            </span>
+            {isCurrent && <MetadataChip tone="blue">Current Entry</MetadataChip>}
+            <MetadataChip tone="blue">{entry.part_of_speech || "Word"}</MetadataChip>
+            {entry.gender && <MetadataChip tone="emerald">{entry.gender}</MetadataChip>}
+            {entry.verb_type && <MetadataChip tone="indigo">{entry.verb_type}</MetadataChip>}
+            {entry.categories?.name && <MetadataChip tone="default">{entry.categories.name}</MetadataChip>}
+            {canToggleRemembered ? (
+              <MetadataChip
+                tone={entry.is_remembered ? "emerald" : "orange"}
+                asButton
+                onClick={onToggleRemembered}
+              >
+                {entry.is_remembered ? "Mastered" : "Learning"}
+              </MetadataChip>
+            ) : (
+              <MetadataChip tone={entry.is_remembered ? "emerald" : "default"}>
+                {entry.is_remembered ? "Mastered" : "Learning"}
+              </MetadataChip>
+            )}
+          </div>
+
+          <p className="mt-4 break-words text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+            {entry.translation}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+          <button
+            onClick={() => onSpeak(entry.word)}
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition-colors hover:bg-blue-50"
+          >
+            🔊
+          </button>
+          {isCurrent ? (
+            <span className="text-xs font-medium text-slate-500">Selected by this route</span>
+          ) : (
+            <Link
+              href={`/word/${entry.id}`}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+            >
+              Open entry
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)]">
+        <div className="space-y-4">
+          {(entry.example_sentence || entry.example_translation) && (
+            <div className="rounded-[1.5rem] border border-blue-100 bg-blue-50/75 p-5">
+              <p className="support-label text-blue-500">Example</p>
+              {entry.example_sentence && (
+                <div className="mt-2 flex flex-col items-start gap-3">
+                  <p className="text-lg font-semibold leading-relaxed text-slate-950 italic">
+                    &quot;{entry.example_sentence}&quot;
+                  </p>
+                  <button
+                    onClick={() => onSpeak(entry.example_sentence || "")}
+                    className="rounded-full border border-blue-100 bg-white px-4 py-2 text-[11px] font-bold text-blue-600 transition-colors hover:bg-blue-100"
+                  >
+                    Play example
+                  </button>
+                </div>
+              )}
+              {entry.example_translation && (
+                <p className="mt-3 border-t border-blue-100 pt-3 text-sm font-medium leading-relaxed text-slate-600">
+                  {entry.example_translation}
+                </p>
+              )}
+            </div>
+          )}
+
+          {(entry.notes || entry.conjugation) && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {entry.notes && (
+                <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/75 p-5">
+                  <p className="support-label">Notes</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700">
+                    {entry.notes}
+                  </p>
+                </div>
+              )}
+              {entry.conjugation && (
+                <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/75 p-5">
+                  <p className="support-label text-emerald-600">Conjugation</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-relaxed text-emerald-950">
+                    {entry.conjugation}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(isCurrent || tempNuance) && (
+            <div className="rounded-[1.5rem] border border-indigo-100 bg-indigo-50/55 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="support-label text-indigo-500">Nuance</p>
+                  <p className="mt-1 text-sm font-medium text-slate-500">
+                    {isCurrent
+                      ? "Keep nuance specific to this one lexical record."
+                      : "Nuance is available on the selected entry only in this first pass."}
+                  </p>
+                </div>
+                {canAskNuance && (
+                  <button
+                    onClick={onAskNuance}
+                    disabled={isAskingAI}
+                    className="rounded-full border border-indigo-100 bg-white px-4 py-2 text-[11px] font-bold text-indigo-600 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+                  >
+                    {isAskingAI ? "Analyzing..." : "Ask AI"}
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-4">
+                {tempNuance ? (
+                  <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700">{tempNuance}</p>
+                ) : (
+                  <p className="text-sm font-medium text-slate-500">
+                    {canAskNuance
+                      ? "No AI nuance yet. Use the action above when you want an extra usage distinction."
+                      : "Open this entry to ask for nuance and save or edit it as its own study record."}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <QuickFact label="Topic" value={entry.categories?.name || "Uncategorized"} tone="blue" />
+            <QuickFact
+              label="Mastery"
+              value={entry.is_remembered ? "Mastered" : "Learning"}
+              tone={entry.is_remembered ? "emerald" : "default"}
+            />
+            {entry.gender && <QuickFact label="Gender" value={entry.gender} tone="emerald" />}
+            {entry.verb_type && <QuickFact label="Verb Type" value={entry.verb_type} tone="emerald" />}
+          </div>
+
+          <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-5">
+            <p className="support-label">Actions</p>
+            <div className="mt-3 grid gap-3">
+              {canEdit ? (
+                <>
+                  <button
+                    onClick={onStartEditing}
+                    className="rounded-2xl bg-slate-950 px-5 py-3 font-bold text-white transition-colors hover:bg-slate-800"
+                  >
+                    Edit entry
+                  </button>
+                  <button
+                    onClick={onDelete}
+                    disabled={isDeleting}
+                    className="rounded-2xl border border-red-100 bg-red-50 px-5 py-3 font-bold text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
+                  >
+                    {isDeleting ? "Deleting..." : "Delete entry"}
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href={`/word/${entry.id}`}
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-center font-bold text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                >
+                  View this entry
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function WordDetailView({
+  currentRecord,
+  siblingEntries,
+  secondaryContext,
+  isDeleting,
+  isAskingAI,
+  tempNuance,
+  onSpeak,
+  onToggleRemembered,
+  onStartEditing,
+  onDelete,
+  onAskNuance,
+}: {
+  currentRecord: VocabDetail;
+  siblingEntries: VocabDetail[];
+  secondaryContext: {
+    categories: Category[];
+    relatedWords: VocabItem[];
+    mainTopicName: string;
+  };
   isDeleting: boolean;
   isAskingAI: boolean;
   tempNuance: string | null;
-  mainTopicName: string;
   onSpeak: (text: string) => void;
   onToggleRemembered: () => void;
   onStartEditing: () => void;
   onDelete: () => void;
   onAskNuance: () => void;
 }) {
+  const familyEntries = [currentRecord, ...siblingEntries];
+  const { relatedWords, mainTopicName } = secondaryContext;
+
   return (
     <div className="mt-4 space-y-6 lg:mt-6">
-      <section className="surface-hero relative overflow-hidden rounded-[2.75rem] p-6 sm:p-8 lg:p-10">
-        <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-blue-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-36 w-36 rounded-full bg-sky-100/50 blur-3xl" />
+      <SpellingFamilyHeader vocab={currentRecord} siblingCount={siblingEntries.length} />
 
-        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] xl:items-start">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <MetadataChip tone="blue">{vocab.language_code}</MetadataChip>
-              <MetadataChip tone="default">Lexicon Record</MetadataChip>
-              {vocab.categories?.name && <MetadataChip tone="indigo">{vocab.categories.name}</MetadataChip>}
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-4">
-              <h1 className="break-all text-4xl font-black leading-[0.95] tracking-tight text-slate-950 sm:text-6xl">{vocab.word}</h1>
-              <button
-                onClick={() => onSpeak(vocab.word)}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-lg shadow-sm transition-colors hover:bg-blue-50"
-              >
-                🔊
-              </button>
-            </div>
-
-            <p className="mt-4 break-words text-2xl font-bold leading-tight text-blue-600 sm:text-3xl">{vocab.translation}</p>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              <MetadataChip tone="blue">{vocab.part_of_speech || "Word"}</MetadataChip>
-              {vocab.gender && <MetadataChip tone="emerald">{vocab.gender}</MetadataChip>}
-              <MetadataChip
-                tone={vocab.is_remembered ? "emerald" : "orange"}
-                asButton
-                onClick={onToggleRemembered}
-              >
-                {vocab.is_remembered ? "Mastered" : "Learning"}
-              </MetadataChip>
-            </div>
-
-            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <QuickFact label="Mastery" value={vocab.is_remembered ? "Mastered" : "Learning"} tone={vocab.is_remembered ? "emerald" : "default"} />
-              <QuickFact label="Topic" value={vocab.categories?.name || "Uncategorized"} tone="blue" />
-              <QuickFact label="Root" value={vocab.root_word ? vocab.root_word.replace(/^\*/, "") : "No root"} tone={vocab.root_word ? "rose" : "default"} />
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-slate-200/80 bg-white/88 p-5 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.22)] sm:p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Record Actions</p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Work with this entry</h2>
-            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              Update details, keep mastery accurate, or remove the record if it no longer belongs in your library.
+      <section className="section-open space-y-4">
+        <div className="flex flex-col gap-2 border-b border-slate-200/80 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="section-eyebrow">Entries</p>
+            <h2 className="section-title">Distinct records under this spelling</h2>
+            <p className="section-copy">
+              Each block below is its own lexical record. The current route stays selected, while sibling entries remain
+              separate by part of speech and meaning.
             </p>
-
-            <div className="mt-6 grid gap-3">
-              <button
-                onClick={onStartEditing}
-                className="rounded-2xl bg-slate-950 px-5 py-4 font-black text-white transition-colors hover:bg-slate-800"
-              >
-                Edit Details
-              </button>
-              <button
-                onClick={onDelete}
-                disabled={isDeleting}
-                className="rounded-2xl border border-red-100 bg-red-50 px-5 py-4 font-black text-red-500 transition-colors hover:bg-red-100 disabled:opacity-50"
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
-              </button>
-            </div>
           </div>
+        </div>
+
+        <div className="space-y-5">
+          {familyEntries.map((entry, index) => {
+            const isCurrent = entry.id === currentRecord.id;
+
+            return (
+              <WordEntryBlock
+                key={entry.id}
+                entry={entry}
+                entryNumber={index + 1}
+                isCurrent={isCurrent}
+                isDeleting={isCurrent ? isDeleting : false}
+                isAskingAI={isCurrent ? isAskingAI : false}
+                tempNuance={isCurrent ? tempNuance : null}
+                onSpeak={onSpeak}
+                onToggleRemembered={isCurrent ? onToggleRemembered : undefined}
+                onStartEditing={isCurrent ? onStartEditing : undefined}
+                onDelete={isCurrent ? onDelete : undefined}
+                onAskNuance={isCurrent ? onAskNuance : undefined}
+              />
+            );
+          })}
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-        <div className="space-y-6">
-          {(vocab.example_sentence || vocab.example_translation) && (
-            <RecordSection
-              eyebrow="Primary Learning"
-              title="Example Sentence"
-              description="Keep context, phrasing, and pronunciation in the main reading lane so the word behaves like a real record, not just a label."
-            >
-              <div className="rounded-[1.75rem] border border-blue-100 bg-blue-50/80 p-5 sm:p-7">
-                {vocab.example_sentence && (
-                  <div className="flex flex-col items-start gap-4">
-                    <p className="text-xl font-bold leading-relaxed text-slate-950 italic sm:text-2xl">
-                      &quot;{vocab.example_sentence}&quot;
-                    </p>
-                    <button
-                      onClick={() => onSpeak(vocab.example_sentence || "")}
-                      className="rounded-2xl border border-blue-100 bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-blue-600 shadow-sm transition-all hover:bg-blue-100"
-                    >
-                      Play Example
-                    </button>
-                  </div>
-                )}
-                {vocab.example_translation && (
-                  <div className="mt-5 border-t border-blue-100 pt-5">
-                    <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-blue-400">Meaning</p>
-                    <p className="text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
-                      {vocab.example_translation}
-                    </p>
-                  </div>
-                )}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        {currentRecord.categories && (
+          <SidebarSection eyebrow="Context" title="Category & Navigation">
+            <div className="space-y-4">
+              <div className="rounded-[1.5rem] border border-indigo-100 bg-indigo-50/80 p-5">
+                <p className="support-label text-indigo-500">Topic Path</p>
+                <p className="mt-2 break-words text-sm font-bold leading-relaxed text-indigo-950 sm:text-base">
+                  {currentRecord.categories.full_path}
+                </p>
               </div>
-            </RecordSection>
-          )}
-
-          <RecordSection
-            eyebrow="Primary Learning"
-            title="Usage & Nuance"
-            description="Nuance stays near the example and translation so the record reads like one learning object with meaning, context, and usage together."
-            actions={
-              <button
-                onClick={onAskNuance}
-                disabled={isAskingAI}
-                className="rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-blue-600 transition-all hover:bg-blue-100 disabled:opacity-50"
+              <Link
+                href={`/study/${currentRecord.language_code}/topics/${currentRecord.category_id}`}
+                className="block rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 transition-all hover:border-indigo-200 hover:text-indigo-600"
               >
-                {isAskingAI ? "Analyzing..." : "Ask AI"}
-              </button>
-            }
-          >
-            {tempNuance ? (
-              <div className="rounded-[2rem] border-2 border-dashed border-indigo-100 bg-indigo-50/60 p-6 animate-in fade-in duration-500 sm:p-8">
-                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 lg:text-base">{tempNuance}</p>
-                <p className="mt-4 text-[8px] font-bold uppercase text-indigo-300">Insight is not saved in your library.</p>
-              </div>
-            ) : (
-              <div className="rounded-[1.75rem] border-2 border-dashed border-slate-200 bg-slate-50 px-5 py-6">
-                <p className="text-sm font-medium text-slate-500">
-                  {isAskingAI
-                    ? "Looking up nuance and usage detail..."
-                    : "No AI nuance yet. Use the button above when you want extra usage context."}
-                </p>
-              </div>
-            )}
-          </RecordSection>
-
-          <RecordSection
-            eyebrow="Primary Learning"
-            title="Grammar & Recall Notes"
-            description="Keep grammar guidance and memory cues close to the main content, but secondary to meaning, example, and nuance."
-          >
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {vocab.conjugation && (
-                <div className="rounded-[1.75rem] border border-emerald-100 bg-emerald-50/85 p-5 sm:p-6">
-                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-emerald-500">Conjugation</p>
-                  <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-emerald-950 sm:text-base">
-                    {vocab.conjugation}
-                  </p>
-                </div>
-              )}
-              <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50/90 p-5 sm:p-6">
-                <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Notes</p>
-                <p className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700 italic sm:text-base">
-                  {vocab.notes || "No grammar notes added."}
-                </p>
-              </div>
-            </div>
-          </RecordSection>
-        </div>
-
-        <aside className="space-y-6">
-          <SidebarSection eyebrow="Record Snapshot" title="Grammar & Facts">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <QuickFact label="Part of Speech" value={vocab.part_of_speech || "---"} tone="blue" />
-              <QuickFact label="Mastery" value={vocab.is_remembered ? "Mastered" : "Learning"} tone={vocab.is_remembered ? "emerald" : "default"} />
-              {vocab.gender && <QuickFact label="Gender" value={vocab.gender} tone="emerald" />}
-              {vocab.verb_type && <QuickFact label="Verb Type" value={vocab.verb_type} tone="emerald" />}
+                <p className="support-label">Study More Like This</p>
+                <p className="mt-2 text-lg font-black text-slate-950">Open {mainTopicName}</p>
+                <p className="mt-3 text-xs font-medium text-indigo-500">Go to topic list</p>
+              </Link>
             </div>
           </SidebarSection>
+        )}
 
-          {vocab.categories && (
-            <SidebarSection eyebrow="Context" title="Category & Navigation">
-              <div className="space-y-4">
-                <div className="rounded-[1.5rem] border border-indigo-100 bg-indigo-50/80 p-5">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-indigo-400">Topic Path</p>
-                  <p className="break-words text-sm font-bold leading-relaxed text-indigo-950 sm:text-base">
-                    {vocab.categories.full_path}
-                  </p>
-                </div>
+        {currentRecord.root_word && (
+          <SidebarSection eyebrow="Context" title="Etymology & Related Words">
+            <div className="space-y-4">
+              <div className="rounded-[1.5rem] border border-rose-100 bg-rose-50/85 p-5">
+                <p className="support-label text-rose-500">Origin</p>
                 <Link
-                  href={`/study/${vocab.language_code}/topics/${vocab.category_id}`}
-                  className="block rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 transition-all hover:border-indigo-200 hover:text-indigo-600"
+                  href={`/root/${encodeRootPath(currentRecord.root_word)}`}
+                  className="mt-2 inline-block text-base font-bold text-rose-700 transition-all hover:text-rose-500 hover:underline sm:text-lg"
                 >
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Study More Like This</p>
-                  <p className="font-black text-slate-950">Open {mainTopicName}</p>
-                  <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-indigo-400">Go to topic list</p>
+                  {currentRecord.root_word.replace(/^\*/, "")}
                 </Link>
               </div>
-            </SidebarSection>
-          )}
 
-          {vocab.root_word && (
-            <SidebarSection eyebrow="Context" title="Etymology & Related Words">
-              <div className="space-y-4">
-                <div className="rounded-[1.5rem] border border-rose-100 bg-rose-50/85 p-5">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-widest text-rose-400">Origin</p>
-                  <Link
-                    href={`/root/${encodeRootPath(vocab.root_word)}`}
-                    className="inline-block text-base font-bold text-rose-700 transition-all hover:text-rose-500 hover:underline sm:text-lg"
-                  >
-                    {vocab.root_word.replace(/^\*/, "")}
-                  </Link>
-                </div>
-
-                {relatedWords.length > 0 && (
-                  <div>
-                    <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-slate-400">Words sharing this root</p>
-                    <div className="space-y-3">
-                      {relatedWords.map((rw) => (
-                        <Link
-                          href={`/word/${rw.id}`}
-                          key={rw.id}
-                          className="block rounded-[1.25rem] border border-rose-100 bg-white px-4 py-4 transition-all hover:border-rose-300"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="rounded-md bg-rose-50 px-2 py-0.5 text-[9px] font-black uppercase text-rose-500">
-                              {rw.language_code}
-                            </span>
-                            <span className="font-bold text-slate-900">{rw.word}</span>
-                          </div>
-                          <span className="mt-1 block text-[10px] font-medium text-slate-400">{rw.translation}</span>
-                        </Link>
-                      ))}
-                    </div>
+              {relatedWords.length > 0 && (
+                <div>
+                  <p className="support-label">Words sharing this root</p>
+                  <div className="mt-3 space-y-3">
+                    {relatedWords.map((rw) => (
+                      <Link
+                        href={`/word/${rw.id}`}
+                        key={rw.id}
+                        className="block rounded-[1.25rem] border border-rose-100 bg-white px-4 py-4 transition-all hover:border-rose-300"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-md bg-rose-50 px-2 py-0.5 text-[9px] font-black uppercase text-rose-500">
+                            {rw.language_code}
+                          </span>
+                          <span className="font-bold text-slate-900">{rw.word}</span>
+                        </div>
+                        <span className="mt-1 block text-[10px] font-medium text-slate-400">{rw.translation}</span>
+                      </Link>
+                    ))}
                   </div>
-                )}
-              </div>
-            </SidebarSection>
-          )}
-        </aside>
+                </div>
+              )}
+            </div>
+          </SidebarSection>
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import type { Category, VocabDetail, VocabItem } from "@/app/lib/types";
 import { buildEditFormFromVocab, type EditFormData } from "@/app/lib/word-detail";
 import {
   buildDuplicateIndex,
+  getComparableLemma,
   getCategoryHierarchyOptions,
   getCategorySelection,
   getCategorySelectionAfterL1Change,
@@ -44,6 +45,27 @@ async function loadRelatedWords(rootWord: string, wordId: string) {
   };
 }
 
+async function loadSiblingEntries(languageCode: string, comparableLemma: string, wordId: string) {
+  const { data, error } = await supabase
+    .from("vocab")
+    .select(`${WORD_DETAIL_COLUMNS}, categories:category_id ( id, name, full_path )`)
+    .eq("language_code", languageCode);
+
+  if (error) {
+    return {
+      data: [] as VocabDetail[],
+      error,
+    };
+  }
+
+  return {
+    data: ((data || []) as unknown as VocabDetail[]).filter(
+      (entry) => entry.id !== wordId && getComparableLemma(entry.word) === comparableLemma
+    ),
+    error: null,
+  };
+}
+
 async function wouldCreateDuplicateWordRecord(wordId: string, languageCode: string, word: string, partOfSpeech: string) {
   if (!partOfSpeech.trim()) {
     return false;
@@ -67,6 +89,7 @@ export function useWordDetailData(wordId: string) {
   const router = useRouter();
 
   const [vocab, setVocab] = useState<VocabDetail | null>(null);
+  const [siblingEntries, setSiblingEntries] = useState<VocabDetail[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [relatedWords, setRelatedWords] = useState<VocabItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -120,6 +143,20 @@ export function useWordDetailData(wordId: string) {
     [wordId]
   );
 
+  const syncSiblingEntries = useCallback(
+    async (languageCode: string, lemmaWord: string) => {
+      const comparableLemma = getComparableLemma(lemmaWord);
+      const { data, error } = await loadSiblingEntries(languageCode, comparableLemma, wordId);
+      if (error) {
+        setErrorMsg(error.message);
+        return;
+      }
+
+      setSiblingEntries(data);
+    },
+    [wordId]
+  );
+
   useEffect(() => {
     async function fetchData() {
       if (!wordId) return;
@@ -153,6 +190,7 @@ export function useWordDetailData(wordId: string) {
 
       const loadedVocab = vocabRes.data as unknown as VocabDetail;
       setVocab(loadedVocab);
+      await syncSiblingEntries(loadedVocab.language_code, loadedVocab.word);
       setEditForm(buildEditFormFromVocab(loadedVocab));
       updateCategoryHierarchy(loadedVocab.category_id, loadedCategories);
       await syncRelatedWords(loadedVocab.root_word);
@@ -160,7 +198,7 @@ export function useWordDetailData(wordId: string) {
     }
 
     fetchData();
-  }, [syncRelatedWords, updateCategoryHierarchy, wordId]);
+  }, [syncRelatedWords, syncSiblingEntries, updateCategoryHierarchy, wordId]);
 
   const handleChange = useCallback((field: keyof EditFormData, value: string) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
@@ -349,9 +387,10 @@ export function useWordDetailData(wordId: string) {
     });
 
     setIsEditing(false);
+    await syncSiblingEntries(vocab.language_code, editForm.word);
     await syncRelatedWords(editForm.rootWord || null);
     router.refresh();
-  }, [categories, editForm, router, syncRelatedWords, vocab, wordId]);
+  }, [categories, editForm, router, syncRelatedWords, syncSiblingEntries, vocab, wordId]);
 
   const handleToggleRemembered = useCallback(async () => {
     if (!vocab) return;
@@ -393,9 +432,20 @@ export function useWordDetailData(wordId: string) {
     if (!vocab?.categories?.full_path) return "General";
     return vocab.categories.full_path.split(" > ")[0];
   }, [vocab]);
+  const secondaryContext = useMemo(
+    () => ({
+      categories,
+      relatedWords,
+      mainTopicName,
+    }),
+    [categories, relatedWords, mainTopicName]
+  );
 
   return {
     vocab,
+    currentRecord: vocab,
+    siblingEntries,
+    secondaryContext,
     relatedWords,
     isLoading,
     isEditing,

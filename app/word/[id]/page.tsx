@@ -12,8 +12,9 @@ export default function WordDetail() {
   const wordId = params.id as string;
 
   const {
-    vocab,
-    relatedWords,
+    currentRecord,
+    siblingEntries,
+    secondaryContext,
     isLoading,
     isEditing,
     isDeleting,
@@ -28,7 +29,6 @@ export default function WordDetail() {
     l1Options,
     l2Options,
     l3Options,
-    mainTopicName,
     handleChange,
     handleL1Change,
     handleL2Change,
@@ -60,24 +60,24 @@ export default function WordDetail() {
         zh: "zh-CN",
         en: "en-US",
       };
-      const languageCode = vocab?.language_code || "en";
+      const languageCode = currentRecord?.language_code || "en";
       utterance.lang = langMap[languageCode] || "en-US";
       window.speechSynthesis.speak(utterance);
     },
-    [vocab?.language_code]
+    [currentRecord?.language_code]
   );
 
   if (isLoading) {
     return <div className="app-shell flex min-h-screen items-center justify-center font-bold text-gray-400">Loading...</div>;
   }
 
-  if (!vocab) {
+  if (!currentRecord) {
     return <div className="app-shell flex min-h-screen items-center justify-center font-bold">Word Not Found.</div>;
   }
 
   return (
     <AppShell className="pb-20">
-      <AppHeader primarySection="library" backHref={`/study/${vocab.language_code}`} backLabel="Study Hub" />
+      <AppHeader primarySection="library" backHref={`/study/${currentRecord.language_code}`} backLabel="Study Hub" />
 
       <AppMain width="xl" className="section-stack transition-all">
         {errorMsg && <div className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-4 font-bold text-red-600">{errorMsg}</div>}
@@ -102,12 +102,12 @@ export default function WordDetail() {
           />
         ) : (
           <WordDetailView
-            vocab={vocab}
-            relatedWords={relatedWords}
+            currentRecord={currentRecord}
+            siblingEntries={siblingEntries}
+            secondaryContext={secondaryContext}
             isDeleting={isDeleting}
             isAskingAI={isAskingAI}
             tempNuance={tempNuance}
-            mainTopicName={mainTopicName}
             onSpeak={speak}
             onToggleRemembered={handleToggleRemembered}
             onStartEditing={startEditing}
