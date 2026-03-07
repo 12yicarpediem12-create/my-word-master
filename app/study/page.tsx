@@ -40,7 +40,7 @@ function StudyLanguageCard({
   const primaryLabel = hasWords ? "Start review" : "Open hub";
 
   return (
-    <article className="surface-card rounded-[2rem] p-5 sm:p-6">
+    <article className="rounded-[2rem] border border-slate-200/80 bg-white/80 p-5 shadow-[0_22px_45px_-38px_rgba(15,23,42,0.28)] transition-all hover:border-blue-200 hover:bg-white sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-[1.5rem] bg-slate-100 text-3xl">
@@ -69,8 +69,8 @@ function StudyLanguageCard({
         </span>
       </div>
 
-      <div className="mt-5 surface-muted px-4 py-4">
-        <div className="flex items-end justify-between gap-3">
+      <div className="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Mastery</p>
             <div className="mt-2 flex items-end gap-2">
@@ -78,9 +78,15 @@ function StudyLanguageCard({
               <p className="pb-1 text-sm font-medium text-slate-600">{total} words</p>
             </div>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-right">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak</p>
-            <p className="mt-1 text-xl font-black text-slate-950">{weakWords}</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
+            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak</p>
+              <p className="mt-1 text-xl font-black text-slate-950">{weakWords}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning</p>
+              <p className="mt-1 text-xl font-black text-slate-950">{learning}</p>
+            </div>
           </div>
         </div>
         <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white">
@@ -90,16 +96,16 @@ function StudyLanguageCard({
 
       <div className="mt-5 flex flex-wrap gap-2">
         <Link
-          href={primaryHref}
+          href={`/study/${code}`}
           className="rounded-full bg-blue-600 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_14px_28px_-20px_rgba(37,99,235,0.75)] transition-colors hover:bg-blue-700"
         >
-          {primaryLabel}
+          Open hub
         </Link>
         <Link
-          href={`/study/${code}`}
+          href={primaryHref}
           className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
         >
-          Open hub
+          {primaryLabel}
         </Link>
         <Link
           href={`/study/${code}/session`}
@@ -130,8 +136,8 @@ export default function StudyHomePage() {
 
         <PageIntro
           eyebrow="Study Home"
-          title="Choose a language and start intentionally"
-          description="This is the canonical study entry point. Continue your recent language when it helps, or pick any language directly from the grid below."
+          title="Choose a language and enter the right study workspace"
+          description="Use this page as the explicit study chooser. Resume your recent language when it helps, or pick any language below when you want to choose intentionally."
         />
 
         {isLoading ? (
@@ -140,7 +146,7 @@ export default function StudyHomePage() {
           </div>
         ) : (
           <>
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_21rem]">
+            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_22rem]">
               <Surface tone="hero" className="p-7 sm:p-9">
                 {recentLanguage ? (
                   <div className="flex h-full flex-col gap-6">
@@ -159,20 +165,20 @@ export default function StudyHomePage() {
                         Continue in {recentLanguage.name}
                       </h2>
                       <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
-                        Your recent activity makes {recentLanguage.name} the quickest place to resume momentum, but the language grid below is the explicit chooser for any language.
+                        This featured path is for continuing your recent language quickly. The chooser below is the canonical place to select any language intentionally.
                       </p>
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="surface-muted px-4 py-4">
+                      <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
                         <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.dueToday}</p>
                       </div>
-                      <div className="surface-muted px-4 py-4">
+                      <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak Points</p>
                         <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.weakWords}</p>
                       </div>
-                      <div className="surface-muted px-4 py-4">
+                      <div className="rounded-[1.5rem] border border-slate-200 bg-white/80 px-4 py-4">
                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Mastery</p>
                         <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.percentage}%</p>
                       </div>
@@ -225,7 +231,7 @@ export default function StudyHomePage() {
               </Surface>
 
               <Surface tone="muted" className="p-6 sm:p-7">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Study Shortcuts</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Across Study</p>
                 <div className="mt-5 grid gap-3">
                   <div className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Languages</p>
@@ -250,7 +256,7 @@ export default function StudyHomePage() {
               </Surface>
             </section>
 
-            <section className="surface-card p-6 sm:p-8">
+            <section className="pt-2">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Chooser</p>
@@ -259,7 +265,7 @@ export default function StudyHomePage() {
                     Every card below is an explicit study entry point. Use this page when you want to choose rather than continue whatever was active most recently.
                   </p>
                 </div>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
                   {vocabStats.length} languages
                 </span>
               </div>

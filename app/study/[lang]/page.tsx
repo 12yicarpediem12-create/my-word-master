@@ -2,18 +2,14 @@
 
 import { useCallback, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import SearchBar from "../../components/SearchBar";
 import AppHeader from "../../components/AppHeader";
-import { AppMain, AppShell, Surface } from "../../components/layout/AppShell";
-import {
-  NavCard,
-  ProgressBar,
-  StatCircle,
-} from "./primitives";
+import { AppMain, AppShell } from "../../components/layout/AppShell";
+import { NavCard } from "./primitives";
 import {
   LanguageHabitPanel,
   LanguageHubHero,
+  LanguageProgressPanel,
   RandomFlashbackCard,
   SelectionActionBar,
   VocabFilterToolbar,
@@ -121,9 +117,9 @@ export default function LanguageHub() {
 
   return (
     <AppShell className="pb-32 overflow-x-hidden relative">
-      <AppHeader primarySection="study" searchSlot={<SearchBar forcedLang={langCode} />} backHref="/" backLabel="Dashboard" />
+      <AppHeader primarySection="study" searchSlot={<SearchBar forcedLang={langCode} />} backHref="/study" backLabel="Study Home" />
 
-      <AppMain width="lg">
+      <AppMain width="xl" className="section-stack">
         {errorMsg && (
           <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">
             {errorMsg}
@@ -132,67 +128,65 @@ export default function LanguageHub() {
 
         <LanguageHubHero
           language={language}
+          activitySummary={activitySummary}
+          globalPercentage={globalPercentage}
           weakWordsCount={weakWordsCount}
           totalWords={totalWords}
           doneForToday={doneForToday}
           onStartReview={handleStartReview}
           onStartWeakPointReview={handleStartWeakPointReview}
+          onOpenCustomModes={() => router.push(`/study/${langCode}/session`)}
         />
 
-        <LanguageHabitPanel
-          activitySummary={activitySummary}
-          habitNudge={habitNudge}
-          quickRecoverySize={quickRecoverySize}
-          totalWords={totalWords}
-          onStartReview={handleStartReview}
-        />
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_22rem]">
+          <div className="space-y-6">
+            <LanguageHabitPanel
+              activitySummary={activitySummary}
+              habitNudge={habitNudge}
+              quickRecoverySize={quickRecoverySize}
+              totalWords={totalWords}
+              onStartReview={handleStartReview}
+            />
 
-        <div className="mb-8 flex justify-end">
-          <Link
-            href={`/study/${langCode}/session`}
-            className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-blue-600 transition-colors"
-          >
-            Open custom study modes
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <NavCard href={`/study/${langCode}/topics`} icon="🗂️" subtitle="Taxonomy" title="Browse by Topic" iconBg="bg-blue-50" />
-          <NavCard href="/history" icon="⏳" subtitle="Activity" title="Review History" iconBg="bg-gray-50" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-          <StatCircle percentage={globalPercentage} mastered={masteredWords} total={totalWords} />
-          <Surface tone="card" className="lg:col-span-2 h-full flex flex-col justify-center p-8 rounded-3xl">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 text-center sm:text-left">Mastery by Category</h3>
-            <div className="space-y-5">
-              {posStats.map((stat) => (
-                <ProgressBar key={stat.name} stat={stat} />
-              ))}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <NavCard href={`/study/${langCode}/topics`} icon="🗂️" subtitle="Taxonomy" title="Browse by Topic" iconBg="bg-blue-50" />
+              <NavCard href="/history" icon="⏳" subtitle="Activity" title="Review History" iconBg="bg-slate-100" />
             </div>
-          </Surface>
-        </div>
+          </div>
 
-        <RandomFlashbackCard randomWord={randomWord} onSpeak={speak} />
+          <div className="space-y-6">
+            <LanguageProgressPanel
+              totalWords={totalWords}
+              masteredWords={masteredWords}
+              globalPercentage={globalPercentage}
+              weakWordsCount={weakWordsCount}
+              dueTodayCount={activitySummary.dueTodayCount}
+              posStats={posStats}
+            />
+            <RandomFlashbackCard randomWord={randomWord} onSpeak={speak} />
+          </div>
+        </section>
 
-        <VocabFilterToolbar
-          activeFilter={activeFilter}
-          dynamicPosList={dynamicPosList}
-          filteredCount={filteredList.length}
-          selectedCount={selectedIds.length}
-          allSelected={filteredList.length > 0 && selectedIds.length === filteredList.length}
-          onFilterChange={setActiveFilter}
-          onToggleSelectAll={handleSelectAll}
-          onClearSelection={() => setSelectedIds([])}
-        />
+        <section className="section-stack">
+          <VocabFilterToolbar
+            activeFilter={activeFilter}
+            dynamicPosList={dynamicPosList}
+            filteredCount={filteredList.length}
+            selectedCount={selectedIds.length}
+            allSelected={filteredList.length > 0 && selectedIds.length === filteredList.length}
+            onFilterChange={setActiveFilter}
+            onToggleSelectAll={handleSelectAll}
+            onClearSelection={() => setSelectedIds([])}
+          />
 
-        <VocabListSection
-          vocabList={filteredList}
-          activeFilter={activeFilter}
-          selectedIds={selectedIds}
-          onToggleSelection={toggleSelection}
-          onSpeak={speak}
-        />
+          <VocabListSection
+            vocabList={filteredList}
+            activeFilter={activeFilter}
+            selectedIds={selectedIds}
+            onToggleSelection={toggleSelection}
+            onSpeak={speak}
+          />
+        </section>
       </AppMain>
 
       <SelectionActionBar selectedCount={selectedIds.length} isDeleting={isDeleting} onDelete={handleBulkDelete} />

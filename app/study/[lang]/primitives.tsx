@@ -14,40 +14,19 @@ type NavCardProps = {
 
 export function NavCard({ href, icon, subtitle, title, iconBg }: NavCardProps) {
   return (
-    <Link href={href} className="surface-card flex items-center justify-between rounded-[2rem] p-6 transition-all group hover:border-blue-300 hover:shadow-lg">
+    <Link
+      href={href}
+      className="group flex items-center justify-between rounded-[2rem] border border-slate-200/80 bg-white/75 p-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_20px_40px_-30px_rgba(15,23,42,0.28)]"
+    >
       <div className="flex items-center gap-5">
-        <div className={`w-14 h-14 ${iconBg} rounded-2xl flex items-center justify-center text-3xl group-hover:scale-110 transition-transform`}>{icon}</div>
+        <div className={`flex h-14 w-14 items-center justify-center rounded-[1.25rem] ${iconBg} text-3xl transition-transform group-hover:scale-105`}>{icon}</div>
         <div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{subtitle}</p>
-          <h2 className="text-xl font-black text-slate-950">{title}</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{subtitle}</p>
+          <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">{title}</h2>
         </div>
       </div>
-      <span className="mr-2 font-black text-slate-300 transition-colors group-hover:text-blue-500">→</span>
+      <span className="mr-1 font-black text-slate-300 transition-colors group-hover:text-blue-500">→</span>
     </Link>
-  );
-}
-
-type StatCircleProps = {
-  percentage: number;
-  mastered: number;
-  total: number;
-};
-
-export function StatCircle({ percentage, mastered, total }: StatCircleProps) {
-  return (
-    <div className="surface-card lg:col-span-1 flex h-full flex-col items-center justify-center rounded-3xl p-8">
-      <h3 className="mb-6 text-center text-xs font-black uppercase tracking-widest text-slate-400">Overall Mastery</h3>
-      <div className="relative w-40 h-40 flex items-center justify-center">
-        <svg className="transform -rotate-90 w-40 h-40">
-          <circle cx="80" cy="80" r="65" stroke="#f3f4f6" strokeWidth="14" fill="none" />
-          <circle cx="80" cy="80" r="65" stroke="#2563eb" strokeWidth="14" fill="none" strokeDasharray={408} strokeDashoffset={408 - (percentage / 100) * 408} className="transition-all duration-1000 ease-out" strokeLinecap="round" />
-        </svg>
-        <div className="absolute flex flex-col items-center justify-center mt-1">
-          <span className="text-3xl font-black leading-none">{percentage}%</span>
-          <span className="text-[10px] font-bold text-gray-400 uppercase mt-1">{mastered} / {total}</span>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -55,11 +34,14 @@ export function ProgressBar({ stat }: { stat: PosStat }) {
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-end">
-        <span className="text-sm font-bold text-gray-700">{stat.name}</span>
-        <span className="text-xs font-black text-gray-400">{stat.mastered} / {stat.total}</span>
+        <span className="text-sm font-bold text-slate-700">{stat.name}</span>
+        <span className="text-xs font-black text-slate-400">{stat.mastered} / {stat.total}</span>
       </div>
-      <div className="h-4 bg-gray-100 rounded-full overflow-hidden border border-gray-100 relative">
-        <div className={`h-full transition-all duration-1000 ease-in-out ${stat.percentage === 100 ? "bg-green-500" : "bg-blue-500"}`} style={{ width: `${stat.percentage}%` }} />
+      <div className="relative h-3.5 overflow-hidden rounded-full border border-slate-100 bg-white">
+        <div
+          className={`h-full transition-all duration-1000 ease-in-out ${stat.percentage === 100 ? "bg-emerald-500" : "bg-blue-500"}`}
+          style={{ width: `${stat.percentage}%` }}
+        />
       </div>
     </div>
   );

@@ -9,7 +9,6 @@ import DailyStudyHero from "./components/dashboard/DailyStudyHero";
 import SettingsPanel from "./components/dashboard/SettingsPanel";
 import {
   DashboardActivitySection,
-  DashboardLanguageListSection,
   DashboardLanguageOverview,
   DashboardProgressSection,
 } from "./components/dashboard/DashboardSections";
@@ -106,21 +105,22 @@ export default function Dashboard() {
           />
         </section>
 
-        <DashboardLanguageListSection vocabStats={vocabStats} />
-
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(19rem,0.85fr)] xl:items-start">
           <DashboardActivitySection dueTodayCount={dueTodayCount} streak={streak} totalWords={totalWords} heatmapValues={heatmapValues} />
           <DashboardProgressSection vocabStats={vocabStats} />
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(18rem,0.58fr)_minmax(0,1fr)] xl:items-start">
-          <Surface tone="muted" className="p-6 sm:p-8 xl:sticky xl:top-32">
-            <p className="page-eyebrow">Build Library</p>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-950">Add a new word when something is worth keeping.</h2>
-            <p className="mt-4 text-sm sm:text-base font-medium leading-relaxed text-slate-600">
-              Capture a new word, use AI autofill when it helps, and keep growing the same library that powers your study flow.
-            </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+        <section className="border-t border-slate-200/70 pt-8 sm:pt-10">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="page-eyebrow">Build Library</p>
+              <h2 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Capture new words quietly, when they are worth keeping.</h2>
+              <p className="mt-2 max-w-3xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
+                The study loop stays above. This area is for slower library growth, cleanup, and import work when you need it.
+              </p>
+            </div>
+            <Surface tone="muted" className="p-4 sm:p-5">
+              <div className="grid gap-3 sm:grid-cols-2">
               <Link
                 href="/import"
                 className="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:text-blue-600"
@@ -135,10 +135,13 @@ export default function Dashboard() {
                 Manage setup
                 <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Adjust languages and categories</p>
               </Link>
-            </div>
-          </Surface>
+              </div>
+            </Surface>
+          </div>
 
-          <CreateCardForm />
+          <div className="max-w-5xl">
+            <CreateCardForm />
+          </div>
         </section>
       </AppMain>
     </AppShell>
