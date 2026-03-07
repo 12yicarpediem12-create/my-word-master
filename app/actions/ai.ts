@@ -130,8 +130,14 @@ export async function generateVocabInfo(
       8. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
          🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:". If the word is NOT a verb, return null or empty string.
       9. NOTES FIELD - 🛑 SILENT CORRECTION RULE:
+         - This is the general grammar/support field for the record.
+         - For adjectives, put agreement or inflection guidance here instead of using "gender".
          - For verbs, provide exactly two lines -> Line 1: Group: [Pattern], Line 2: Tip: [Grammar tip].
          - 🛑 STRICT RULE: NEVER mention "typo", "spelling mistake", "misspelled", or correct the user explicitly anywhere in the output. If the user input contains a typo, SILENTLY fix it in the "word" field and provide normal grammar notes. DO NOT act like a teacher correcting a mistake.
+      10. GENDER FIELD:
+         - Return "gender" ONLY for noun records.
+         - For adjectives, adverbs, verbs, expressions, and all non-noun records, return null for "gender".
+         - If an adjective has masculine/feminine agreement or other inflection guidance, put that in "notes", not in "gender".
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
@@ -145,14 +151,14 @@ export async function generateVocabInfo(
         "word": "lemma only, never include articles",
         "translation": "English translation without articles",
         "part_of_speech": "e.g., Adjective",
-        "gender": "Masculine/Feminine/Neuter or null",
+        "gender": "Masculine/Feminine/Neuter for nouns only, otherwise null",
         "verb_type": "Transitive/Intransitive or null",
-        "conjugation": "Present:\\nio parlo...\\n\\nPast Participle: parlato",
+        "conjugation": "For verbs only: Present:\\nio parlo...\\n\\nPast Participle: parlato",
         "example_sentence": "Sentence in target language matching the specific POS/Meaning",
         "example_translation": "English translation",
         "category_id": "Selected ID number only when confidence is high, otherwise null",
         "root_word": "e.g., noctem (Latin) or null",
-        "notes": "Grammar pattern or tip. NO typo warnings."
+        "notes": "General grammar/support note. Use this for adjective agreement and verb pattern tips. NO typo warnings."
       }
 
       Ambiguity shape:

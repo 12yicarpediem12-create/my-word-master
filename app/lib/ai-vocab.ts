@@ -138,6 +138,10 @@ function translationLooksBroad(value: string): boolean {
   return /\s\/\s|;/.test(value);
 }
 
+function partOfSpeechIncludes(partOfSpeech: string, label: string): boolean {
+  return partOfSpeech.toLowerCase().includes(label.toLowerCase());
+}
+
 export function normalizeAiVocabResponse(
   raw: unknown,
   { requestedWord, allowedCategoryIds }: NormalizeAiVocabParams
@@ -177,14 +181,17 @@ export function normalizeAiVocabResponse(
     return createNeedsHint("blended_senses");
   }
 
+  const isNoun = partOfSpeechIncludes(partOfSpeech, "noun");
+  const isVerb = partOfSpeechIncludes(partOfSpeech, "verb");
+
   return {
     status: "ok",
     word,
     translation,
     part_of_speech: partOfSpeech,
-    gender: cleanNullableString(result.gender),
+    gender: isNoun ? cleanNullableString(result.gender) : null,
     verb_type: cleanNullableString(result.verb_type),
-    conjugation: cleanNullableString(result.conjugation),
+    conjugation: isVerb ? cleanNullableString(result.conjugation) : null,
     example_sentence: exampleSentence,
     example_translation: exampleTranslation,
     category_id: cleanCategoryId(result.category_id, allowedCategoryIds),
