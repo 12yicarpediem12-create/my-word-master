@@ -157,11 +157,15 @@ export async function bulkInsertVocabWords(languageCode: string, items: Omit<Voc
   }
 }
 
-export async function bulkDeleteVocab(ids: string[]): Promise<ActionResult> {
+export async function bulkDeleteVocab(ids: Array<string | number>): Promise<ActionResult> {
   try {
     if (!Array.isArray(ids) || ids.length === 0) return {};
-    const normalizedIds = ids.map((id) => id.trim()).filter(Boolean);
-    if (normalizedIds.length === 0) return {};
+    const normalizedIds = ids
+      .map((id) => (typeof id === "string" || typeof id === "number" ? String(id).trim() : ""))
+      .filter((id): id is string => id.length > 0);
+    if (!normalizedIds.length) {
+      return { error: "No valid ids provided." };
+    }
 
     const { userId, accessToken } = await requireAuthenticatedUser();
     const supabase = getServerSupabase(accessToken);
