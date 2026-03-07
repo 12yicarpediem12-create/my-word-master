@@ -33,6 +33,7 @@ export default function ImportPage() {
     skippedCount,
     failedCount,
     readyToSaveCount,
+    needsHintCount,
     analyzedCount,
   } = useImportWorkflow();
 
@@ -70,6 +71,7 @@ export default function ImportPage() {
             parsedCount={parsedData.length}
             analyzedCount={analyzedCount}
             readyToSaveCount={readyToSaveCount}
+            needsHintCount={needsHintCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
             percentComplete={percentComplete}
@@ -83,6 +85,7 @@ export default function ImportPage() {
             fileName={fileName}
             parsedCount={parsedData.length}
             readyToSaveCount={readyToSaveCount}
+            needsHintCount={needsHintCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
             logs={logs}
@@ -97,6 +100,7 @@ export default function ImportPage() {
           <ImportDonePanel
             parsedCount={parsedData.length}
             readyToSaveCount={readyToSaveCount}
+            needsHintCount={needsHintCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
             selectedLang={selectedLang}

@@ -40,7 +40,7 @@ function SummaryGrid({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`grid grid-cols-2 gap-3 lg:grid-cols-4 ${className || ""}`}>{children}</div>;
+  return <div className={`grid grid-cols-2 gap-3 lg:grid-cols-5 ${className || ""}`}>{children}</div>;
 }
 
 export function ImportUploadPanel({
@@ -119,18 +119,18 @@ export function ImportUploadPanel({
             </div>
             <div>
               <p className="font-semibold text-slate-950">2. Let AI structure it</p>
-              <p className="mt-1 text-sm text-slate-600">Meanings, POS, examples, and root hints are filled where possible.</p>
+              <p className="mt-1 text-sm text-slate-600">Meanings, POS, examples, and root hints are filled where possible, one lexical record at a time.</p>
             </div>
             <div>
               <p className="font-semibold text-slate-950">3. Review before save</p>
-              <p className="mt-1 text-sm text-slate-600">Only rows that remain in the review list will be written to your library.</p>
+              <p className="mt-1 text-sm text-slate-600">Rows marked Needs Hint stay editable in review until they have one clear POS and meaning.</p>
             </div>
           </div>
 
           <div className="mt-5 border-t border-slate-200 pt-5">
             <p className="support-label">Good to know</p>
             <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              Duplicate words are skipped during analysis, so the review step stays focused on new rows worth importing.
+              Duplicate rows are checked by spelling plus part of speech, so the same spelling can still be imported as a different lexical entry.
             </p>
           </div>
         </div>
@@ -144,6 +144,7 @@ export function ImportProgressPanel({
   parsedCount,
   analyzedCount,
   readyToSaveCount,
+  needsHintCount,
   skippedCount,
   failedCount,
   percentComplete,
@@ -154,6 +155,7 @@ export function ImportProgressPanel({
   parsedCount: number;
   analyzedCount: number;
   readyToSaveCount: number;
+  needsHintCount: number;
   skippedCount: number;
   failedCount: number;
   percentComplete: number;
@@ -177,6 +179,7 @@ export function ImportProgressPanel({
           <SummaryGrid className="mb-8 text-left">
             <ImportCountCard label="Analyzed" value={analyzedCount} tone="blue" helper={`${parsedCount} uploaded`} />
             <ImportCountCard label="Ready To Save" value={readyToSaveCount} tone="emerald" />
+            <ImportCountCard label="Needs Hint" value={needsHintCount} tone="amber" helper="Ambiguous rows" />
             <ImportCountCard label="Skipped" value={skippedCount} tone="amber" />
             <ImportCountCard label="Failed" value={failedCount} tone="rose" />
           </SummaryGrid>
@@ -212,6 +215,7 @@ export function ImportReviewPanel({
   fileName,
   parsedCount,
   readyToSaveCount,
+  needsHintCount,
   skippedCount,
   failedCount,
   logs,
@@ -223,6 +227,7 @@ export function ImportReviewPanel({
   fileName: string | null;
   parsedCount: number;
   readyToSaveCount: number;
+  needsHintCount: number;
   skippedCount: number;
   failedCount: number;
   logs: ImportLog[];
@@ -246,9 +251,10 @@ export function ImportReviewPanel({
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <ImportCountCard label="Analyzed" value={parsedCount} tone="blue" helper={fileName || undefined} />
-            <ImportCountCard label="Ready" value={readyToSaveCount} tone="emerald" helper="Rows in table" />
+            <ImportCountCard label="Ready" value={readyToSaveCount} tone="emerald" helper="Will save now" />
+            <ImportCountCard label="Needs Hint" value={needsHintCount} tone="amber" helper="Set one POS/use" />
             <ImportCountCard label="Skipped" value={skippedCount} tone="amber" helper="Usually duplicates" />
-            <ImportCountCard label="Failed" value={failedCount} tone="rose" helper="Needs review" />
+            <ImportCountCard label="Failed" value={failedCount} tone="rose" helper="Analysis error" />
           </div>
 
           <ImportReviewTable analyzedData={analyzedData} onRemove={onRemove} onEditChange={onEditChange} />
@@ -260,9 +266,14 @@ export function ImportReviewPanel({
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Ready to save</h3>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
               {readyToSaveCount > 0
-                ? `${readyToSaveCount} reviewed row${readyToSaveCount !== 1 ? "s" : ""} will be saved to the library.`
+                ? `${readyToSaveCount} reviewed row${readyToSaveCount !== 1 ? "s" : ""} currently meet the one-record-per-POS rule and will be saved.`
                 : "There are no valid rows left to save."}
             </p>
+            {needsHintCount > 0 && (
+              <p className="mt-3 text-sm leading-relaxed text-amber-700">
+                {needsHintCount} row{needsHintCount !== 1 ? "s still need" : " still needs"} one clear part of speech and meaning before they can be saved.
+              </p>
+            )}
 
             <div className="mt-6 space-y-3">
               <button onClick={onSave} disabled={analyzedData.length === 0} className="w-full rounded-2xl bg-blue-600 px-5 py-4 font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
@@ -279,6 +290,7 @@ export function ImportReviewPanel({
             <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-600">
               <p>Remove rows you do not trust. Only visible rows are saved.</p>
               <p>Edit wording, POS, gender, or root fields directly in the table.</p>
+              <p>Rows marked Needs Hint should be narrowed to one POS and one meaning before save.</p>
               <p>Skipped and failed rows stay listed in the issues panel for context.</p>
             </div>
           </div>
@@ -293,6 +305,7 @@ export function ImportReviewPanel({
 export function ImportDonePanel({
   parsedCount,
   readyToSaveCount,
+  needsHintCount,
   skippedCount,
   failedCount,
   selectedLang,
@@ -300,6 +313,7 @@ export function ImportDonePanel({
 }: {
   parsedCount: number;
   readyToSaveCount: number;
+  needsHintCount: number;
   skippedCount: number;
   failedCount: number;
   selectedLang: string;
@@ -318,6 +332,7 @@ export function ImportDonePanel({
         <SummaryGrid className="mb-8 text-left">
           <ImportCountCard label="Analyzed" value={parsedCount} tone="blue" />
           <ImportCountCard label="Saved" value={readyToSaveCount} tone="emerald" />
+          <ImportCountCard label="Needs Hint" value={needsHintCount} tone="amber" />
           <ImportCountCard label="Skipped" value={skippedCount} tone="amber" />
           <ImportCountCard label="Failed" value={failedCount} tone="rose" />
         </SummaryGrid>

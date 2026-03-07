@@ -8,11 +8,13 @@ import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import type { Category, VocabDetail, VocabItem } from "@/app/lib/types";
 import { buildEditFormFromVocab, type EditFormData } from "@/app/lib/word-detail";
 import {
+  buildDuplicateIndex,
   getCategoryHierarchyOptions,
   getCategorySelection,
   getCategorySelectionAfterL1Change,
   getCategorySelectionAfterL2Change,
   getCategorySelectionAfterL3Change,
+  hasDuplicateEntry,
   normalizeRootWord,
 } from "@/app/lib/vocab-form";
 
@@ -21,16 +23,12 @@ const supabase = getSupabaseBrowserClient();
 const WORD_DETAIL_COLUMNS =
   "id, language_code, word, translation, part_of_speech, gender, verb_type, category_id, example_sentence, example_translation, conjugation, notes, root_word, is_remembered, created_at, last_reviewed, next_review_date, mistake_count, repetition, efactor, interval";
 
-function buildWordAiContextHint(editForm: EditFormData) {
-  if (editForm.hint) {
-    return ` (Hint: ${editForm.hint})`;
-  }
-
-  if (editForm.pos || editForm.translation) {
-    return ` (Hint: User intends this word to be POS: "${editForm.pos}", meaning related to: "${editForm.translation}")`;
-  }
-
-  return "";
+function getWordAiIntent(editForm: EditFormData) {
+  return {
+    hint: editForm.hint || "",
+    intendedPos: editForm.pos || "",
+    intendedMeaning: editForm.translation || "",
+  };
 }
 
 async function loadRelatedWords(rootWord: string, wordId: string) {
@@ -44,6 +42,25 @@ async function loadRelatedWords(rootWord: string, wordId: string) {
     data: (data || []) as VocabItem[],
     error,
   };
+}
+
+async function wouldCreateDuplicateWordRecord(wordId: string, languageCode: string, word: string, partOfSpeech: string) {
+  if (!partOfSpeech.trim()) {
+    return false;
+  }
+
+  const { data, error } = await supabase
+    .from("vocab")
+    .select("word, part_of_speech")
+    .eq("language_code", languageCode)
+    .neq("id", wordId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const duplicateIndex = buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
+  return hasDuplicateEntry(duplicateIndex, word, partOfSpeech);
 }
 
 export function useWordDetailData(wordId: string) {
@@ -222,9 +239,16 @@ export function useWordDetailData(wordId: string) {
     setIsAutoFilling(true);
 
     try {
+      const aiIntent = getWordAiIntent(editForm);
       const aiData = (await generateWordDetails(
-        editForm.word + buildWordAiContextHint(editForm),
-        vocab.language_code
+        {
+          word: editForm.word,
+          langCode: vocab.language_code,
+          hint: aiIntent.hint,
+          intendedPos: aiIntent.intendedPos,
+          intendedMeaning: aiIntent.intendedMeaning,
+          source: "edit",
+        }
       )) as Record<string, string | number | null | undefined> & { error?: string };
 
       if (aiData.error) {
@@ -258,6 +282,28 @@ export function useWordDetailData(wordId: string) {
 
   const handleUpdate = useCallback(async () => {
     setErrorMsg(null);
+
+    if (!vocab) {
+      setErrorMsg("Word not found.");
+      return;
+    }
+
+    try {
+      const wouldDuplicate = await wouldCreateDuplicateWordRecord(
+        wordId,
+        vocab.language_code,
+        editForm.word,
+        editForm.pos
+      );
+
+      if (wouldDuplicate) {
+        setErrorMsg("Another record already exists for this word and part of speech.");
+        return;
+      }
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Could not verify duplicates.");
+      return;
+    }
 
     const { error } = await updateVocabWord(wordId, {
       word: editForm.word,
@@ -305,7 +351,7 @@ export function useWordDetailData(wordId: string) {
     setIsEditing(false);
     await syncRelatedWords(editForm.rootWord || null);
     router.refresh();
-  }, [categories, editForm, router, syncRelatedWords, wordId]);
+  }, [categories, editForm, router, syncRelatedWords, vocab, wordId]);
 
   const handleToggleRemembered = useCallback(async () => {
     if (!vocab) return;

@@ -199,6 +199,7 @@ export function WordDetailView({
 
             <div className="mt-5 flex flex-wrap gap-2">
               <MetadataChip tone="blue">{vocab.part_of_speech || "Word"}</MetadataChip>
+              {vocab.gender && <MetadataChip tone="emerald">{vocab.gender}</MetadataChip>}
               <MetadataChip
                 tone={vocab.is_remembered ? "emerald" : "orange"}
                 asButton
@@ -455,14 +456,19 @@ export function WordDetailEditForm({
               <FieldWrapper label="Meaning">
                 <input type="text" value={editForm.translation} onChange={(e) => onChange("translation", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
               </FieldWrapper>
-              <FieldWrapper label="AI Hint" color="blue">
-                <input
-                  type="text"
-                  value={editForm.hint}
-                  onChange={(e) => onChange("hint", e.target.value)}
-                  placeholder="Hint for AI: meaning, nuance, or part of speech..."
-                  className={`${baseInputClass} ${colorTheme.blue.input}`}
-                />
+              <FieldWrapper label="AI Disambiguation Hint" color="blue">
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={editForm.hint}
+                    onChange={(e) => onChange("hint", e.target.value)}
+                    placeholder="Example: adjective — calm and steady, noun — a state of rest"
+                    className={`${baseInputClass} ${colorTheme.blue.input}`}
+                  />
+                  <p className="ml-2 text-[11px] leading-relaxed text-slate-500">
+                    Use this when the spelling could map to multiple entries. The AI will stay inside one intended part of speech and use.
+                  </p>
+                </div>
               </FieldWrapper>
             </div>
           </div>
@@ -471,7 +477,7 @@ export function WordDetailEditForm({
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Edit Actions</p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Update this record</h2>
             <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              Keep the same record, refine its details, and use AI autofill when you want a faster pass.
+              Keep the same record, refine its details, and use AI autofill when you want help filling one specific lexical entry.
             </p>
 
             <div className="mt-6 grid gap-3">
@@ -507,8 +513,13 @@ export function WordDetailEditForm({
             description="Edit the core learning content in the main column so the record still reads like the same study object."
           >
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <FieldWrapper label="Part of Speech">
-                <input type="text" value={editForm.pos} onChange={(e) => onChange("pos", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
+              <FieldWrapper label="Intended Part of Speech">
+                <div className="space-y-2">
+                  <input type="text" value={editForm.pos} onChange={(e) => onChange("pos", e.target.value)} className={`${baseInputClass} ${colorTheme.gray.input}`} />
+                  <p className="ml-2 text-[11px] leading-relaxed text-slate-500">
+                    Keep this focused on one POS. If the spelling has noun and verb uses, edit them as separate records.
+                  </p>
+                </div>
               </FieldWrapper>
               <FieldWrapper label="Example Sentence" color="blue">
                 <textarea value={editForm.example} onChange={(e) => onChange("example", e.target.value)} rows={3} className={`${baseTextareaClass} ${colorTheme.blue.input}`} />

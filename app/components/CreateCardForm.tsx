@@ -158,7 +158,14 @@ export default function CreateCardForm() {
     setIsGenerating(true);
 
     try {
-      const aiData = await generateVocabInfo(formData.word + (formData.hint ? ` (Hint: ${formData.hint})` : ""), selectedLang);
+      const aiData = await generateVocabInfo({
+        word: formData.word,
+        langCode: selectedLang,
+        hint: formData.hint,
+        intendedPos: formData.pos,
+        intendedMeaning: formData.translation,
+        source: "add",
+      });
       if (aiData?.error) { setErrorMsg("AI Error: " + aiData.error); return; }
 
       if (aiData) {
@@ -271,7 +278,18 @@ export default function CreateCardForm() {
                 {isGenerating ? "..." : "Auto-Fill"}
               </button>
             </div>
-            <input type="text" value={formData.hint} onChange={(e) => handleChange("hint", e.target.value)} placeholder="Hint: specific meaning..." className={`mt-2 p-2 rounded-xl text-[9px] font-bold outline-none w-full border border-blue-100 ${colorTheme.blue.input}`} />
+            <div className="mt-2 space-y-2">
+              <input
+                type="text"
+                value={formData.hint}
+                onChange={(e) => handleChange("hint", e.target.value)}
+                placeholder="Disambiguation hint: verb — to record audio, noun — a written record"
+                className={`p-2 rounded-xl text-[10px] font-bold outline-none w-full border border-blue-100 ${colorTheme.blue.input}`}
+              />
+              <p className="ml-2 text-[11px] leading-relaxed text-slate-500">
+                Use this when one spelling can map to multiple parts of speech or meanings. The AI will create one lexical entry only.
+              </p>
+            </div>
           </FieldWrapper>
         </div>
 
@@ -279,8 +297,13 @@ export default function CreateCardForm() {
           <FieldWrapper label="Meaning">
             <input type="text" value={formData.translation} onChange={(e) => handleChange("translation", e.target.value)} required placeholder="English translation" className={`${baseInputClass} ${colorTheme.gray.input}`} />
           </FieldWrapper>
-          <FieldWrapper label="Part of Speech">
-            <input type="text" value={formData.pos} onChange={(e) => handleChange("pos", e.target.value)} placeholder="Verb" className={`${baseInputClass} ${colorTheme.gray.input}`} />
+          <FieldWrapper label="Intended Part of Speech">
+            <div className="space-y-2">
+              <input type="text" value={formData.pos} onChange={(e) => handleChange("pos", e.target.value)} placeholder="Verb" className={`${baseInputClass} ${colorTheme.gray.input}`} />
+              <p className="ml-2 text-[11px] leading-relaxed text-slate-500">
+                Add a POS here if you already know it. This helps the AI stay on one specific record instead of blending senses.
+              </p>
+            </div>
           </FieldWrapper>
         </div>
 

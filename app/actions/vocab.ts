@@ -5,6 +5,7 @@ import {
   getSupabaseServerPublicClient,
   getSupabaseServerWriteClient,
 } from "@/app/lib/supabase-server";
+import { buildDuplicateIndex, hasDuplicateEntry } from "@/app/lib/vocab-form";
 
 type ActionResult = { error?: string };
 
@@ -201,6 +202,32 @@ export async function updateVocabWord(wordId: string, payload: VocabUpdatePayloa
 
     const { userId, accessToken } = await requireAuthenticatedUser();
     const supabase = getServerSupabase(accessToken);
+    const { data: currentWord, error: currentWordError } = await supabase
+      .from("vocab")
+      .select("id, language_code")
+      .eq("id", wordId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (currentWordError) return { error: currentWordError.message };
+    if (!currentWord) return { error: "Word not found or not accessible." };
+
+    if (payload.part_of_speech?.trim()) {
+      const { data: siblingWords, error: siblingWordsError } = await supabase
+        .from("vocab")
+        .select("word, part_of_speech")
+        .eq("user_id", userId)
+        .eq("language_code", currentWord.language_code)
+        .neq("id", wordId);
+
+      if (siblingWordsError) return { error: siblingWordsError.message };
+
+      const duplicateIndex = buildDuplicateIndex((siblingWords || []) as Array<{ word: string; part_of_speech?: string | null }>);
+      if (hasDuplicateEntry(duplicateIndex, payload.word, payload.part_of_speech)) {
+        return { error: "Another record already exists for this word and part of speech." };
+      }
+    }
+
     const { data, error } = await supabase
       .from("vocab")
       .update({

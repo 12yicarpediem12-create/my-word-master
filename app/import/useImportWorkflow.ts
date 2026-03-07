@@ -6,21 +6,30 @@ import { generateVocabInfo } from "../actions/ai";
 import { bulkInsertVocabWords } from "../actions/vocab";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import type { Language } from "@/app/lib/types";
-import { buildDuplicateWordSet, normalizeRootWord, normalizeWordForLookup } from "@/app/lib/vocab-form";
+import {
+  appendDuplicateEntry,
+  buildDuplicateIndex,
+  hasDuplicateEntry,
+  normalizeRootWord,
+} from "@/app/lib/vocab-form";
 import type { AnalyzedWord, ImportLog, ParsedRow, Phase } from "./types";
 
 const supabase = getSupabaseBrowserClient();
 
 async function loadDuplicateIndex(lang: string) {
-  const { data, error } = await supabase.from("vocab").select("word").eq("language_code", lang);
+  const { data, error } = await supabase
+    .from("vocab")
+    .select("word, part_of_speech")
+    .eq("language_code", lang);
   if (error) {
     throw new Error(`Failed to load duplicates: ${error.message}`);
   }
 
-  return buildDuplicateWordSet((data || []) as Array<{ word: string }>);
+  return buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
 }
 
 function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
+  const isNeedsHint = aiData.status === "needs_hint";
   return {
     id: index,
     word: aiData?.word || row.word,
@@ -34,6 +43,8 @@ function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnTyp
     example_translation: aiData?.example_translation || "",
     conjugation: aiData?.conjugation || "",
     notes: aiData?.notes || "",
+    ai_status: isNeedsHint ? "needs_hint" : "ready",
+    ai_message: isNeedsHint ? aiData.error : "",
   };
 }
 
@@ -109,7 +120,7 @@ export function useImportWorkflow() {
     setErrorMsg(null);
 
     try {
-      const existingWords = await loadDuplicateIndex(selectedLang);
+      let existingWords = await loadDuplicateIndex(selectedLang);
       const nextAnalyzed: AnalyzedWord[] = [];
 
       for (let index = 0; index < parsedData.length; index++) {
@@ -117,24 +128,36 @@ export function useImportWorkflow() {
         setProgress({ current: index + 1, total: parsedData.length });
 
         try {
-          const normalized = normalizeWordForLookup(currentRow.word);
-          if (existingWords.has(normalized)) {
-            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: "Already exists" }, ...prev]);
+          if (currentRow.pos && hasDuplicateEntry(existingWords, currentRow.word, currentRow.pos)) {
+            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Already exists as ${currentRow.pos}` }, ...prev]);
             continue;
           }
 
-          const contextHint = currentRow.pos || currentRow.translation
-            ? ` (Hint: User intends this word to be POS: "${currentRow.pos || "any"}", meaning related to: "${currentRow.translation || "any"}")`
-            : "";
-          const aiData = await generateVocabInfo(currentRow.word + contextHint, selectedLang);
+          const aiData = await generateVocabInfo({
+            word: currentRow.word,
+            langCode: selectedLang,
+            intendedPos: currentRow.pos,
+            intendedMeaning: currentRow.translation,
+            source: "import",
+          });
+
+          if (aiData.status === "needs_hint") {
+            nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
+            continue;
+          }
 
           if (aiData?.error) {
             setLogs((prev) => [{ word: currentRow.word, status: "error", message: aiData.error }, ...prev]);
             continue;
           }
 
+          if (hasDuplicateEntry(existingWords, aiData.word || currentRow.word, aiData.part_of_speech || currentRow.pos || "")) {
+            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Already exists as ${aiData.part_of_speech}` }, ...prev]);
+            continue;
+          }
+
           nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
-          existingWords.add(normalized);
+          existingWords = appendDuplicateEntry(existingWords, aiData.word || currentRow.word, aiData.part_of_speech || currentRow.pos || "");
         } catch {
           setLogs((prev) => [{ word: currentRow.word, status: "error", message: "Unexpected error" }, ...prev]);
         }
@@ -163,15 +186,16 @@ export function useImportWorkflow() {
   };
 
   const handleSaveToDatabase = async () => {
-    if (analyzedData.length === 0) return;
+    const validRows = analyzedData.filter((item) => item.translation.trim() && item.part_of_speech.trim());
+    if (validRows.length === 0) return;
 
     setPhase("saving");
-    setProgress({ current: 0, total: analyzedData.length });
+    setProgress({ current: 0, total: validRows.length });
     setErrorMsg(null);
 
     const { error } = await bulkInsertVocabWords(
       selectedLang,
-      analyzedData.map((item) => ({
+      validRows.map((item) => ({
         word: item.word,
         translation: item.translation,
         part_of_speech: item.part_of_speech || null,
@@ -193,7 +217,7 @@ export function useImportWorkflow() {
       return;
     }
 
-    setProgress({ current: analyzedData.length, total: analyzedData.length });
+    setProgress({ current: validRows.length, total: validRows.length });
     setPhase("done");
   };
 
@@ -202,8 +226,15 @@ export function useImportWorkflow() {
   }, [progress]);
   const skippedCount = useMemo(() => logs.filter((log) => log.status === "skipped").length, [logs]);
   const failedCount = useMemo(() => logs.filter((log) => log.status === "error").length, [logs]);
-  const readyToSaveCount = analyzedData.length;
-  const analyzedCount = Math.min(parsedData.length, readyToSaveCount + skippedCount + failedCount);
+  const readyToSaveCount = useMemo(
+    () => analyzedData.filter((item) => item.translation.trim() && item.part_of_speech.trim()).length,
+    [analyzedData]
+  );
+  const needsHintCount = useMemo(
+    () => analyzedData.filter((item) => !item.translation.trim() || !item.part_of_speech.trim() || item.ai_status === "needs_hint").length,
+    [analyzedData]
+  );
+  const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
 
   return {
     languages,
@@ -226,6 +257,7 @@ export function useImportWorkflow() {
     skippedCount,
     failedCount,
     readyToSaveCount,
+    needsHintCount,
     analyzedCount,
   };
 }

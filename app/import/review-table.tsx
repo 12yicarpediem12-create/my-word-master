@@ -1,5 +1,23 @@
 import type { AnalyzedWord } from "./types";
 
+function getReviewStatus(item: AnalyzedWord) {
+  const hasRequiredFields = item.translation.trim() && item.part_of_speech.trim();
+
+  if (!hasRequiredFields) {
+    return {
+      label: "Needs Hint",
+      tone: "bg-amber-50 text-amber-700 border-amber-100",
+      message: item.ai_message || "Add one clear part of speech and meaning so this becomes a single lexical entry.",
+    };
+  }
+
+  return {
+    label: "Ready",
+    tone: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    message: "",
+  };
+}
+
 export function ImportReviewTable({
   analyzedData,
   onRemove,
@@ -14,10 +32,10 @@ export function ImportReviewTable({
       <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/80 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Save Preview</p>
-          <p className="mt-1 text-sm font-bold text-slate-500">Everything shown below is editable and will be inserted on save.</p>
+          <p className="mt-1 text-sm font-bold text-slate-500">Everything shown below is editable. Only rows with one clear POS and meaning will be inserted on save.</p>
         </div>
-        <span className="inline-flex items-center self-start rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-700 sm:self-auto">
-          Ready Rows: {analyzedData.length}
+        <span className="inline-flex items-center self-start rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-700 sm:self-auto">
+          Review Rows: {analyzedData.length}
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -39,17 +57,30 @@ export function ImportReviewTable({
                 <td colSpan={7} className="p-10 text-center font-bold text-slate-400">No words to import. (All duplicates or errors)</td>
               </tr>
             ) : (
-              analyzedData.map((item) => (
-                <tr key={item.id} className="group transition-colors hover:bg-slate-50/80">
+              analyzedData.map((item) => {
+                const status = getReviewStatus(item);
+
+                return (
+                <tr
+                  key={item.id}
+                  className={`group transition-colors hover:bg-slate-50/80 ${status.label === "Needs Hint" ? "bg-amber-50/35" : ""}`}
+                >
                   <td className="p-4 text-center">
                     <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
                       ✖
                     </button>
                   </td>
                   <td className="p-4">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-black uppercase tracking-widest">
-                      Ready
-                    </span>
+                    <div className="space-y-2">
+                      <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest ${status.tone}`}>
+                        {status.label}
+                      </span>
+                      {status.message && (
+                        <p className="max-w-[14rem] text-[11px] font-medium leading-relaxed text-slate-500">
+                          {status.message}
+                        </p>
+                      )}
+                    </div>
                   </td>
                   <td className="p-2">
                     <input type="text" value={item.word} onChange={(e) => onEditChange(item.id, "word", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-slate-950 outline-none transition-colors focus:border-blue-400" />
@@ -67,7 +98,7 @@ export function ImportReviewTable({
                     <input type="text" value={item.root_word} onChange={(e) => onEditChange(item.id, "root_word", e.target.value)} className="w-full border-b-2 border-transparent bg-transparent p-2 text-sm font-medium text-rose-600 outline-none transition-colors focus:border-rose-400" />
                   </td>
                 </tr>
-              ))
+              )})
             )}
           </tbody>
         </table>
