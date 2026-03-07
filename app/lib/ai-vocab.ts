@@ -53,6 +53,7 @@ export type AiVocabError = {
 
 type NormalizeAiVocabParams = {
   requestedWord: string;
+  allowedCategoryIds?: Set<string>;
 };
 
 function stripHintSuffix(value: string): string {
@@ -68,10 +69,13 @@ function cleanNullableString(value: unknown): string | null {
   return cleaned || null;
 }
 
-function cleanCategoryId(value: unknown): string | null {
+function cleanCategoryId(value: unknown, allowedCategoryIds?: Set<string>): string | null {
   if (value === null || value === undefined) return null;
   const cleaned = String(value).trim();
-  return cleaned || null;
+  if (!cleaned) return null;
+  if (!/^\d+$/.test(cleaned)) return null;
+  if (allowedCategoryIds && !allowedCategoryIds.has(cleaned)) return null;
+  return cleaned;
 }
 
 function createNeedsHint(reason: string, candidates: string[] = []): AiVocabNeedsHint {
@@ -136,7 +140,7 @@ function translationLooksBroad(value: string): boolean {
 
 export function normalizeAiVocabResponse(
   raw: unknown,
-  { requestedWord }: NormalizeAiVocabParams
+  { requestedWord, allowedCategoryIds }: NormalizeAiVocabParams
 ): AiVocabSuccess | AiVocabNeedsHint {
   if (!raw || typeof raw !== "object") {
     return createNeedsHint("invalid_json_shape");
@@ -183,7 +187,7 @@ export function normalizeAiVocabResponse(
     conjugation: cleanNullableString(result.conjugation),
     example_sentence: exampleSentence,
     example_translation: exampleTranslation,
-    category_id: cleanCategoryId(result.category_id),
+    category_id: cleanCategoryId(result.category_id, allowedCategoryIds),
     root_word: cleanNullableString(result.root_word),
     notes,
   };

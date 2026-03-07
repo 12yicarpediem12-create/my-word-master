@@ -68,6 +68,7 @@ export async function generateVocabInfo(
     const categoryListString = categories
       ?.map((c) => `[${c.id}] ${c.full_path}`)
       .join("\n") || "No categories found";
+    const allowedCategoryIds = new Set((categories || []).map((category) => String(category.id)));
 
     const prompt = `
       You are a linguistic expert creating ONE precise vocabulary record for a study app.
@@ -103,28 +104,32 @@ export async function generateVocabInfo(
       3. PART OF SPEECH (POS):
          - Return exactly one POS label only.
          - Use a single label such as "Noun", "Verb", "Adjective", "Adverb", "Expression", "Proper Noun", or another single POS phrase if needed.
-      2. CATEGORY SELECTION - STRICT RULE: 
-         - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY IF the word fits PERFECTLY and UNDENIABLY into that specific sub-topic.
-         - If returning a category, output ONLY the numerical ID (e.g., "45").
-      3. ETYMOLOGY (Shared Roots) - STRICT RULES:
+      4. CATEGORY SELECTION - CONSERVATIVE RULE:
+         - Category is OPTIONAL.
+         - Choose a "Category ID" from the AVAILABLE CATEGORY LIST below ONLY when there is one clearly best, high-confidence fit for this exact lexical record.
+         - If two or more categories are similarly plausible, return null.
+         - If the fit is broad, cross-topic, or uncertain, return null.
+         - Prefer under-classification over wrong classification.
+         - If returning a category, output ONLY the numerical ID (e.g., "45"). Otherwise return null.
+      5. ETYMOLOGY (Shared Roots) - STRICT RULES:
          - For Romance languages (French, Italian, Spanish, Portuguese), trace the root back to "Latin" whenever possible.
          - DO NOT use micro-classifications like "Late Latin", "Vulgar Latin", "Medieval Latin", or "Post-Classical Latin". Group them all strictly as "(Latin)".
          - DO NOT trace back to "Proto-Indo-European" unless absolutely necessary. Stop at Latin, Proto-Germanic, Ancient Greek, or Arabic.
          - Format strictly as: "root_word (Language)" -> Example: "noctem (Latin)".
          - If unknown or not applicable, return null.
-      4. NO ARTICLES IN WORD FIELD:
+      6. NO ARTICLES IN WORD FIELD:
          - ALWAYS return the lemma only in the "word" field.
          - For nouns, DO NOT include any definite or indefinite article in "word".
          - Keep gender separate in the "gender" field.
          - Do not add articles for adjectives, verbs, or any other part of speech.
-      5. ENGLISH TRANSLATION - STRICT RULES:
+      7. ENGLISH TRANSLATION - STRICT RULES:
          - ALWAYS translate to ENGLISH.
          - DO NOT include English articles like "the", "a", or "an".
          - Return one central meaning/use only.
          - If the spelling has multiple unrelated meanings or POS and the intended one is unclear, use the ambiguity result instead of combining them.
-      6. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
+      8. CONJUGATION: For verbs, start with "Present:". List pronouns and forms (e.g., "io parlo"). DO NOT include English translations here.
          🌟 IMPORTANT: Add ONE EMPTY LINE (\\n\\n) before "Past Participle:". If the word is NOT a verb, return null or empty string.
-      7. NOTES FIELD - 🛑 SILENT CORRECTION RULE:
+      9. NOTES FIELD - 🛑 SILENT CORRECTION RULE:
          - For verbs, provide exactly two lines -> Line 1: Group: [Pattern], Line 2: Tip: [Grammar tip].
          - 🛑 STRICT RULE: NEVER mention "typo", "spelling mistake", "misspelled", or correct the user explicitly anywhere in the output. If the user input contains a typo, SILENTLY fix it in the "word" field and provide normal grammar notes. DO NOT act like a teacher correcting a mistake.
 
@@ -145,7 +150,7 @@ export async function generateVocabInfo(
         "conjugation": "Present:\\nio parlo...\\n\\nPast Participle: parlato",
         "example_sentence": "Sentence in target language matching the specific POS/Meaning",
         "example_translation": "English translation",
-        "category_id": "Selected ID number or null",
+        "category_id": "Selected ID number only when confidence is high, otherwise null",
         "root_word": "e.g., noctem (Latin) or null",
         "notes": "Grammar pattern or tip. NO typo warnings."
       }
@@ -170,7 +175,10 @@ export async function generateVocabInfo(
 
     try {
       const parsed = JSON.parse(content) as unknown;
-      return normalizeAiVocabResponse(parsed, { requestedWord: word });
+      return normalizeAiVocabResponse(parsed, {
+        requestedWord: word,
+        allowedCategoryIds,
+      });
     } catch {
       throw new Error("Gemini returned an unexpected response format");
     }
