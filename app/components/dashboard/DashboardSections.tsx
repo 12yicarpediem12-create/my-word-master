@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { SVGAttributes } from "react";
 import CalendarHeatmap from "react-calendar-heatmap";
 import { Tooltip } from "react-tooltip";
@@ -293,6 +294,7 @@ export function DashboardActivitySection({
   totalWords: number;
   heatmapValues: HeatmapValue[];
 }) {
+  const router = useRouter();
   const today = new Date();
   const startDate = new Date();
   startDate.setDate(today.getDate() - 90);
@@ -342,6 +344,10 @@ export function DashboardActivitySection({
                       "data-tooltip-id": "heatmap-tooltip",
                       "data-tooltip-content": `${value.date}: ${count} words`,
                     } as unknown as SVGAttributes<SVGSVGElement>;
+                  }}
+                  onClick={(value: HeatmapCell) => {
+                    if (!value?.date) return;
+                    router.push(`/history?date=${encodeURIComponent(value.date)}`);
                   }}
                   showWeekdayLabels={true}
                 />

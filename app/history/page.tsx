@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import SearchBar from "../components/SearchBar";
 import AppHeader from "../components/AppHeader";
 import { AppMain, AppShell, PageIntro, Surface } from "../components/layout/AppShell";
@@ -77,12 +78,22 @@ function HistoryCard({ vocab, langInfo }: HistoryCardProps) {
 }
 
 export default function HistoryPage() {
+  const searchParams = useSearchParams();
+  const requestedDate = searchParams.get("date");
   const [results, setResults] = useState<VocabItem[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<ViewRange>("7days");
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [focusedDate, setFocusedDate] = useState<string | null>(requestedDate);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFocusedDate(requestedDate);
+    if (requestedDate) {
+      setSelectedMonth(requestedDate.slice(0, 7));
+    }
+  }, [requestedDate]);
 
   useEffect(() => {
     async function fetchLanguages() {
@@ -105,7 +116,11 @@ export default function HistoryPage() {
         .select("id, language_code, word, translation, is_remembered, last_reviewed")
         .not("last_reviewed", "is", null);
 
-      if (range === "month") {
+      if (focusedDate) {
+        const startOfDay = `${focusedDate}T00:00:00.000Z`;
+        const endOfDay = `${focusedDate}T23:59:59.999Z`;
+        query = query.gte("last_reviewed", startOfDay).lte("last_reviewed", endOfDay);
+      } else if (range === "month") {
         const startOfMonth = `${selectedMonth}-01T00:00:00Z`;
         const date = new Date(selectedMonth);
         const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59).toISOString();
@@ -127,7 +142,7 @@ export default function HistoryPage() {
       setIsLoading(false);
     }
     fetchHistory();
-  }, [range, selectedMonth]);
+  }, [focusedDate, range, selectedMonth]);
 
   const groupedByDate = useMemo(() => {
     return results.reduce((acc: Record<string, VocabItem[]>, vocab) => {
@@ -166,12 +181,18 @@ export default function HistoryPage() {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-[1.25rem] border border-slate-200 bg-white p-1">
-                <TabButton active={range === "7days"} onClick={() => setRange("7days")}>7 Days</TabButton>
-                <TabButton active={range === "30days"} onClick={() => setRange("30days")}>30 Days</TabButton>
-                <TabButton active={range === "month"} onClick={() => setRange("month")}>Archive</TabButton>
+                <TabButton active={!focusedDate && range === "7days"} onClick={() => { setFocusedDate(null); setRange("7days"); }}>7 Days</TabButton>
+                <TabButton active={!focusedDate && range === "30days"} onClick={() => { setFocusedDate(null); setRange("30days"); }}>30 Days</TabButton>
+                <TabButton active={!focusedDate && range === "month"} onClick={() => { setFocusedDate(null); setRange("month"); }}>Archive</TabButton>
               </div>
 
-              {range === "month" && (
+              {focusedDate && (
+                <span className="rounded-[1.25rem] border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+                  Focused day: {focusedDate}
+                </span>
+              )}
+
+              {!focusedDate && range === "month" && (
                 <input
                   type="month"
                   value={selectedMonth}

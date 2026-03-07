@@ -312,6 +312,7 @@ body {
   fill: #9ca3af !important;
   font-weight: 600 !important;
   transform: translateX(-0.95rem) translateY(0.05rem) !important;
+  pointer-events: none !important;
 }
 
 .dashboard-heatmap-canvas .react-calendar-heatmap .react-calendar-heatmap-month-label {
@@ -320,11 +321,13 @@ body {
   font-weight: 600 !important;
   transform: translateY(-0.18rem) !important;
   text-anchor: start !important;
+  pointer-events: none !important;
 }
 
 .dashboard-heatmap-canvas .react-calendar-heatmap rect {
   rx: 2.2; ry: 2.2;
   stroke: none;
+  cursor: pointer;
 }
 
 .dashboard-heatmap-canvas .react-calendar-heatmap .color-empty { fill: #f3f4f6 !important; }
@@ -368,11 +371,13 @@ body {
   .dashboard-heatmap-canvas .react-calendar-heatmap .react-calendar-heatmap-weekday-label {
     font-size: 0.7rem !important;
     transform: translateX(-1.25rem) translateY(0.04rem) !important;
+    pointer-events: none !important;
   }
 
   .dashboard-heatmap-canvas .react-calendar-heatmap .react-calendar-heatmap-month-label {
     font-size: 0.72rem !important;
     transform: translateY(-0.28rem) !important;
+    pointer-events: none !important;
   }
 }
 
