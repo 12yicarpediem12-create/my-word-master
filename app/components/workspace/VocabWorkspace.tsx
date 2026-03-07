@@ -40,9 +40,9 @@ export function WorkspaceHeader({
   return (
     <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between", className)}>
       <div className="min-w-0">
-        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{eyebrow}</p>}
-        <h2 className="mt-3 text-[1.85rem] font-semibold tracking-tight text-slate-950">{title}</h2>
-        {description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>}
+        {eyebrow && <p className="section-eyebrow">{eyebrow}</p>}
+        <h2 className="section-title">{title}</h2>
+        {description && <p className="section-copy">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3 lg:justify-end">{actions}</div>}
     </div>
@@ -60,7 +60,7 @@ export function WorkspaceFilterGroup({
 }) {
   return (
     <div className={cn("space-y-3", className)}>
-      <p className="ml-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+      <p className="support-label ml-1">{label}</p>
       <div className="flex flex-wrap gap-2.5">{children}</div>
     </div>
   );
@@ -91,9 +91,9 @@ export function WorkspaceUtilityPanel({
       )}
     >
       <div>
-        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{eyebrow}</p>}
+        {eyebrow && <p className="support-label">{eyebrow}</p>}
         <h3 className="mt-2 text-base font-semibold tracking-tight text-slate-950">{title}</h3>
-        {description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>}
+        {description && <p className="support-copy mt-2">{description}</p>}
       </div>
       {children}
     </aside>
@@ -144,7 +144,7 @@ export function WorkspaceEmptyState({
     <WorkspacePanel tone="muted" className={cn("rounded-[2.25rem] p-10 text-center sm:p-12", className)}>
       <div className="mb-6 text-5xl opacity-50 sm:text-6xl">{icon}</div>
       <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">{title}</h3>
-      <p className="mt-2 text-sm text-slate-600 sm:text-base">{description}</p>
+      <p className="mt-2 max-w-xl mx-auto text-sm text-slate-600 sm:text-base">{description}</p>
     </WorkspacePanel>
   );
 }

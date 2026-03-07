@@ -30,7 +30,7 @@ function TabButton({
   return (
     <button
       onClick={onClick}
-      className={`rounded-2xl px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all ${
+      className={`rounded-2xl px-4 py-2 text-xs font-medium transition-all ${
         active ? "bg-slate-950 text-white shadow-sm" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950"
       }`}
     >
@@ -42,7 +42,7 @@ function TabButton({
 function DateDivider({ date }: { date: string }) {
   return (
     <div className="flex items-center gap-4">
-      <h3 className="whitespace-nowrap text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{date}</h3>
+      <h3 className="whitespace-nowrap text-[11px] font-medium tracking-[0.08em] text-slate-400">{date}</h3>
       <div className="h-px w-full bg-slate-200" />
     </div>
   );
@@ -50,10 +50,10 @@ function DateDivider({ date }: { date: string }) {
 
 function StatCard({ label, value, helper }: { label: string; value: string | number; helper?: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-slate-200 bg-white/85 px-5 py-4 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.18)]">
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>
-      {helper && <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-400">{helper}</p>}
+    <div className="rounded-[1.35rem] border border-slate-200 bg-white/72 px-5 py-4 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.14)]">
+      <p className="support-label">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
+      {helper && <p className="mt-2 text-xs text-slate-400">{helper}</p>}
     </div>
   );
 }
@@ -62,13 +62,13 @@ function HistoryCard({ vocab, langInfo }: HistoryCardProps) {
   return (
     <Link
       href={`/word/${vocab.id}`}
-      className="group flex items-center justify-between rounded-[1.75rem] border border-slate-200/80 bg-white/85 px-5 py-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_20px_40px_-32px_rgba(15,23,42,0.22)]"
+      className="group flex items-center justify-between rounded-[1.6rem] border border-slate-200/80 bg-white/78 px-5 py-5 transition-all hover:border-blue-200 hover:bg-white hover:shadow-[0_16px_32px_-28px_rgba(15,23,42,0.16)]"
     >
       <div className="flex items-center gap-4">
         <span className="text-2xl">{langInfo?.emoji || "🌍"}</span>
         <div className="min-w-0">
-          <p className="font-black text-slate-950 transition-colors group-hover:text-blue-600">{vocab.word}</p>
-          <p className="mt-1 text-sm font-medium text-slate-500">{vocab.translation}</p>
+          <p className="font-semibold text-slate-950 transition-colors group-hover:text-blue-600">{vocab.word}</p>
+          <p className="mt-1 text-sm text-slate-500">{vocab.translation}</p>
         </div>
       </div>
       <span className="text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
@@ -162,7 +162,7 @@ export default function HistoryPage() {
           description="Use history to reflect on activity patterns and reopen words you studied recently. This is a supporting page, not the main study workspace."
         />
 
-        <Surface tone="muted" className="p-4 sm:p-5">
+        <Surface tone="muted" className="rounded-[1.65rem] p-4 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-[1.25rem] border border-slate-200 bg-white p-1">
@@ -181,7 +181,7 @@ export default function HistoryPage() {
               )}
             </div>
 
-            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
+            <span className="rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-medium text-emerald-700">
               {stats.rate}% mastery
             </span>
           </div>
@@ -195,7 +195,7 @@ export default function HistoryPage() {
         </div>
 
         {isLoading ? (
-          <div className="rounded-[2rem] border border-slate-200 bg-slate-50/70 px-6 py-20 text-center font-bold uppercase tracking-widest text-slate-400 animate-pulse">
+          <div className="quiet-state animate-pulse">
             Fetching records...
           </div>
         ) : Object.keys(groupedByDate).length > 0 ? (
@@ -212,11 +212,11 @@ export default function HistoryPage() {
             ))}
           </div>
         ) : (
-          <Surface tone="muted" className="rounded-[2.5rem] p-12 text-center sm:p-16">
+          <div className="quiet-state sm:p-16">
             <div className="text-6xl opacity-40">🏜️</div>
-            <h2 className="mt-6 text-2xl font-black tracking-tight text-slate-950">No activity found</h2>
-            <p className="mt-2 text-sm font-medium text-slate-500 sm:text-base">Try selecting a different period.</p>
-          </Surface>
+            <h2 className="mt-6 text-2xl font-semibold tracking-tight text-slate-950">No activity found</h2>
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">Try a different date range.</p>
+          </div>
         )}
       </AppMain>
     </AppShell>

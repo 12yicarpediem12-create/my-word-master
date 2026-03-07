@@ -22,9 +22,9 @@ function WizardSection({
     <section className="animate-in fade-in duration-500">
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{eyebrow}</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
-          <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600 sm:text-base">{description}</p>
+          <p className="section-eyebrow">{eyebrow}</p>
+          <h1 className="section-title">{title}</h1>
+          <p className="section-copy sm:text-base">{description}</p>
         </div>
         {actions && <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div>}
       </div>
@@ -67,7 +67,7 @@ export function ImportUploadPanel({
       description="Choose the target language, drop in a CSV, and prepare the list for AI analysis."
       actions={
         parsedCount > 0 ? (
-          <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
+          <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-600">
             {parsedCount} parsed
           </span>
         ) : undefined
@@ -78,8 +78,8 @@ export function ImportUploadPanel({
           <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 rounded-full bg-purple-200/30 blur-3xl" />
           <div className="grid gap-8">
             <div className="flex flex-col gap-2">
-              <label className="ml-2 text-[10px] font-black uppercase tracking-tight text-slate-400">Select Target Language</label>
-              <select value={selectedLang} onChange={(e) => onLanguageChange(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 font-bold text-slate-950 outline-none">
+              <label className="ml-2 support-label">Target language</label>
+              <select value={selectedLang} onChange={(e) => onLanguageChange(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 p-4 font-medium text-slate-950 outline-none">
                 {languages.map((l) => (
                   <option key={l.code} value={l.code}>
                     {l.emoji} {l.name}
@@ -89,13 +89,13 @@ export function ImportUploadPanel({
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="ml-2 text-[10px] font-black uppercase tracking-tight text-slate-400">Upload CSV File</label>
-              <div className="relative rounded-[2rem] border-2 border-dashed border-purple-200 bg-purple-50/40 p-10 text-center transition-colors hover:bg-purple-50">
+              <label className="ml-2 support-label">Upload CSV</label>
+              <div className="relative rounded-[2rem] border-2 border-dashed border-purple-200 bg-purple-50/30 p-10 text-center transition-colors hover:bg-purple-50/50">
                 <input type="file" accept=".csv" onChange={onFileUpload} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
                 <div className="pointer-events-none">
                   <span className="mb-4 block text-4xl">📄</span>
-                  <p className="mb-1 text-lg font-black text-purple-700">{fileName ? fileName : "Click or drag CSV here"}</p>
-                  <p className="text-sm font-bold text-purple-400">
+                  <p className="mb-1 text-lg font-semibold text-purple-700">{fileName ? fileName : "Click or drag a CSV here"}</p>
+                  <p className="text-sm font-medium text-purple-400">
                     Required column: <span className="rounded-md border border-purple-100 bg-white px-2 py-0.5">word</span>
                   </p>
                 </div>
@@ -103,33 +103,33 @@ export function ImportUploadPanel({
             </div>
 
             {parsedCount > 0 && (
-              <button onClick={onAnalyze} className="mt-2 flex w-full items-center justify-center gap-3 rounded-[2rem] bg-gradient-to-r from-indigo-600 to-purple-600 py-5 text-xl font-black text-white shadow-xl shadow-purple-500/20 transition-all hover:opacity-90">
+              <button onClick={onAnalyze} className="mt-2 flex w-full items-center justify-center gap-3 rounded-[2rem] bg-gradient-to-r from-indigo-600 to-purple-600 py-5 text-lg font-semibold text-white shadow-xl shadow-purple-500/20 transition-all hover:opacity-90">
                 <span className="text-2xl">🧠</span> Analyze with AI ({parsedCount} words)
               </button>
             )}
           </div>
         </div>
 
-        <div className="surface-muted rounded-[2rem] p-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Workflow Notes</p>
+        <div className="surface-muted rounded-[1.85rem] p-6">
+          <p className="support-label">Workflow notes</p>
           <div className="mt-4 space-y-4">
             <div>
-              <p className="font-black text-slate-950">1. Upload a raw list</p>
-              <p className="mt-1 text-sm font-medium text-slate-600">Use a simple CSV with a required `word` column.</p>
+              <p className="font-semibold text-slate-950">1. Upload a raw list</p>
+              <p className="mt-1 text-sm text-slate-600">Use a simple CSV with a required `word` column.</p>
             </div>
             <div>
-              <p className="font-black text-slate-950">2. Let AI structure it</p>
-              <p className="mt-1 text-sm font-medium text-slate-600">Meanings, POS, examples, and root hints are filled where possible.</p>
+              <p className="font-semibold text-slate-950">2. Let AI structure it</p>
+              <p className="mt-1 text-sm text-slate-600">Meanings, POS, examples, and root hints are filled where possible.</p>
             </div>
             <div>
-              <p className="font-black text-slate-950">3. Review before save</p>
-              <p className="mt-1 text-sm font-medium text-slate-600">Only rows that remain in the review list will be written to your library.</p>
+              <p className="font-semibold text-slate-950">3. Review before save</p>
+              <p className="mt-1 text-sm text-slate-600">Only rows that remain in the review list will be written to your library.</p>
             </div>
           </div>
 
           <div className="mt-5 border-t border-slate-200 pt-5">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Good To Know</p>
-            <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
+            <p className="support-label">Good to know</p>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
               Duplicate words are skipped during analysis, so the review step stays focused on new rows worth importing.
             </p>
           </div>
@@ -169,10 +169,10 @@ export function ImportProgressPanel({
       description={isAnalyzing ? "The import is being structured into editable rows. Keep this window open while the wizard prepares the review step." : "Only the rows currently approved in the review step will be written to your library."}
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="rounded-[2.5rem] border border-slate-200/80 bg-white/85 p-8 text-center shadow-[0_26px_50px_-40px_rgba(15,23,42,0.22)] sm:p-12">
+        <div className="rounded-[2.2rem] border border-slate-200/75 bg-white/78 p-8 text-center shadow-[0_20px_44px_-38px_rgba(15,23,42,0.16)] sm:p-12">
           <div className="mb-6 text-6xl animate-pulse">{isAnalyzing ? "🧠" : "💾"}</div>
-          <h2 className="mb-2 text-3xl font-black text-slate-950">{isAnalyzing ? "Analyzing words..." : "Saving valid rows..."}</h2>
-          <p className="mb-8 font-bold text-slate-500">{isAnalyzing ? "The next step will open an editable review workspace." : "The wizard is writing your approved rows to the library."}</p>
+          <h2 className="mb-2 text-3xl font-semibold text-slate-950">{isAnalyzing ? "Analyzing words..." : "Saving valid rows..."}</h2>
+          <p className="mb-8 text-sm font-medium text-slate-500">{isAnalyzing ? "The next step will open an editable review workspace." : "The wizard is writing your approved rows to the library."}</p>
 
           <SummaryGrid className="mb-8 text-left">
             <ImportCountCard label="Analyzed" value={analyzedCount} tone="blue" helper={`${parsedCount} uploaded`} />
@@ -182,20 +182,20 @@ export function ImportProgressPanel({
           </SummaryGrid>
 
           <div className="mb-3 flex items-end justify-between">
-            <span className="text-sm font-black uppercase tracking-widest text-slate-400">Progress</span>
-            <span className="text-2xl font-black text-purple-600">{percentComplete}%</span>
+            <span className="support-label">Progress</span>
+            <span className="text-2xl font-semibold text-purple-600">{percentComplete}%</span>
           </div>
           <div className="relative h-4 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
             <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out" style={{ width: `${percentComplete}%` }} />
           </div>
-          <p className="mt-3 text-center text-xs font-bold uppercase tracking-widest text-slate-400">{progress.current} / {progress.total} Processed</p>
+          <p className="mt-3 text-center text-xs font-medium text-slate-400">{progress.current} / {progress.total} processed</p>
         </div>
 
         <div className="space-y-4">
-          <div className="surface-muted rounded-[2rem] p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Current Step</p>
-            <h3 className="mt-3 text-xl font-black text-slate-950">{isAnalyzing ? "Preparing review rows" : "Writing approved rows"}</h3>
-            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+          <div className="surface-muted rounded-[1.85rem] p-6">
+            <p className="support-label">Current step</p>
+            <h3 className="mt-3 text-xl font-semibold text-slate-950">{isAnalyzing ? "Preparing review rows" : "Writing approved rows"}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
               {isAnalyzing
                 ? "The wizard is checking duplicates, calling AI, and preparing an editable review table."
                 : "The wizard is saving only the rows that survived review, skips, and manual removals."}
@@ -237,7 +237,7 @@ export function ImportReviewPanel({
       title="Review the AI-prepared rows"
       description="This is the main work area of the wizard. Edit the rows that look good, remove anything you do not want, and save only the final list."
       actions={
-        <button onClick={onSave} disabled={analyzedData.length === 0} className="rounded-2xl bg-slate-950 px-8 py-4 font-black text-white shadow-xl transition-all hover:bg-black disabled:opacity-50">
+        <button onClick={onSave} disabled={analyzedData.length === 0} className="rounded-2xl bg-slate-950 px-8 py-4 font-semibold text-white shadow-xl transition-all hover:bg-black disabled:opacity-50">
           Save Valid Rows Only
         </button>
       }
@@ -255,28 +255,28 @@ export function ImportReviewPanel({
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-32">
-          <div className="surface-muted rounded-[2rem] p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Save Summary</p>
-            <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Ready to commit</h3>
-            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+          <div className="surface-muted rounded-[1.85rem] p-6">
+            <p className="support-label">Save summary</p>
+            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Ready to save</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
               {readyToSaveCount > 0
                 ? `${readyToSaveCount} reviewed row${readyToSaveCount !== 1 ? "s" : ""} will be saved to the library.`
                 : "There are no valid rows left to save."}
             </p>
 
             <div className="mt-6 space-y-3">
-              <button onClick={onSave} disabled={analyzedData.length === 0} className="w-full rounded-2xl bg-blue-600 px-5 py-4 font-black text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
+              <button onClick={onSave} disabled={analyzedData.length === 0} className="w-full rounded-2xl bg-blue-600 px-5 py-4 font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50">
                 Save Valid Rows
               </button>
-              <Link href="/library" className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 text-center font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">
+              <Link href="/library" className="block w-full rounded-2xl border border-slate-200 bg-white/80 px-5 py-4 text-center font-medium text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">
                 Open Library
               </Link>
             </div>
           </div>
 
-          <div className="surface-muted rounded-[2rem] p-6">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Review Rules</p>
-            <div className="mt-4 space-y-3 text-sm font-medium leading-relaxed text-slate-600">
+          <div className="surface-muted rounded-[1.85rem] p-6">
+            <p className="support-label">Review notes</p>
+            <div className="mt-4 space-y-3 text-sm leading-relaxed text-slate-600">
               <p>Remove rows you do not trust. Only visible rows are saved.</p>
               <p>Edit wording, POS, gender, or root fields directly in the table.</p>
               <p>Skipped and failed rows stay listed in the issues panel for context.</p>

@@ -20,10 +20,10 @@ export function ImportCountCard({
   };
 
   return (
-    <div className={`rounded-[1.5rem] border p-4 shadow-[0_16px_30px_-28px_rgba(15,23,42,0.2)] ${toneMap[tone]}`}>
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">{label}</p>
-      <p className="mt-2 text-3xl font-black">{value}</p>
-      {helper && <p className="mt-2 text-xs font-bold opacity-60">{helper}</p>}
+    <div className={`rounded-[1.35rem] border p-4 shadow-[0_12px_28px_-26px_rgba(15,23,42,0.14)] ${toneMap[tone]}`}>
+      <p className="support-label opacity-60">{label}</p>
+      <p className="mt-2 text-3xl font-semibold">{value}</p>
+      {helper && <p className="mt-2 text-xs font-medium opacity-60">{helper}</p>}
     </div>
   );
 }
@@ -54,7 +54,7 @@ export function ImportPhaseBadge({ phase }: { phase: Phase }) {
   };
 
   return (
-    <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-blue-600">
+    <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-600">
       {labelMap[phase]}
     </span>
   );
@@ -64,7 +64,7 @@ export function ImportWizardStepper({ phase }: { phase: Phase }) {
   const activeIndex = getPhaseStepIndex(phase);
 
   return (
-    <div className="rounded-[2rem] border border-slate-200/80 bg-white/75 p-4 shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)] sm:p-5">
+    <div className="rounded-[1.75rem] border border-slate-200/75 bg-white/64 p-4 shadow-[0_14px_30px_-28px_rgba(15,23,42,0.14)] sm:p-5">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {WIZARD_STEPS.map((step, index) => {
           const isActive = index === activeIndex;
@@ -73,7 +73,7 @@ export function ImportWizardStepper({ phase }: { phase: Phase }) {
           return (
             <div
               key={step.title}
-              className={`rounded-[1.5rem] border px-4 py-4 transition-all ${
+              className={`rounded-[1.35rem] border px-4 py-4 transition-all ${
                 isActive
                   ? "border-blue-200 bg-blue-50/70 shadow-sm"
                   : isComplete
@@ -93,9 +93,9 @@ export function ImportWizardStepper({ phase }: { phase: Phase }) {
                 >
                   {isComplete ? "✓" : index + 1}
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{step.helper}</span>
+                <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">{step.helper}</span>
               </div>
-              <p className="mt-3 text-base font-black text-slate-950">{step.title}</p>
+              <p className="mt-3 text-base font-semibold text-slate-950">{step.title}</p>
             </div>
           );
         })}
@@ -111,29 +111,29 @@ export function LogStatusBadge({ status }: { status: ImportLog["status"] }) {
     error: "bg-rose-50 text-rose-700 border-rose-100",
   };
 
-  return <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest ${statusMap[status]}`}>{status}</span>;
+  return <span className={`px-2.5 py-1 rounded-full border text-[10px] font-medium uppercase tracking-[0.12em] ${statusMap[status]}`}>{status}</span>;
 }
 
 export function LogSummaryPanel({ logs }: { logs: ImportLog[] }) {
   if (logs.length === 0) return null;
 
   return (
-    <div className="surface-muted rounded-[2rem] p-6 sm:p-7">
+    <div className="surface-muted rounded-[1.85rem] p-6 sm:p-7">
       <div className="flex items-center justify-between gap-4 mb-5">
         <div>
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Issues & Skips</p>
-          <h3 className="text-xl font-black text-slate-950">Rows needing attention</h3>
+          <p className="mb-2 support-label">Issues and skips</p>
+          <h3 className="text-xl font-semibold text-slate-950">Rows needing attention</h3>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{logs.length}</span>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">{logs.length}</span>
       </div>
 
       <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
         {logs.map((log, index) => (
-          <div key={`${log.word}-${log.status}-${index}`} className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3">
+          <div key={`${log.word}-${log.status}-${index}`} className="rounded-[1.35rem] border border-slate-200/80 bg-white/72 px-4 py-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="min-w-0">
-                <p className="break-words font-black text-slate-950">{log.word}</p>
-                <p className="mt-1 break-words text-sm font-medium text-slate-500">{log.message || "No additional detail."}</p>
+                <p className="break-words font-semibold text-slate-950">{log.word}</p>
+                <p className="mt-1 break-words text-sm text-slate-500">{log.message || "No additional detail."}</p>
               </div>
               <LogStatusBadge status={log.status} />
             </div>

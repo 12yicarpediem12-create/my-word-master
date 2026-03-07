@@ -312,7 +312,7 @@ export default function LibraryPage() {
 
           <div className="mt-5 border-t border-slate-200/75 pt-5">
             {isLoading ? (
-              <div className="rounded-[2rem] border border-slate-200/70 bg-white/55 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
+              <div className="quiet-state animate-pulse">
                 Loading your library...
               </div>
             ) : filteredVocab.length > 0 ? (
@@ -344,7 +344,7 @@ export default function LibraryPage() {
                 icon="📭"
                 title="No words found"
                 description="Try another filter, or add words from the dashboard."
-                className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 p-12 shadow-none"
+                className="quiet-state border-0 bg-transparent p-0 shadow-none"
               />
             )}
           </div>

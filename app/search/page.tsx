@@ -219,7 +219,7 @@ function SearchContent() {
 
           <div className="mt-5 border-t border-slate-200/75 pt-5">
             {isLoading ? (
-              <div className="rounded-[2rem] border border-slate-200/70 bg-white/55 px-6 py-20 text-center font-bold uppercase tracking-widest text-gray-400 animate-pulse">
+              <div className="quiet-state animate-pulse">
                 Searching...
               </div>
             ) : results.length > 0 ? (
@@ -239,7 +239,7 @@ function SearchContent() {
                 icon="🏜️"
                 title="No words found"
                 description={query.trim() ? `We couldn't find any words matching "${query}".` : "Type a query above to search across your library."}
-                className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 p-12 shadow-none"
+                className="quiet-state border-0 bg-transparent p-0 shadow-none"
               />
             )}
           </div>
