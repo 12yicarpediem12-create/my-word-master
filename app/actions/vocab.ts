@@ -6,7 +6,11 @@ import { cookies } from "next/headers";
 type ActionResult = { error?: string };
 
 function getRequiredEnv(name: string): string {
-  const value = process.env[name];
+  const envMap: Record<string, string | undefined> = {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
+  const value = envMap[name];
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
