@@ -27,15 +27,15 @@ const SearchWordItemRich = ({ vocab }: { vocab: any }) => {
         <span className={`w-3 h-3 rounded-full mt-2 sm:mt-0 shrink-0 ${vocab.is_remembered ? "bg-green-400" : "bg-orange-400"}`}></span>
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-xl sm:text-2xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
-            {isWeak && !vocab.is_remembered && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">Weak</span>}
+            <p className="text-xl sm:text-2xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{vocab.word}</p>
+            {isWeak && !vocab.is_remembered && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium uppercase tracking-[0.12em]">Weak</span>}
           </div>
-          <p className="text-sm font-medium text-gray-500 mt-1">{vocab.translation}</p>
+          <p className="mt-1 text-sm text-gray-500">{vocab.translation}</p>
         </div>
       </div>
       
       <div className="flex items-center gap-4 pl-7 sm:pl-0 self-start sm:self-auto">
-        <span className="hidden sm:inline-block text-[10px] font-bold bg-gray-100 text-gray-400 px-3 py-1 rounded-full uppercase tracking-widest">{vocab.part_of_speech || "N/A"}</span>
+        <span className="hidden sm:inline-block text-[10px] font-medium bg-gray-100 text-gray-400 px-3 py-1 rounded-full uppercase tracking-[0.12em]">{vocab.part_of_speech || "N/A"}</span>
         <span className="text-xl sm:text-2xl">{vocab.is_remembered ? "✅" : "🔥"}</span>
       </div>
     </Link>
@@ -54,17 +54,17 @@ const SearchWordItemCompact = ({ vocab }: { vocab: any }) => {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`w-2.5 h-2.5 rounded-full ${vocab.is_remembered ? "bg-green-400" : "bg-orange-400"}`}></span>
-            <p className="text-lg font-black text-gray-900 group-hover:text-blue-600 transition-colors break-words">{vocab.word}</p>
-            {isWeak && !vocab.is_remembered && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">Weak</span>}
+            <p className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors break-words">{vocab.word}</p>
+            {isWeak && !vocab.is_remembered && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium uppercase tracking-[0.12em]">Weak</span>}
           </div>
-          <p className="text-sm font-bold text-gray-500 mt-1 break-words">{vocab.translation}</p>
+          <p className="mt-1 text-sm text-gray-500 break-words">{vocab.translation}</p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap sm:justify-end">
-          <span className="text-[10px] font-black bg-gray-100 text-gray-500 px-3 py-1 rounded-full uppercase tracking-widest">
+          <span className="text-[10px] font-medium bg-gray-100 text-gray-500 px-3 py-1 rounded-full uppercase tracking-[0.12em]">
             {vocab.part_of_speech || "N/A"}
           </span>
-          <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border ${vocab.is_remembered ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"}`}>
+          <span className={`text-[10px] font-medium px-3 py-1 rounded-full uppercase tracking-[0.12em] border ${vocab.is_remembered ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"}`}>
             {vocab.is_remembered ? "Mastered" : "Learning"}
           </span>
         </div>
@@ -88,10 +88,10 @@ const LanguageGroupCard = ({
     <div className={`flex items-center gap-4 ${densityMode === "rich" ? "mb-6 pb-4" : "mb-4 pb-3"} border-b border-slate-200/70`}>
       <span className="text-4xl">{langInfo?.emoji || "🌍"}</span>
       <div>
-        <h2 className="text-2xl font-black tracking-tight text-gray-900">{langInfo?.name || langCode.toUpperCase()}</h2>
-        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{langCode.toUpperCase()}</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-gray-900">{langInfo?.name || langCode.toUpperCase()}</h2>
+        <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">{langCode.toUpperCase()}</p>
       </div>
-      <span className="ml-auto text-xs font-black uppercase tracking-[0.18em] text-slate-500">{words.length} words</span>
+      <span className="ml-auto text-xs font-medium text-slate-500">{words.length} words</span>
     </div>
     <div className={densityMode === "rich" ? "divide-y-2 divide-gray-100" : "space-y-2"}>
       {words.map((vocab: any) => (
@@ -158,8 +158,8 @@ function SearchContent() {
 
       <AppMain width="xl" className="section-stack">
         <PageIntro
-          eyebrow="Learning Workspace"
-          title="Search library"
+          eyebrow="Search"
+          title="Search the library"
           description={
             query.trim()
               ? `Showing ${results.length} result${results.length !== 1 ? "s" : ""} for “${query}”.`
@@ -170,10 +170,10 @@ function SearchContent() {
         <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Vocabulary Workspace"
-            title="Workspace controls"
-            description={filterLang === "all" ? "Scanning results across your full library." : `Scanning only ${filterLang.toUpperCase()} results.`}
+            title="Query and view"
+            description={filterLang === "all" ? "Searching across your full library." : `Searching only ${filterLang.toUpperCase()}.`}
             actions={
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500">
                 {results.length} results
               </span>
             }
@@ -183,7 +183,7 @@ function SearchContent() {
             <div className="space-y-5">
               <WorkspaceFilterGroup label="Query">
                 <span className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700">
-                  {query.trim() ? `“${query}”` : "No active query"}
+                  {query.trim() ? `“${query}”` : "Type a search"}
                 </span>
               </WorkspaceFilterGroup>
 
@@ -209,9 +209,9 @@ function SearchContent() {
           <WorkspaceHeader
             eyebrow="Results"
             title="Search results"
-            description={filterLang === "all" ? "Grouped by language so search still feels like one library workspace." : `Focused on ${filterLang.toUpperCase()} results only.`}
+            description={filterLang === "all" ? "Grouped by language so search still reads like one library workspace." : `Focused on ${filterLang.toUpperCase()} only.`}
             actions={
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500">
                 {densityMode} view
               </span>
             }

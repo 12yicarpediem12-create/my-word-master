@@ -45,30 +45,30 @@ const VocabCard = ({ v, isSelected, onToggle }: { v: any, isSelected: boolean, o
           {v.is_remembered ? "✅" : "🔥"}
         </div>
         <div className="flex items-center gap-2 mb-4">
-          <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+          <span className="bg-gray-100 text-gray-500 text-[10px] font-medium px-3 py-1 rounded-full uppercase tracking-[0.12em]">
             {v.language_code}
           </span>
-          <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+          <span className="text-[10px] font-medium text-blue-400 uppercase tracking-[0.12em]">
             {v.part_of_speech || "Word"}
           </span>
         </div>
-        <h2 className={`text-3xl font-black tracking-tight mb-1 break-words transition-colors ${isSelected ? "text-red-600" : "text-gray-900 group-hover:text-blue-600"}`}>
+        <h2 className={`text-3xl font-semibold tracking-tight mb-1 break-words transition-colors ${isSelected ? "text-red-600" : "text-gray-900 group-hover:text-blue-600"}`}>
           {v.word}
         </h2>
-        <p className="text-gray-500 font-bold text-lg mb-6">{v.translation}</p>
+        <p className="text-gray-500 text-lg mb-6">{v.translation}</p>
         <div className="mt-auto flex flex-wrap gap-2">
           {v.gender && (
-            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-medium px-3 py-1 rounded-xl uppercase tracking-[0.12em]">
               {v.gender}
             </span>
           )}
           {v.verb_type && (
-            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-medium px-3 py-1 rounded-xl uppercase tracking-[0.12em]">
               {v.verb_type}
             </span>
           )}
           {v.category && v.category !== "Other" && (
-            <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+            <span className="bg-indigo-50 text-indigo-600 border border-indigo-100 text-[10px] font-medium px-3 py-1 rounded-xl uppercase tracking-[0.12em]">
               {v.category}
             </span>
           )}
@@ -98,36 +98,36 @@ const CompactVocabRow = ({ v, isSelected, onToggle }: { v: any, isSelected: bool
       <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-gray-100 text-gray-500 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">
+            <span className="bg-gray-100 text-gray-500 text-[10px] font-medium px-2.5 py-1 rounded-full uppercase tracking-[0.12em]">
               {v.language_code}
             </span>
-            <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest border ${v.is_remembered ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"}`}>
+            <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full uppercase tracking-[0.12em] border ${v.is_remembered ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-orange-50 text-orange-600 border-orange-100"}`}>
               {v.is_remembered ? "Mastered" : "Learning"}
             </span>
             {v.part_of_speech && (
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
+              <span className="text-[10px] font-medium text-blue-500 uppercase tracking-[0.12em]">
                 {v.part_of_speech}
               </span>
             )}
           </div>
           <div className="mt-2 flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
-            <p className="text-lg sm:text-xl font-black text-gray-900 break-words">{v.word}</p>
-            <p className="text-sm sm:text-base font-bold text-gray-500 break-words">{v.translation}</p>
+            <p className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{v.word}</p>
+            <p className="text-sm sm:text-base text-gray-500 break-words">{v.translation}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap lg:justify-end">
           {v.gender && (
-            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-medium px-3 py-1 rounded-xl uppercase tracking-[0.12em]">
               {v.gender}
             </span>
           )}
           {v.verb_type && (
-            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-3 py-1 rounded-xl uppercase tracking-widest">
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-medium px-3 py-1 rounded-xl uppercase tracking-[0.12em]">
               {v.verb_type}
             </span>
           )}
-          <span className="text-gray-300 font-black text-sm uppercase tracking-widest">Open →</span>
+          <span className="text-gray-300 text-sm font-medium tracking-[0.08em]">Open →</span>
         </div>
       </div>
     </Link>
@@ -211,8 +211,8 @@ export default function LibraryPage() {
       <AppMain width="xl" className="section-stack">
         {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
         <PageIntro
-          eyebrow="Learning Workspace"
-          title="Library workspace"
+          eyebrow="Library"
+          title="Browse your library"
           description={`Browse, filter, and maintain ${vocab.length} word${vocab.length !== 1 ? "s" : ""} across your languages.`}
           actions={undefined}
         />
@@ -220,25 +220,25 @@ export default function LibraryPage() {
         <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Vocabulary Workspace"
-            title="Workspace controls"
-            description={`${filteredVocab.length} word${filteredVocab.length !== 1 ? "s" : ""} match your current library filters.`}
+            title="Filters and view"
+            description={`${filteredVocab.length} word${filteredVocab.length !== 1 ? "s" : ""} match your current filters.`}
             actions={
               <>
-                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500">
                   {selectedIds.length} selected
                 </span>
                 {filteredVocab.length > 0 && (
                   <button
                     onClick={handleSelectAll}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 shadow-sm transition-all hover:text-slate-900 active:scale-95"
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-500 shadow-sm transition-all hover:text-slate-900 active:scale-95"
                   >
-                    {selectedIds.length === filteredVocab.length ? "Deselect All" : "Select All"}
+                    {selectedIds.length === filteredVocab.length ? "Deselect all" : "Select all"}
                   </button>
                 )}
                 {selectedIds.length > 0 && (
                   <button
                     onClick={() => setSelectedIds([])}
-                    className="rounded-xl border border-slate-200 bg-slate-100/90 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-900"
+                    className="rounded-xl border border-slate-200 bg-slate-100/90 px-4 py-3 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
                   >
                     Clear
                   </button>
@@ -301,10 +301,10 @@ export default function LibraryPage() {
         <WorkspacePanel tone="open">
           <WorkspaceHeader
             eyebrow="Results"
-            title="Library results"
+            title="Words"
             description={`Showing ${filteredVocab.length} word${filteredVocab.length !== 1 ? "s" : ""}${selectedLang !== "all" ? ` in ${selectedLang.toUpperCase()}` : ""}${filterStatus !== "all" ? ` with ${filterStatus} status` : ""}.`}
             actions={
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500">
                 {densityMode} view
               </span>
             }
@@ -343,7 +343,7 @@ export default function LibraryPage() {
               <WorkspaceEmptyState
                 icon="📭"
                 title="No words found"
-                description="Try changing your filters or add new words from the dashboard."
+                description="Try another filter, or add words from the dashboard."
                 className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 p-12 shadow-none"
               />
             )}

@@ -40,9 +40,9 @@ export function WorkspaceHeader({
   return (
     <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between", className)}>
       <div className="min-w-0">
-        {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{eyebrow}</p>}
-        <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">{title}</h2>
-        {description && <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{description}</p>}
+        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{eyebrow}</p>}
+        <h2 className="mt-3 text-[1.85rem] font-semibold tracking-tight text-slate-950">{title}</h2>
+        {description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-3 lg:justify-end">{actions}</div>}
     </div>
@@ -60,7 +60,7 @@ export function WorkspaceFilterGroup({
 }) {
   return (
     <div className={cn("space-y-3", className)}>
-      <p className="ml-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="ml-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
       <div className="flex flex-wrap gap-2.5">{children}</div>
     </div>
   );
@@ -91,9 +91,9 @@ export function WorkspaceUtilityPanel({
       )}
     >
       <div>
-        {eyebrow && <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{eyebrow}</p>}
-        <h3 className="mt-2 text-base font-black tracking-tight text-slate-950">{title}</h3>
-        {description && <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{description}</p>}
+        {eyebrow && <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{eyebrow}</p>}
+        <h3 className="mt-2 text-base font-semibold tracking-tight text-slate-950">{title}</h3>
+        {description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>}
       </div>
       {children}
     </aside>
@@ -119,7 +119,7 @@ export function WorkspaceChipButton({
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-2 rounded-2xl border px-5 py-3 text-sm font-bold transition-all",
+        "inline-flex items-center gap-2 rounded-2xl border px-5 py-3 text-sm font-medium transition-all",
         active ? activeClass : inactiveClass,
         className
       )}
@@ -143,8 +143,8 @@ export function WorkspaceEmptyState({
   return (
     <WorkspacePanel tone="muted" className={cn("rounded-[2.25rem] p-10 text-center sm:p-12", className)}>
       <div className="mb-6 text-5xl opacity-50 sm:text-6xl">{icon}</div>
-      <h3 className="text-xl font-black text-slate-950 sm:text-2xl">{title}</h3>
-      <p className="mt-2 text-sm font-medium text-slate-600 sm:text-base">{description}</p>
+      <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">{title}</h3>
+      <p className="mt-2 text-sm text-slate-600 sm:text-base">{description}</p>
     </WorkspacePanel>
   );
 }
@@ -169,9 +169,9 @@ export function WorkspaceSelectionBar({
   return (
     <div className="fixed bottom-10 left-1/2 z-50 flex -translate-x-1/2 items-center gap-6 rounded-[2.5rem] border border-slate-700 bg-slate-950/95 px-6 py-5 text-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] backdrop-blur-md animate-in slide-in-from-bottom-20 duration-500 sm:gap-10 sm:px-10">
       <div className="flex flex-col">
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Selected</span>
-        <span className="text-xl font-black tracking-tight sm:text-2xl">
-          {selectedCount} <span className="text-base font-bold text-slate-400">{itemLabel}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Selected</span>
+        <span className="text-xl font-semibold tracking-tight sm:text-2xl">
+          {selectedCount} <span className="text-base font-medium text-slate-400">{itemLabel}</span>
         </span>
       </div>
 
@@ -180,7 +180,7 @@ export function WorkspaceSelectionBar({
       <button
         onClick={onAction}
         disabled={isBusy}
-        className="flex items-center gap-2 rounded-2xl bg-red-500 px-6 py-3 font-black text-white shadow-lg shadow-red-500/30 transition-all hover:bg-red-600 disabled:opacity-50 sm:px-8"
+        className="flex items-center gap-2 rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white shadow-lg shadow-red-500/30 transition-all hover:bg-red-600 disabled:opacity-50 sm:px-8"
       >
         {isBusy ? busyLabel : actionLabel}
       </button>

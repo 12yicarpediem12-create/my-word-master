@@ -40,33 +40,33 @@ export function DashboardLanguageOverview({
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Overview</p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Your active stack</h2>
-            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
-              Keep language status close at hand, then use Study Home when you want a full chooser.
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Languages</p>
+            <h2 className="mt-3 text-[1.9rem] font-semibold tracking-tight text-slate-950">Current languages</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Keep language status close at hand, then open Study when you want the full chooser.
             </p>
           </div>
-          <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+          <span className="rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[11px] font-medium text-slate-500">
             {activeLanguages.length || vocabStats.length} languages
           </span>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-slate-200/75 py-4 sm:grid-cols-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Total Words</p>
-            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{totalWords}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Words</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{totalWords}</p>
           </div>
           <div className="min-w-0 sm:border-l sm:border-slate-200/65 sm:pl-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Active Languages</p>
-            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{activeLanguages.length}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Active languages</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{activeLanguages.length}</p>
           </div>
           <div className="min-w-0 sm:border-l sm:border-slate-200/65 sm:pl-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
-            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{dueNowCount}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Due now</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{dueNowCount}</p>
           </div>
           <div className="min-w-0 sm:border-l sm:border-slate-200/65 sm:pl-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning</p>
-            <p className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">{learningCount}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Learning</p>
+            <p className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{learningCount}</p>
           </div>
         </div>
 
@@ -74,12 +74,12 @@ export function DashboardLanguageOverview({
           {spotlightStats.length > 0 ? (
             <>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Language Cards</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Quick access</p>
                 <Link
                   href="/study"
-                  className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors hover:text-blue-600"
+                  className="text-xs font-medium text-slate-500 transition-colors hover:text-blue-600"
                 >
-                  Open study home
+                  Open Study
                 </Link>
               </div>
 
@@ -95,8 +95,8 @@ export function DashboardLanguageOverview({
                           {stat.emoji || "🌍"}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-base font-black text-slate-950">{stat.name}</p>
-                          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                          <p className="truncate text-base font-semibold text-slate-950">{stat.name}</p>
+                          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-400">
                             {stat.code}
                           </p>
                         </div>
@@ -115,12 +115,12 @@ export function DashboardLanguageOverview({
                     </div>
 
                     <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-200/70 pt-3">
-                      <p className="text-sm font-black text-slate-950">{stat.percentage}% mastery</p>
+                      <p className="text-sm font-semibold text-slate-950">{stat.percentage}% mastered</p>
                       <Link
                         href={`/study/${stat.code}`}
-                        className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-600 transition-colors hover:text-blue-600"
+                        className="text-xs font-medium text-slate-600 transition-colors hover:text-blue-600"
                       >
-                        Study
+                        Open
                       </Link>
                     </div>
                   </article>
@@ -136,35 +136,35 @@ export function DashboardLanguageOverview({
       </div>
 
       <div className="mt-6 border-t border-slate-200/75 pt-5">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Next Actions</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Shortcuts</p>
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
           <Link
             href="/study"
-            className="font-black text-slate-900 transition-colors hover:text-blue-600"
+            className="font-semibold text-slate-900 transition-colors hover:text-blue-600"
           >
-            Study home
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Choose a language intentionally</p>
+            Study
+            <p className="mt-1 text-xs text-slate-400">Choose a language intentionally.</p>
           </Link>
           <Link
             href="/library"
-            className="font-black text-slate-900 transition-colors hover:text-blue-600"
+            className="font-semibold text-slate-900 transition-colors hover:text-blue-600"
           >
             Library
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Browse and clean up words</p>
+            <p className="mt-1 text-xs text-slate-400">Browse and tidy your words.</p>
           </Link>
           <Link
             href="/import"
-            className="font-black text-slate-900 transition-colors hover:text-blue-600"
+            className="font-semibold text-slate-900 transition-colors hover:text-blue-600"
           >
             Import
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Bring in a larger vocab list</p>
+            <p className="mt-1 text-xs text-slate-400">Bring in a larger word list.</p>
           </Link>
           <Link
             href="/manage"
-            className="font-black text-slate-900 transition-colors hover:text-blue-600"
+            className="font-semibold text-slate-900 transition-colors hover:text-blue-600"
           >
-            Manage
-            <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Languages, categories, and setup</p>
+            Settings
+            <p className="mt-1 text-xs text-slate-400">Languages, categories, and setup.</p>
           </Link>
         </div>
       </div>

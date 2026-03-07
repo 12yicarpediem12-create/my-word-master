@@ -51,11 +51,11 @@ export default function DailyStudyHero({
 
       <div className="relative flex flex-col gap-8 xl:grid xl:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.8fr)] xl:items-start">
         <div>
-          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.25em] text-blue-600 sm:text-xs">Today's Study</p>
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-600 sm:text-xs">Today</p>
           <h2 className="text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-5xl">
             {doneForToday ? "Done for today." : dueTodayCount > 0 ? `${dueTodayCount} cards are ready.` : "You are caught up for now."}
           </h2>
-          <p className="mt-4 max-w-2xl text-sm font-medium text-slate-600 sm:text-base">
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
             {doneForToday
               ? "Your due review queue is complete. Use custom modes only if you want extra practice."
               : dueTodayCount > 0
@@ -65,16 +65,16 @@ export default function DailyStudyHero({
 
           <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="surface-muted px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{doneForToday ? "Done Today" : "Due Now"}</p>
-              <p className="mt-2 text-3xl font-black text-slate-950">{dueTodayCount}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{doneForToday ? "Done today" : "Due now"}</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-950">{dueTodayCount}</p>
             </div>
             <div className="surface-muted px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Overdue</p>
-              <p className="mt-2 text-3xl font-black text-slate-950">{overdueCount}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Overdue</p>
+              <p className="mt-2 text-3xl font-semibold text-slate-950">{overdueCount}</p>
             </div>
             <div className="surface-muted px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Streak / Last Active</p>
-              <p className="mt-2 text-2xl font-black text-slate-950">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Streak and recent activity</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
                 {streak} {lastActivityLabel ? `· ${lastActivityLabel}` : ""}
               </p>
             </div>
@@ -83,11 +83,11 @@ export default function DailyStudyHero({
           <div className={`mt-5 rounded-[1.75rem] border px-5 py-4 ${habitToneClass}`}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{habitNudge.eyebrow}</p>
-                <p className="mt-1 text-lg font-black text-slate-950 sm:text-xl">{habitNudge.title}</p>
-                <p className="mt-1 text-sm font-medium text-slate-600">{habitNudge.description}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">{habitNudge.eyebrow}</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">{habitNudge.title}</p>
+                <p className="mt-1 text-sm text-slate-600">{habitNudge.description}</p>
               </div>
-              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-500">
                 <span>{streak > 0 ? `${streak}-day rhythm` : "Fresh start"}</span>
                 <span className="opacity-40">•</span>
                 <span>{overdueCount > 0 ? `${overdueCount} to recover` : `${quickSessionSize}-card suggestion`}</span>
@@ -98,11 +98,11 @@ export default function DailyStudyHero({
 
         <div className="relative flex min-h-full flex-col gap-4 rounded-[2rem] border border-blue-100/80 bg-white/85 p-5 shadow-[0_24px_54px_-36px_rgba(37,99,235,0.45)] backdrop-blur-sm">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Primary Action</p>
-            <h3 className="mt-3 text-2xl font-black tracking-tight text-slate-950">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">Resume</p>
+            <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
               {doneForToday ? "Keep the recent language warm." : "Continue your recent language."}
             </h3>
-            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
               {primaryLanguage
                 ? doneForToday
                   ? `All due cards are cleared in ${primaryLanguage.emoji || "🌍"} ${primaryLanguage.name}.`
@@ -112,24 +112,24 @@ export default function DailyStudyHero({
           </div>
 
           <div className="surface-muted px-4 py-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Recommended Session</p>
-            <p className="mt-2 text-3xl font-black text-slate-950">{quickSessionSize}</p>
-            <p className="mt-1 text-sm font-medium text-slate-600">cards to get moving fast</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Suggested session</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-950">{quickSessionSize}</p>
+            <p className="mt-1 text-sm text-slate-600">cards to get moving quickly</p>
           </div>
 
           <div className="mt-auto flex flex-col gap-3">
             <Link
               href={primaryLanguage ? (doneForToday ? `/study/${primaryLanguage.code}` : `/study/${primaryLanguage.code}/session?mode=review&direction=recognition`) : "/manage"}
-              className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-center font-black text-white shadow-[0_18px_40px_-22px_rgba(37,99,235,0.75)] transition-all hover:bg-blue-700"
+              className="w-full rounded-2xl bg-blue-600 px-6 py-4 text-center font-semibold text-white shadow-[0_18px_40px_-22px_rgba(37,99,235,0.75)] transition-all hover:bg-blue-700"
             >
-              {doneForToday ? "Open Recent Hub" : "Continue Recent Review"}
+              {doneForToday ? "Open recent workspace" : "Continue review"}
             </Link>
             {primaryLanguage && (
               <Link
                 href={`/study/${primaryLanguage.code}/session`}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 text-center text-sm font-medium text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-600"
               >
-                Recent language modes
+                More study options
               </Link>
             )}
           </div>

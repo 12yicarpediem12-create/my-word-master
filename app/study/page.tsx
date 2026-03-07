@@ -37,7 +37,7 @@ function StudyLanguageCard({
   const primaryHref = hasWords
     ? `/study/${code}/session?mode=review&direction=recognition`
     : `/study/${code}`;
-  const primaryLabel = hasWords ? "Start review" : "Open hub";
+  const primaryLabel = hasWords ? "Review now" : "Open workspace";
 
   return (
     <article className="rounded-[1.9rem] border border-slate-200/80 bg-white/74 p-5 transition-all hover:border-blue-200 hover:bg-white sm:p-6">
@@ -48,12 +48,12 @@ function StudyLanguageCard({
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="truncate text-xl font-black tracking-tight text-slate-950">{name}</h2>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              <h2 className="truncate text-xl font-semibold tracking-tight text-slate-950">{name}</h2>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
                 {code}
               </span>
             </div>
-            <p className="mt-2 text-sm font-medium text-slate-600">
+            <p className="mt-2 text-sm text-slate-600">
               {remembered} mastered, {learning} still in active review.
             </p>
           </div>
@@ -72,15 +72,15 @@ function StudyLanguageCard({
       <div className="mt-5 border-t border-slate-200/75 pt-4">
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Mastery</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Mastery</p>
             <div className="mt-2 flex items-end gap-2">
-              <p className="text-3xl font-black tracking-tight text-slate-950">{percentage}%</p>
-              <p className="pb-1 text-sm font-medium text-slate-600">{total} words</p>
+              <p className="text-3xl font-semibold tracking-tight text-slate-950">{percentage}%</p>
+              <p className="pb-1 text-sm text-slate-600">{total} words</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-slate-600 sm:justify-end">
-            <span><span className="font-black text-slate-950">{weakWords}</span> weak</span>
-            <span><span className="font-black text-slate-950">{learning}</span> learning</span>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-600 sm:justify-end">
+            <span><span className="font-semibold text-slate-950">{weakWords}</span> weak</span>
+            <span><span className="font-semibold text-slate-950">{learning}</span> learning</span>
           </div>
         </div>
         <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -91,25 +91,25 @@ function StudyLanguageCard({
       <div className="mt-5 flex flex-wrap gap-2">
         <Link
           href={`/study/${code}`}
-          className="rounded-full bg-blue-600 px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-white shadow-[0_14px_28px_-20px_rgba(37,99,235,0.75)] transition-colors hover:bg-blue-700"
+          className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_28px_-20px_rgba(37,99,235,0.75)] transition-colors hover:bg-blue-700"
         >
-          Open hub
+          Open workspace
         </Link>
         <Link
           href={primaryHref}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
         >
           {primaryLabel}
         </Link>
         <Link
           href={`/study/${code}/session`}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
         >
-          Custom modes
+          Study options
         </Link>
         <Link
           href={`/study/${code}/topics`}
-          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+          className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
         >
           Topics
         </Link>
@@ -129,9 +129,9 @@ export default function StudyHomePage() {
         {errorMsg && <div className="mb-6 rounded-2xl border-2 border-red-200 bg-red-50 p-4 font-bold text-red-600">{errorMsg}</div>}
 
         <PageIntro
-          eyebrow="Study Home"
-          title="Choose a language and enter the right study workspace"
-          description="Use this page as the explicit study chooser. Resume your recent language when it helps, or pick any language below when you want to choose intentionally."
+          eyebrow="Study"
+          title="Choose a language"
+          description="Resume where you left off, or choose a language deliberately before you start."
         />
 
         {isLoading ? (
@@ -145,10 +145,10 @@ export default function StudyHomePage() {
                 {recentLanguage ? (
                   <div className="flex h-full flex-col gap-6">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-blue-600">
-                        Recent Language
+                      <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600">
+                        Continue
                       </span>
-                      <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-medium text-slate-500">
                         {formatDueLabel(recentLanguage.dueToday)}
                       </span>
                     </div>
@@ -159,22 +159,22 @@ export default function StudyHomePage() {
                         Continue in {recentLanguage.name}
                       </h2>
                       <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
-                        This featured path is for continuing your recent language quickly. The chooser below is the canonical place to select any language intentionally.
+                        This is the fastest way back into your recent language. Use the chooser below when you want to decide intentionally.
                       </p>
                     </div>
 
                     <div className="grid gap-x-4 gap-y-4 border-y border-slate-200/70 py-4 sm:grid-cols-3">
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Now</p>
-                        <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.dueToday}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Due now</p>
+                        <p className="mt-2 text-3xl font-semibold text-slate-950">{recentLanguage.dueToday}</p>
                       </div>
                       <div className="sm:border-l sm:border-slate-200/65 sm:pl-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak Points</p>
-                        <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.weakWords}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Weak points</p>
+                        <p className="mt-2 text-3xl font-semibold text-slate-950">{recentLanguage.weakWords}</p>
                       </div>
                       <div className="sm:border-l sm:border-slate-200/65 sm:pl-4">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Mastery</p>
-                        <p className="mt-2 text-3xl font-black text-slate-950">{recentLanguage.percentage}%</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Mastery</p>
+                        <p className="mt-2 text-3xl font-semibold text-slate-950">{recentLanguage.percentage}%</p>
                       </div>
                     </div>
 
@@ -185,15 +185,15 @@ export default function StudyHomePage() {
                             ? `/study/${recentLanguage.code}/session?mode=review&direction=recognition`
                             : `/study/${recentLanguage.code}`
                         }
-                        className="rounded-2xl bg-blue-600 px-6 py-4 font-black text-white shadow-[0_18px_40px_-22px_rgba(37,99,235,0.75)] transition-colors hover:bg-blue-700"
+                        className="rounded-2xl bg-blue-600 px-6 py-4 font-semibold text-white shadow-[0_18px_40px_-22px_rgba(37,99,235,0.75)] transition-colors hover:bg-blue-700"
                       >
-                        {recentLanguage.dueToday > 0 ? "Continue review" : "Open recent hub"}
+                        {recentLanguage.dueToday > 0 ? "Continue review" : "Open recent workspace"}
                       </Link>
                       <Link
                         href={`/study/${recentLanguage.code}/session`}
-                        className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
+                        className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-medium text-slate-700 transition-colors hover:border-blue-200 hover:text-blue-600"
                       >
-                        Custom modes
+                        Study options
                       </Link>
                       <Link
                         href={`/study/${recentLanguage.code}/topics`}
@@ -206,17 +206,17 @@ export default function StudyHomePage() {
                 ) : (
                   <div className="flex h-full flex-col justify-between gap-6">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">Study Entry</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-600">Get started</p>
                       <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950">Add a language to start studying</h2>
                       <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">
                         Once you add a language and a few words, this page becomes the explicit chooser for every study flow.
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                      <Link href="/manage" className="rounded-2xl bg-blue-600 px-6 py-4 font-black text-white transition-colors hover:bg-blue-700">
-                        Manage setup
+                      <Link href="/manage" className="rounded-2xl bg-blue-600 px-6 py-4 font-semibold text-white transition-colors hover:bg-blue-700">
+                        Library settings
                       </Link>
-                      <Link href="/import" className="rounded-2xl border border-slate-200 bg-white px-6 py-4 font-black text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">
+                      <Link href="/import" className="rounded-2xl border border-slate-200 bg-white px-6 py-4 font-semibold text-slate-950 transition-colors hover:border-blue-200 hover:text-blue-600">
                         Import words
                       </Link>
                     </div>
@@ -225,26 +225,26 @@ export default function StudyHomePage() {
               </Surface>
 
               <section className="section-open">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Across Study</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Study overview</p>
                 <div className="mt-5 grid gap-x-4 gap-y-4 border-y border-slate-200/75 py-4">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Languages</p>
-                    <p className="mt-2 text-3xl font-black text-slate-950">{vocabStats.length}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Languages</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950">{vocabStats.length}</p>
                   </div>
                   <div className="border-t border-slate-200/70 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Due Across Study</p>
-                    <p className="mt-2 text-3xl font-black text-slate-950">{totalDue}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Due across study</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950">{totalDue}</p>
                   </div>
                   <div className="border-t border-slate-200/70 pt-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Weak Points</p>
-                    <p className="mt-2 text-3xl font-black text-slate-950">{totalWeak}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Weak points</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-950">{totalWeak}</p>
                   </div>
                   <Link
                     href="/history"
-                    className="border-t border-slate-200/70 pt-4 font-black text-slate-950 transition-colors hover:text-blue-600"
+                    className="border-t border-slate-200/70 pt-4 font-semibold text-slate-950 transition-colors hover:text-blue-600"
                   >
-                    Review history
-                    <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">See past learning activity</p>
+                    Activity history
+                    <p className="mt-1 text-xs text-slate-400">See your recent study patterns.</p>
                   </Link>
                 </div>
               </section>
@@ -253,13 +253,13 @@ export default function StudyHomePage() {
             <section className="pt-2">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Language Chooser</p>
-                  <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950">Pick a language intentionally</h2>
-                  <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">All languages</p>
+                  <h2 className="mt-3 text-[1.9rem] font-semibold tracking-tight text-slate-950">Pick a language deliberately</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
                     Every card below is an explicit study entry point. Use this page when you want to choose rather than continue whatever was active most recently.
                   </p>
                 </div>
-                <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-medium text-slate-500">
                   {vocabStats.length} languages
                 </span>
               </div>

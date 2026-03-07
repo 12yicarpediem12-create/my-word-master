@@ -80,9 +80,9 @@ export default function Dashboard() {
       <AppMain width="xl" className="section-stack">
         {errorMsg && <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 text-red-600 font-bold rounded-2xl">{errorMsg}</div>}
         <PageIntro
-          eyebrow="Learning Workspace"
-          title="Home Base"
-          description="Start with today’s review, check the health of your languages, and decide the next best step without leaving one workspace."
+          eyebrow="Dashboard"
+          title="Today"
+          description="Start your review, check the health of your languages, and choose the next useful step."
           framed={false}
         />
 
@@ -114,8 +114,8 @@ export default function Dashboard() {
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="page-eyebrow">Build Library</p>
-              <h2 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Capture new words quietly, when they are worth keeping.</h2>
-              <p className="mt-2 max-w-3xl text-sm font-medium leading-relaxed text-slate-600 sm:text-base">
+              <h2 className="font-display text-[2rem] font-semibold tracking-tight text-slate-950 sm:text-[2.35rem]">Grow the library, quietly.</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base">
                 The study loop stays above. This area is for slower library growth, cleanup, and import work when you need it.
               </p>
             </div>
@@ -125,14 +125,14 @@ export default function Dashboard() {
                 className="rounded-[1.5rem] border border-slate-200/80 bg-white/72 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:bg-white hover:text-blue-600"
               >
                 Bulk import
-                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Bring in a bigger list</p>
+                <p className="mt-1 text-xs text-slate-400">Bring in a larger list.</p>
               </Link>
               <Link
                 href="/manage"
                 className="rounded-[1.5rem] border border-slate-200/80 bg-white/72 px-4 py-4 font-black text-slate-900 transition-all hover:border-blue-200 hover:bg-white hover:text-blue-600"
               >
-                Manage setup
-                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">Adjust languages and categories</p>
+                Library settings
+                <p className="mt-1 text-xs text-slate-400">Languages, categories, and setup.</p>
               </Link>
             </div>
           </div>
