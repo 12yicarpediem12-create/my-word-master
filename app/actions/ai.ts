@@ -104,6 +104,9 @@ export async function generateVocabInfo(
       3. PART OF SPEECH (POS):
          - Return exactly one POS label only.
          - Use a single label such as "Noun", "Verb", "Adjective", "Adverb", "Expression", "Proper Noun", or another single POS phrase if needed.
+         - IMPORTANT: If the noun sense is clear, return "Noun" even when the noun can refer to masculine or feminine people.
+         - Common-gender nouns are still valid single noun records. Do NOT return "needs_hint" just because the noun may apply to male/female people.
+         - Gender uncertainty is NOT the same as part-of-speech ambiguity. Reserve "needs_hint" for real POS ambiguity or real central-meaning/use ambiguity.
       4. CATEGORY SELECTION - CONSERVATIVE RULE:
          - Category is OPTIONAL.
          - Only return "category_id" when the lexical entry has one clear, high-confidence topic fit.
@@ -146,6 +149,8 @@ export async function generateVocabInfo(
          - Return "gender" ONLY for noun records.
          - For adjectives, adverbs, verbs, expressions, and all non-noun records, return null for "gender".
          - If an adjective has masculine/feminine agreement or other inflection guidance, put that in "notes", not in "gender".
+         - For clear noun entries, "gender" may be "Masculine", "Feminine", "Masculine/Feminine", or null.
+         - A noun that can refer to masculine or feminine people is still a valid noun record and should not become "needs_hint" for that reason alone.
 
       ### AVAILABLE CATEGORY LIST:
       ${categoryListString}
