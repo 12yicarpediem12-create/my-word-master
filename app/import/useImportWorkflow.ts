@@ -49,6 +49,30 @@ function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnTyp
   };
 }
 
+function hasImportFallbackDisambiguation(row: Pick<ParsedRow, "translation" | "pos">): boolean {
+  return Boolean(row.translation?.trim() && row.pos?.trim());
+}
+
+function toImportFallbackReadyWord(index: number, row: ParsedRow, message?: string): AnalyzedWord {
+  return {
+    id: index,
+    word: row.word,
+    translation: row.translation || "",
+    part_of_speech: row.pos || "",
+    gender: "",
+    root_word: "",
+    verb_type: "",
+    category_id: "",
+    example_sentence: "",
+    example_translation: "",
+    conjugation: "",
+    notes: "",
+    ai_hint: "",
+    ai_status: "ready",
+    ai_message: message || "",
+  };
+}
+
 export function useImportWorkflow() {
   const [languages, setLanguages] = useState<Language[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
@@ -156,6 +180,26 @@ export function useImportWorkflow() {
           });
 
           if (aiData.status === "needs_hint") {
+            if (hasImportFallbackDisambiguation(currentRow)) {
+              const fallbackRow = toImportFallbackReadyWord(
+                index,
+                currentRow,
+                "Used CSV part of speech and meaning because the AI stayed conservative."
+              );
+              nextAnalyzed.push(fallbackRow);
+              setAnalyzedData([...nextAnalyzed]);
+              setLogs((prev) => [
+                {
+                  word: currentRow.word,
+                  status: "success",
+                  message: `Used CSV fields as ${currentRow.pos}${currentRow.translation ? ` · ${currentRow.translation}` : ""}`,
+                },
+                ...prev,
+              ]);
+              existingWords = appendDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech);
+              continue;
+            }
+
             nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
             setAnalyzedData([...nextAnalyzed]);
             setLogs((prev) => [
@@ -261,11 +305,24 @@ export function useImportWorkflow() {
         return;
       }
 
+      const rerunSourceRow = {
+        word: row.word,
+        translation: row.translation,
+        pos: row.part_of_speech,
+      };
+
       setAnalyzedData((prev) =>
         prev.map((item) => {
           if (item.id !== id) return item;
 
-          const nextRow = toAnalyzedWord(id, { word: row.word, translation: row.translation, pos: row.part_of_speech }, aiData);
+          const nextRow =
+            aiData.status === "needs_hint" && hasImportFallbackDisambiguation(rerunSourceRow)
+              ? toImportFallbackReadyWord(
+                  id,
+                  rerunSourceRow,
+                  "Used the current POS and meaning because the AI stayed conservative."
+                )
+              : toAnalyzedWord(id, rerunSourceRow, aiData);
 
           return {
             ...item,
@@ -284,7 +341,7 @@ export function useImportWorkflow() {
             ai_message:
               nextRow.ai_status === "needs_hint"
                 ? nextRow.ai_message || "This row still needs one clear part of speech and meaning."
-                : "",
+                : nextRow.ai_message || "",
             ai_hint: item.ai_hint || "",
           };
         })
@@ -293,10 +350,12 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: row.word,
-          status: aiData.status === "needs_hint" ? "needs_hint" : "success",
+          status: aiData.status === "needs_hint" && !hasImportFallbackDisambiguation(rerunSourceRow) ? "needs_hint" : "success",
           message:
             aiData.status === "needs_hint"
-              ? "Still needs a clearer hint or part of speech."
+              ? hasImportFallbackDisambiguation(rerunSourceRow)
+                ? `Used current fields as ${rerunSourceRow.pos}${rerunSourceRow.translation ? ` · ${rerunSourceRow.translation}` : ""}`
+                : "Still needs a clearer hint or part of speech."
               : `Re-prepared as ${aiData.part_of_speech}${aiData.translation ? ` · ${aiData.translation}` : ""}`,
         },
         ...prev,
