@@ -53,20 +53,27 @@ function hasImportFallbackDisambiguation(row: Pick<ParsedRow, "translation" | "p
   return Boolean(row.translation?.trim() && row.pos?.trim());
 }
 
-function toImportFallbackReadyWord(index: number, row: ParsedRow, message?: string): AnalyzedWord {
+function toImportReadyWord(
+  index: number,
+  row: ParsedRow,
+  aiData?: Awaited<ReturnType<typeof generateVocabInfo>>,
+  message?: string
+): AnalyzedWord {
+  const canUseAiEnrichment = aiData && aiData.status === "ok";
+
   return {
     id: index,
-    word: row.word,
+    word: (canUseAiEnrichment && aiData.word) || row.word,
     translation: row.translation || "",
     part_of_speech: row.pos || "",
-    gender: "",
-    root_word: "",
-    verb_type: "",
-    category_id: "",
-    example_sentence: "",
-    example_translation: "",
-    conjugation: "",
-    notes: "",
+    gender: (canUseAiEnrichment && aiData.gender) || "",
+    root_word: normalizeRootWord(canUseAiEnrichment ? aiData.root_word : null),
+    verb_type: (canUseAiEnrichment && aiData.verb_type) || "",
+    category_id: (canUseAiEnrichment && aiData.category_id) || "",
+    example_sentence: (canUseAiEnrichment && aiData.example_sentence) || "",
+    example_translation: (canUseAiEnrichment && aiData.example_translation) || "",
+    conjugation: (canUseAiEnrichment && aiData.conjugation) || "",
+    notes: (canUseAiEnrichment && aiData.notes) || "",
     ai_hint: "",
     ai_status: "ready",
     ai_message: message || "",
@@ -158,6 +165,7 @@ export function useImportWorkflow() {
 
       for (let index = 0; index < parsedData.length; index++) {
         const currentRow = parsedData[index];
+        const hasCsvDisambiguation = hasImportFallbackDisambiguation(currentRow);
         setProgress({
           current: index + 1,
           total: parsedData.length,
@@ -180,12 +188,17 @@ export function useImportWorkflow() {
           });
 
           if (aiData.status === "needs_hint") {
-            if (hasImportFallbackDisambiguation(currentRow)) {
-              const fallbackRow = toImportFallbackReadyWord(
+            if (hasCsvDisambiguation) {
+              const fallbackRow = toImportReadyWord(
                 index,
                 currentRow,
+                undefined,
                 "Used CSV part of speech and meaning because the AI stayed conservative."
               );
+              if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech)) {
+                setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${fallbackRow.part_of_speech}` }, ...prev]);
+                continue;
+              }
               nextAnalyzed.push(fallbackRow);
               setAnalyzedData([...nextAnalyzed]);
               setLogs((prev) => [
@@ -214,26 +227,55 @@ export function useImportWorkflow() {
           }
 
           if (aiData?.error) {
+            if (hasCsvDisambiguation) {
+              const fallbackRow = toImportReadyWord(
+                index,
+                currentRow,
+                undefined,
+                "Used CSV part of speech and meaning because AI enrichment was unavailable."
+              );
+              if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech)) {
+                setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${fallbackRow.part_of_speech}` }, ...prev]);
+                continue;
+              }
+              nextAnalyzed.push(fallbackRow);
+              setAnalyzedData([...nextAnalyzed]);
+              setLogs((prev) => [
+                {
+                  word: currentRow.word,
+                  status: "success",
+                  message: `Used CSV fields as ${currentRow.pos}${currentRow.translation ? ` · ${currentRow.translation}` : ""}`,
+                },
+                ...prev,
+              ]);
+              existingWords = appendDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech);
+              continue;
+            }
+
             setLogs((prev) => [{ word: currentRow.word, status: "error", message: aiData.error }, ...prev]);
             continue;
           }
 
-          if (hasDuplicateEntry(existingWords, aiData.word || currentRow.word, aiData.part_of_speech || currentRow.pos || "")) {
-            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${aiData.part_of_speech}` }, ...prev]);
+          const preparedRow = hasCsvDisambiguation
+            ? toImportReadyWord(index, currentRow, aiData)
+            : toAnalyzedWord(index, currentRow, aiData);
+
+          if (hasDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech)) {
+            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${preparedRow.part_of_speech}` }, ...prev]);
             continue;
           }
 
-          nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
+          nextAnalyzed.push(preparedRow);
           setAnalyzedData([...nextAnalyzed]);
           setLogs((prev) => [
             {
-              word: aiData.word || currentRow.word,
+              word: preparedRow.word,
               status: "success",
-              message: `Prepared as ${aiData.part_of_speech}${aiData.translation ? ` · ${aiData.translation}` : ""}`,
+              message: `Prepared as ${preparedRow.part_of_speech}${preparedRow.translation ? ` · ${preparedRow.translation}` : ""}`,
             },
             ...prev,
           ]);
-          existingWords = appendDuplicateEntry(existingWords, aiData.word || currentRow.word, aiData.part_of_speech || currentRow.pos || "");
+          existingWords = appendDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech);
         } catch {
           setLogs((prev) => [{ word: currentRow.word, status: "error", message: "Unexpected error" }, ...prev]);
         }
@@ -280,6 +322,13 @@ export function useImportWorkflow() {
     );
 
     try {
+      const rerunSourceRow = {
+        word: row.word,
+        translation: row.translation,
+        pos: row.part_of_speech,
+      };
+      const hasCsvDisambiguation = hasImportFallbackDisambiguation(rerunSourceRow);
+
       const aiData = await generateVocabInfo({
         word: row.word,
         langCode: selectedLang,
@@ -290,6 +339,31 @@ export function useImportWorkflow() {
       });
 
       if (aiData.status === "error") {
+        if (hasCsvDisambiguation) {
+          const fallbackRow = toImportReadyWord(
+            id,
+            rerunSourceRow,
+            undefined,
+            "Used the current POS and meaning because AI enrichment was unavailable."
+          );
+          setAnalyzedData((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    ...fallbackRow,
+                    ai_hint: item.ai_hint || "",
+                  }
+                : item
+            )
+          );
+          setLogs((prev) => [
+            { word: row.word, status: "success", message: `Used current fields as ${rerunSourceRow.pos}${rerunSourceRow.translation ? ` · ${rerunSourceRow.translation}` : ""}` },
+            ...prev,
+          ]);
+          return;
+        }
+
         setAnalyzedData((prev) =>
           prev.map((item) =>
             item.id === id
@@ -305,22 +379,17 @@ export function useImportWorkflow() {
         return;
       }
 
-      const rerunSourceRow = {
-        word: row.word,
-        translation: row.translation,
-        pos: row.part_of_speech,
-      };
-
       setAnalyzedData((prev) =>
         prev.map((item) => {
           if (item.id !== id) return item;
 
           const nextRow =
-            aiData.status === "needs_hint" && hasImportFallbackDisambiguation(rerunSourceRow)
-              ? toImportFallbackReadyWord(
+            hasCsvDisambiguation
+              ? toImportReadyWord(
                   id,
                   rerunSourceRow,
-                  "Used the current POS and meaning because the AI stayed conservative."
+                  aiData.status === "ok" ? aiData : undefined,
+                  aiData.status === "needs_hint" ? "Used the current POS and meaning because the AI stayed conservative." : ""
                 )
               : toAnalyzedWord(id, rerunSourceRow, aiData);
 
@@ -350,13 +419,13 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: row.word,
-          status: aiData.status === "needs_hint" && !hasImportFallbackDisambiguation(rerunSourceRow) ? "needs_hint" : "success",
+          status: aiData.status === "needs_hint" && !hasCsvDisambiguation ? "needs_hint" : "success",
           message:
             aiData.status === "needs_hint"
-              ? hasImportFallbackDisambiguation(rerunSourceRow)
+              ? hasCsvDisambiguation
                 ? `Used current fields as ${rerunSourceRow.pos}${rerunSourceRow.translation ? ` · ${rerunSourceRow.translation}` : ""}`
                 : "Still needs a clearer hint or part of speech."
-              : `Re-prepared as ${aiData.part_of_speech}${aiData.translation ? ` · ${aiData.translation}` : ""}`,
+              : `Re-prepared as ${hasCsvDisambiguation ? rerunSourceRow.pos : aiData.part_of_speech}${(hasCsvDisambiguation ? rerunSourceRow.translation : aiData.translation) ? ` · ${hasCsvDisambiguation ? rerunSourceRow.translation : aiData.translation}` : ""}`,
         },
         ...prev,
       ]);

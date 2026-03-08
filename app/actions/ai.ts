@@ -123,6 +123,9 @@ export async function generateVocabInfo(
       5. ETYMOLOGY (Shared Roots) - CONSERVATIVE RULE:
          - "root_word" is OPTIONAL.
          - Use "root_word" mainly for single-word entries.
+         - If the entry is a single word, TRY to return a useful lexical root whenever a plausible and defensible root can be identified.
+         - For single-word entries, prefer returning a meaningful "root_word" rather than leaving it blank.
+         - For single-word entries, return null only when no useful or defensible root can be identified.
          - If the entry is a phrase, do NOT force a single shared "root_word" unless one lexical root clearly and naturally represents the whole entry.
          - In most phrase cases, return "root_word" as null.
          - If there is useful origin, literal sense, or key-word etymology for a phrase, put it in "notes" instead of forcing "root_word".
