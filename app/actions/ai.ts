@@ -114,7 +114,13 @@ export async function generateVocabInfo(
            3. "conjugation" for verbs
            4. "example_sentence"
            5. "example_translation"
-         - For those high-value support fields, do NOT leave them blank just because there is minor uncertainty when the entry itself is already clear.
+         - For those high-value support fields, TRY HARD to fill them when the entry itself is already clear.
+         - Do NOT leave those high-value support fields blank just because there is minor uncertainty.
+         - If the entry is a clear noun, strongly prefer returning "gender" when it is a normal lexical property of the noun.
+         - If the entry is a clear single-word item, strongly prefer returning a useful "root_word" when a plausible lexical root can be identified.
+         - If the entry is a clear verb, strongly prefer returning "conjugation" rather than leaving it null.
+         - If the entry is clear, strongly prefer returning both "example_sentence" and "example_translation" rather than leaving them blank.
+         - For import rows, it is better to provide a plausible, defensible support-field answer for these high-value fields than to leave them empty by default.
          - In that import path, stay more conservative on lower-priority support fields:
            - "category_id"
            - "root_word" for phrases
