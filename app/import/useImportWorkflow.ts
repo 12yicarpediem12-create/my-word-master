@@ -138,7 +138,7 @@ export function useImportWorkflow() {
 
           acc.push({
             word,
-            translation: row.translation?.trim(),
+            translation: row.translation?.trim() || row.meaning?.trim(),
             pos: row.pos?.trim(),
           });
           return acc;
