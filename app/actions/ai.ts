@@ -104,6 +104,21 @@ export async function generateVocabInfo(
          - IMPORTANT: Do NOT return "needs_hint" for clear fixed expressions, common phrases, or everyday lexicalized entries that already have one obvious central use.
          - Do NOT return "needs_hint" for clear profession, role, or person nouns just because they have grammatical variation, common gender, or masculine/feminine reference.
          - Reserve "needs_hint" for real part-of-speech ambiguity or real central-meaning ambiguity, not for normal lexical variation inside one valid entry.
+      2B. IMPORT-SPECIFIC ENRICHMENT PRIORITY:
+         - If Source is "import" and the request already provides both "Intended part of speech" and "Intended meaning/use", treat the surface word plus those provided fields as the authoritative core lexical identity.
+         - In that import path, DO NOT re-decide lexical identity unless there is a direct contradiction.
+         - In that import path, your main job is to enrich the exact provided entry with support fields.
+         - For import rows with authoritative core identity, prioritize filling these high-value support fields whenever a plausible and defensible answer exists:
+           1. "gender" for nouns
+           2. "root_word" for single-word entries
+           3. "conjugation" for verbs
+           4. "example_sentence"
+           5. "example_translation"
+         - For those high-value support fields, do NOT leave them blank just because there is minor uncertainty when the entry itself is already clear.
+         - In that import path, stay more conservative on lower-priority support fields:
+           - "category_id"
+           - "root_word" for phrases
+           - weak extra notes beyond genuinely useful grammar support
       3. PART OF SPEECH (POS):
          - Return exactly one POS label only.
          - Use a single label such as "Noun", "Verb", "Adjective", "Adverb", "Expression", "Proper Noun", or another single POS phrase if needed.
