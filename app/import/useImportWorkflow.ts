@@ -63,7 +63,7 @@ function toImportReadyWord(
 
   return {
     id: index,
-    word: (canUseAiEnrichment && aiData.word) || row.word,
+    word: row.word,
     translation: row.translation || "",
     part_of_speech: row.pos || "",
     gender: (canUseAiEnrichment && aiData.gender) || "",
