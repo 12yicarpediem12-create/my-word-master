@@ -255,6 +255,7 @@ export function ImportReviewPanel({
   parsedCount,
   readyToSaveCount,
   needsHintCount,
+  enrichableCount,
   skippedCount,
   failedCount,
   logs,
@@ -264,11 +265,15 @@ export function ImportReviewPanel({
   onEditChange,
   onRerunRow,
   rerunningRowId,
+  onEnrichSupportFields,
+  isEnrichingSupportFields,
+  supportEnrichmentProgress,
 }: {
   fileName: string | null;
   parsedCount: number;
   readyToSaveCount: number;
   needsHintCount: number;
+  enrichableCount: number;
   skippedCount: number;
   failedCount: number;
   logs: ImportLog[];
@@ -278,6 +283,9 @@ export function ImportReviewPanel({
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
   onRerunRow: (id: number) => void;
   rerunningRowId: number | null;
+  onEnrichSupportFields: () => void;
+  isEnrichingSupportFields: boolean;
+  supportEnrichmentProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
 }) {
   const [focusNeedsHintSignal, setFocusNeedsHintSignal] = useState(0);
 
@@ -321,6 +329,32 @@ export function ImportReviewPanel({
                 ? `${readyToSaveCount} reviewed row${readyToSaveCount !== 1 ? "s" : ""} currently meet the one-record-per-POS rule and will be saved.`
                 : "There are no valid rows left to save."}
             </p>
+            <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
+              <p className="support-label">Support-field enrichment</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {enrichableCount > 0
+                  ? `${enrichableCount} ready row${enrichableCount !== 1 ? "s" : ""} still have missing high-value support fields like gender, root, conjugation, or examples.`
+                  : "All ready rows already have the current high-value support fields filled."}
+              </p>
+              {isEnrichingSupportFields && (
+                <div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-blue-900">
+                    {supportEnrichmentProgress.currentStage || "Filling missing support fields"}
+                  </p>
+                  <p className="mt-1 text-xs text-blue-700">
+                    {supportEnrichmentProgress.current} / {supportEnrichmentProgress.total}
+                    {supportEnrichmentProgress.currentWord ? ` · ${supportEnrichmentProgress.currentWord}` : ""}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onEnrichSupportFields}
+                disabled={enrichableCount === 0 || isEnrichingSupportFields}
+                className="mt-4 w-full rounded-2xl border border-blue-200 bg-white px-5 py-4 font-semibold text-blue-700 transition-colors hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isEnrichingSupportFields ? "Filling support fields..." : "Fill missing support fields"}
+              </button>
+            </div>
             {needsHintCount > 0 && (
               <div className="mt-3 rounded-[1.35rem] border border-amber-200 bg-amber-50/75 p-4">
                 <p className="text-sm leading-relaxed text-amber-800">

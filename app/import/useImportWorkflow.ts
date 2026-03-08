@@ -10,6 +10,8 @@ import {
   appendDuplicateEntry,
   buildDuplicateIndex,
   hasDuplicateEntry,
+  isNounPartOfSpeech,
+  isVerbPartOfSpeech,
   normalizeRootWord,
 } from "@/app/lib/vocab-form";
 import type { AnalyzedWord, ImportLog, ImportProgress, ParsedRow, Phase } from "./types";
@@ -51,6 +53,35 @@ function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnTyp
 
 function hasImportFallbackDisambiguation(row: Pick<ParsedRow, "translation" | "pos">): boolean {
   return Boolean(row.translation?.trim() && row.pos?.trim());
+}
+
+function isSingleWordEntry(word: string): boolean {
+  return !/\s/.test(word.trim());
+}
+
+function rowNeedsSupportEnrichment(row: AnalyzedWord): boolean {
+  if (row.ai_status === "needs_hint") return false;
+
+  return (
+    (isNounPartOfSpeech(row.part_of_speech) && !row.gender.trim()) ||
+    (isSingleWordEntry(row.word) && !row.root_word.trim()) ||
+    (isVerbPartOfSpeech(row.part_of_speech) && !row.conjugation.trim()) ||
+    !row.example_sentence.trim() ||
+    !row.example_translation.trim()
+  );
+}
+
+function mergeMissingSupportFields(row: AnalyzedWord, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
+  if (aiData.status !== "ok") return row;
+
+  return {
+    ...row,
+    gender: row.gender.trim() ? row.gender : aiData.gender || "",
+    root_word: row.root_word.trim() ? row.root_word : normalizeRootWord(aiData.root_word),
+    conjugation: row.conjugation.trim() ? row.conjugation : aiData.conjugation || "",
+    example_sentence: row.example_sentence.trim() ? row.example_sentence : aiData.example_sentence || "",
+    example_translation: row.example_translation.trim() ? row.example_translation : aiData.example_translation || "",
+  };
 }
 
 function toImportReadyWord(
@@ -96,6 +127,13 @@ export function useImportWorkflow() {
   const [logs, setLogs] = useState<ImportLog[]>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [rerunningRowId, setRerunningRowId] = useState<number | null>(null);
+  const [isEnrichingSupportFields, setIsEnrichingSupportFields] = useState(false);
+  const [supportEnrichmentProgress, setSupportEnrichmentProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
 
   useEffect(() => {
     async function fetchLanguages() {
@@ -447,6 +485,84 @@ export function useImportWorkflow() {
     }
   };
 
+  const handleEnrichReadyRows = async () => {
+    if (!selectedLang) return;
+
+    const eligibleRows = analyzedData.filter(rowNeedsSupportEnrichment);
+    if (eligibleRows.length === 0) return;
+
+    setIsEnrichingSupportFields(true);
+    setSupportEnrichmentProgress({
+      current: 0,
+      total: eligibleRows.length,
+      currentWord: null,
+      currentStage: "Preparing support-field enrichment",
+    });
+
+    let updatedCount = 0;
+
+    try {
+      for (let index = 0; index < eligibleRows.length; index++) {
+        const row = eligibleRows[index];
+        setSupportEnrichmentProgress({
+          current: index + 1,
+          total: eligibleRows.length,
+          currentWord: row.word,
+          currentStage: "Filling missing support fields",
+        });
+
+        try {
+          const aiData = await generateVocabInfo({
+            word: row.word,
+            langCode: selectedLang,
+            intendedPos: row.part_of_speech,
+            intendedMeaning: row.translation,
+            source: "import",
+          });
+
+          if (aiData.status === "ok") {
+            setAnalyzedData((prev) =>
+              prev.map((item) => {
+                if (item.id !== row.id) return item;
+                const next = mergeMissingSupportFields(item, aiData);
+                const changed =
+                  next.gender !== item.gender ||
+                  next.root_word !== item.root_word ||
+                  next.conjugation !== item.conjugation ||
+                  next.example_sentence !== item.example_sentence ||
+                  next.example_translation !== item.example_translation;
+
+                if (changed) updatedCount += 1;
+                return next;
+              })
+            );
+          }
+        } catch {
+          setLogs((prev) => [{ word: row.word, status: "error", message: "Support-field enrichment failed." }, ...prev]);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      setLogs((prev) => [
+        {
+          word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
+          status: "success",
+          message: "Filled missing support fields where AI could provide a plausible answer.",
+        },
+        ...prev,
+      ]);
+    } finally {
+      setSupportEnrichmentProgress({
+        current: eligibleRows.length,
+        total: eligibleRows.length,
+        currentWord: null,
+        currentStage: "Support-field enrichment complete",
+      });
+      setIsEnrichingSupportFields(false);
+    }
+  };
+
   const handleRemoveFromReview = (id: number) => {
     setAnalyzedData((prev) => prev.filter((item) => item.id !== id));
   };
@@ -520,6 +636,10 @@ export function useImportWorkflow() {
     () => analyzedData.filter((item) => item.ai_status === "needs_hint").length,
     [analyzedData]
   );
+  const enrichableCount = useMemo(
+    () => analyzedData.filter(rowNeedsSupportEnrichment).length,
+    [analyzedData]
+  );
   const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
   const remainingCount = useMemo(() => {
     if (phase === "saving") {
@@ -544,6 +664,7 @@ export function useImportWorkflow() {
     handleAnalyzeData,
     handleEditChange,
     handleRerunRow,
+    handleEnrichReadyRows,
     handleRemoveFromReview,
     handleSaveToDatabase,
     percentComplete,
@@ -552,7 +673,10 @@ export function useImportWorkflow() {
     remainingCount,
     readyToSaveCount,
     needsHintCount,
+    enrichableCount,
     analyzedCount,
     rerunningRowId,
+    isEnrichingSupportFields,
+    supportEnrichmentProgress,
   };
 }

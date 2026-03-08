@@ -28,6 +28,7 @@ export default function ImportPage() {
     handleAnalyzeData,
     handleEditChange,
     handleRerunRow,
+    handleEnrichReadyRows,
     handleRemoveFromReview,
     handleSaveToDatabase,
     percentComplete,
@@ -36,8 +37,11 @@ export default function ImportPage() {
     remainingCount,
     readyToSaveCount,
     needsHintCount,
+    enrichableCount,
     analyzedCount,
     rerunningRowId,
+    isEnrichingSupportFields,
+    supportEnrichmentProgress,
   } = useImportWorkflow();
 
   return (
@@ -90,6 +94,7 @@ export default function ImportPage() {
             parsedCount={parsedData.length}
             readyToSaveCount={readyToSaveCount}
             needsHintCount={needsHintCount}
+            enrichableCount={enrichableCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
             logs={logs}
@@ -99,6 +104,9 @@ export default function ImportPage() {
             onEditChange={handleEditChange}
             onRerunRow={handleRerunRow}
             rerunningRowId={rerunningRowId}
+            onEnrichSupportFields={handleEnrichReadyRows}
+            isEnrichingSupportFields={isEnrichingSupportFields}
+            supportEnrichmentProgress={supportEnrichmentProgress}
           />
         )}
 
