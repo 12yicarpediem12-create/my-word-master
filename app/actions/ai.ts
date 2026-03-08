@@ -101,12 +101,16 @@ export async function generateVocabInfo(
              "candidates": ["Noun", "Verb"]
            }
          - In that case, do not include the normal lexical fields.
+         - IMPORTANT: Do NOT return "needs_hint" for clear fixed expressions, common phrases, or everyday lexicalized entries that already have one obvious central use.
+         - Do NOT return "needs_hint" for clear profession, role, or person nouns just because they have grammatical variation, common gender, or masculine/feminine reference.
+         - Reserve "needs_hint" for real part-of-speech ambiguity or real central-meaning ambiguity, not for normal lexical variation inside one valid entry.
       3. PART OF SPEECH (POS):
          - Return exactly one POS label only.
          - Use a single label such as "Noun", "Verb", "Adjective", "Adverb", "Expression", "Proper Noun", or another single POS phrase if needed.
          - IMPORTANT: If the noun sense is clear, return "Noun" even when the noun can refer to masculine or feminine people.
          - Common-gender nouns are still valid single noun records. Do NOT return "needs_hint" just because the noun may apply to male/female people.
          - Gender uncertainty is NOT the same as part-of-speech ambiguity. Reserve "needs_hint" for real POS ambiguity or real central-meaning/use ambiguity.
+         - If an entry is a clear fixed phrase or expression with one obvious use, return a single phrase-level POS such as "Expression" instead of escalating to "needs_hint".
       4. CATEGORY SELECTION - CONSERVATIVE RULE:
          - Category is OPTIONAL.
          - Only return "category_id" when the lexical entry has one clear, high-confidence topic fit.
