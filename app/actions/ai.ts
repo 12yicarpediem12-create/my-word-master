@@ -316,12 +316,12 @@ export type GenerateImportBetterRootWordInput = {
 export async function generateImportNounGender(
   input: GenerateImportNounGenderInput
 ): Promise<{ gender: "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null; error?: string }> {
-  try {
-    const word = input.word.trim();
-    const langCode = input.langCode.trim();
-    const intendedMeaning = input.intendedMeaning.trim();
-    const partOfSpeech = input.partOfSpeech.trim();
+  const word = input.word.trim();
+  const langCode = input.langCode.trim();
+  const intendedMeaning = input.intendedMeaning.trim();
+  const partOfSpeech = input.partOfSpeech.trim();
 
+  try {
     const apiKey = getGeminiApiKey();
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
@@ -386,13 +386,40 @@ export async function generateImportNounGender(
     throw new Error(`Unexpected gender response format: ${content.slice(0, 120)}`);
   } catch (error) {
     console.error("Gemini noun gender enrichment error:", error);
-    return {
-      gender: null,
-      error:
+
+    try {
+      const fallback = await generateVocabInfo({
+        word,
+        langCode,
+        intendedPos: partOfSpeech,
+        intendedMeaning,
+        source: "import",
+      });
+
+      if (fallback.status === "ok") {
+        return {
+          gender: normalizeNounGender(fallback.gender) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+        };
+      }
+
+      return {
+        gender: null,
+        error:
+          fallback.status === "error"
+            ? `Targeted gender call failed; broad fallback also failed: ${fallback.error}`
+            : `Targeted gender call failed; broad fallback returned no usable noun gender.`,
+      };
+    } catch (fallbackError) {
+      const targetedMessage =
         error instanceof Error && /Unexpected gender response format/i.test(error.message)
           ? error.message
-          : toSafeAiErrorMessage(error),
-    };
+          : toSafeAiErrorMessage(error);
+
+      return {
+        gender: null,
+        error: `Targeted gender call failed: ${targetedMessage}. Broad fallback failed: ${toSafeAiErrorMessage(fallbackError)}`,
+      };
+    }
   }
 }
 
