@@ -66,6 +66,40 @@ function isSingleWordEntry(word: string): boolean {
   return !/\s/.test(word.trim());
 }
 
+function getComparableSurfaceLemma(word: string): string {
+  return word
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getComparableRootLemma(rootWord: string): string {
+  return normalizeRootWord(rootWord)
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getRootLanguageLabel(rootWord: string): string {
+  const match = normalizeRootWord(rootWord).match(/\(([^)]+)\)\s*$/);
+  return match ? match[1].trim().toLowerCase() : "";
+}
+
+function getCurrentLanguageLabels(languageCode: string): string[] {
+  const normalized = languageCode.trim().toLowerCase();
+
+  if (normalized === "it") return ["italian", "italiano"];
+  if (normalized === "es") return ["spanish", "espanol", "español"];
+  if (normalized === "fr") return ["french", "francais", "français"];
+  if (normalized === "de") return ["german", "deutsch"];
+  if (normalized === "pt") return ["portuguese", "portugues", "português"];
+
+  return [normalized];
+}
+
 function isReadyImportRow(row: Pick<AnalyzedWord, "ai_status" | "word" | "translation" | "part_of_speech">): boolean {
   return row.ai_status === "ready" && Boolean(row.word.trim() && row.translation.trim() && row.part_of_speech.trim());
 }
@@ -98,7 +132,7 @@ function rowNeedsExampleEnrichment(row: AnalyzedWord): boolean {
   return isReadyImportRow(row) && (!row.example_sentence.trim() || !row.example_translation.trim());
 }
 
-function looksSuspiciousRootWord(word: string, rootWord: string): boolean {
+function looksSuspiciousRootWord(word: string, rootWord: string, languageCode: string): boolean {
   const normalizedRoot = normalizeRootWord(rootWord);
   if (!normalizedRoot) return false;
 
@@ -110,19 +144,35 @@ function looksSuspiciousRootWord(word: string, rootWord: string): boolean {
     return true;
   }
 
-  const rootLemma = normalizedRoot.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
-  const surfaceLemma = word.trim().toLowerCase();
+  const rootLanguage = getRootLanguageLabel(normalizedRoot);
+  if (getCurrentLanguageLabels(languageCode).includes(rootLanguage)) {
+    return true;
+  }
+
+  const rootLemma = getComparableRootLemma(normalizedRoot);
+  const surfaceLemma = getComparableSurfaceLemma(word);
 
   return rootLemma === surfaceLemma;
 }
 
-function rowNeedsRootQualityCorrection(row: AnalyzedWord): boolean {
+function rowNeedsRootQualityCorrection(row: AnalyzedWord, languageCode: string): boolean {
   return (
     isReadyImportRow(row) &&
     isSingleWordEntry(row.word) &&
     row.root_word.trim().length > 0 &&
-    looksSuspiciousRootWord(row.word, row.root_word)
+    looksSuspiciousRootWord(row.word, row.root_word, languageCode)
   );
+}
+
+function hasClearlyBetterRootWord(word: string, currentRootWord: string, nextRootWord: string, languageCode: string): boolean {
+  const normalizedCurrent = normalizeRootWord(currentRootWord);
+  const normalizedNext = normalizeRootWord(nextRootWord);
+
+  if (!normalizedNext || normalizedNext === normalizedCurrent) return false;
+  if (!looksSuspiciousRootWord(word, normalizedCurrent, languageCode)) return false;
+  if (looksSuspiciousRootWord(word, normalizedNext, languageCode)) return false;
+
+  return true;
 }
 
 function mergeMissingSupportFields(row: AnalyzedWord, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
@@ -1104,7 +1154,7 @@ export function useImportWorkflow() {
   const handleImproveWeakRoots = async () => {
     if (!selectedLang) return;
 
-    const eligibleRows = analyzedData.filter(rowNeedsRootQualityCorrection);
+    const eligibleRows = analyzedData.filter((row) => rowNeedsRootQualityCorrection(row, selectedLang));
     if (eligibleRows.length === 0) return;
 
     setIsImprovingWeakRoots(true);
@@ -1145,7 +1195,7 @@ export function useImportWorkflow() {
           });
 
           const nextRootWord = normalizeRootWord(result.root_word);
-          if (nextRootWord && nextRootWord !== normalizeRootWord(row.root_word)) {
+          if (hasClearlyBetterRootWord(row.word, row.root_word, nextRootWord, selectedLang)) {
             setAnalyzedData((prev) =>
               prev.map((item) => {
                 if (item.id !== row.id) return item;
@@ -1301,8 +1351,8 @@ export function useImportWorkflow() {
     [analyzedData]
   );
   const weakRootCorrectionCount = useMemo(
-    () => analyzedData.filter(rowNeedsRootQualityCorrection).length,
-    [analyzedData]
+    () => analyzedData.filter((row) => rowNeedsRootQualityCorrection(row, selectedLang)).length,
+    [analyzedData, selectedLang]
   );
   const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
   const remainingCount = useMemo(() => {

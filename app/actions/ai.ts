@@ -722,13 +722,18 @@ export async function generateImportBetterRootWord(
       - Do NOT rewrite the meaning or part of speech.
       - Replace the current root only when you can provide a clearly better root.
       - If the current root is already acceptable, or no better defensible root can be identified, return null.
+      - The goal is practical learning value, not maximal historical precision.
 
       Root-word rules:
       - Format strictly as: "root_word (Language)"
       - Example: "noctem (Latin)"
       - For Romance languages, prefer "(Latin)" whenever plausible.
       - Do not use overly specific labels like "Late Latin", "Vulgar Latin", or "Medieval Latin".
-      - Prefer keeping the current value over replacing it with something weak or artificial.
+      - Avoid pseudo-historical or weak roots that merely imitate the modern word.
+      - If the current root is just the same modern surface word with a language label, prefer a clearer historical/borrowed source or return null.
+      - Prefer a simple, defensible source such as Latin, Ancient Greek, Arabic, Proto-Germanic, or a clear modern donor language over artificial intermediate forms.
+      - For clear loanwords like "film", a direct donor-language root such as "film (English)" is acceptable.
+      - Prefer keeping the current value over replacing it with something equally weak or artificial.
 
       Output JSON only:
       {
