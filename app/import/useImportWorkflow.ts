@@ -18,8 +18,10 @@ import {
   buildDuplicateIndex,
   hasDuplicateEntry,
   isNounPartOfSpeech,
+  isSuspiciousRootWord,
   isVerbPartOfSpeech,
   normalizeRootWord,
+  sanitizeRootWordForImport,
 } from "@/app/lib/vocab-form";
 import type { AnalyzedWord, ImportBatchRunSummary, ImportLog, ImportProgress, ParsedRow, Phase } from "./types";
 
@@ -37,7 +39,12 @@ async function loadDuplicateIndex(lang: string) {
   return buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
 }
 
-function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
+function toAnalyzedWord(
+  index: number,
+  row: ParsedRow,
+  aiData: Awaited<ReturnType<typeof generateVocabInfo>>,
+  languageCode: string
+): AnalyzedWord {
   const isNeedsHint = aiData.status === "needs_hint";
   return {
     id: index,
@@ -45,7 +52,7 @@ function toAnalyzedWord(index: number, row: ParsedRow, aiData: Awaited<ReturnTyp
     translation: aiData?.translation || row.translation || "",
     part_of_speech: aiData?.part_of_speech || row.pos || "",
     gender: aiData?.gender || "",
-    root_word: normalizeRootWord(aiData?.root_word),
+    root_word: sanitizeRootWordForImport(aiData?.word || row.word, aiData?.root_word, languageCode),
     verb_type: aiData?.verb_type || "",
     category_id: aiData?.category_id || "",
     example_sentence: aiData?.example_sentence || "",
@@ -64,40 +71,6 @@ function hasImportFallbackDisambiguation(row: Pick<ParsedRow, "translation" | "p
 
 function isSingleWordEntry(word: string): boolean {
   return !/\s/.test(word.trim());
-}
-
-function getComparableSurfaceLemma(word: string): string {
-  return word
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function getComparableRootLemma(rootWord: string): string {
-  return normalizeRootWord(rootWord)
-    .replace(/\s*\([^)]*\)\s*$/, "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function getRootLanguageLabel(rootWord: string): string {
-  const match = normalizeRootWord(rootWord).match(/\(([^)]+)\)\s*$/);
-  return match ? match[1].trim().toLowerCase() : "";
-}
-
-function getCurrentLanguageLabels(languageCode: string): string[] {
-  const normalized = languageCode.trim().toLowerCase();
-
-  if (normalized === "it") return ["italian", "italiano"];
-  if (normalized === "es") return ["spanish", "espanol", "español"];
-  if (normalized === "fr") return ["french", "francais", "français"];
-  if (normalized === "de") return ["german", "deutsch"];
-  if (normalized === "pt") return ["portuguese", "portugues", "português"];
-
-  return [normalized];
 }
 
 function isReadyImportRow(row: Pick<AnalyzedWord, "ai_status" | "word" | "translation" | "part_of_speech">): boolean {
@@ -133,26 +106,7 @@ function rowNeedsExampleEnrichment(row: AnalyzedWord): boolean {
 }
 
 function looksSuspiciousRootWord(word: string, rootWord: string, languageCode: string): boolean {
-  const normalizedRoot = normalizeRootWord(rootWord);
-  if (!normalizedRoot) return false;
-
-  if (!/^.+ \([A-Za-z][A-Za-z\s-]*\)$/.test(normalizedRoot)) {
-    return true;
-  }
-
-  if (/\((?:Late Latin|Vulgar Latin|Medieval Latin|Post-Classical Latin)\)$/i.test(normalizedRoot)) {
-    return true;
-  }
-
-  const rootLanguage = getRootLanguageLabel(normalizedRoot);
-  if (getCurrentLanguageLabels(languageCode).includes(rootLanguage)) {
-    return true;
-  }
-
-  const rootLemma = getComparableRootLemma(normalizedRoot);
-  const surfaceLemma = getComparableSurfaceLemma(word);
-
-  return rootLemma === surfaceLemma;
+  return isSuspiciousRootWord(word, rootWord, languageCode);
 }
 
 function rowNeedsRootQualityCorrection(row: AnalyzedWord, languageCode: string): boolean {
@@ -166,7 +120,7 @@ function rowNeedsRootQualityCorrection(row: AnalyzedWord, languageCode: string):
 
 function hasClearlyBetterRootWord(word: string, currentRootWord: string, nextRootWord: string, languageCode: string): boolean {
   const normalizedCurrent = normalizeRootWord(currentRootWord);
-  const normalizedNext = normalizeRootWord(nextRootWord);
+  const normalizedNext = sanitizeRootWordForImport(word, nextRootWord, languageCode);
 
   if (!normalizedNext || normalizedNext === normalizedCurrent) return false;
   if (!looksSuspiciousRootWord(word, normalizedCurrent, languageCode)) return false;
@@ -175,13 +129,17 @@ function hasClearlyBetterRootWord(word: string, currentRootWord: string, nextRoo
   return true;
 }
 
-function mergeMissingSupportFields(row: AnalyzedWord, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
+function mergeMissingSupportFields(
+  row: AnalyzedWord,
+  aiData: Awaited<ReturnType<typeof generateVocabInfo>>,
+  languageCode: string
+): AnalyzedWord {
   if (aiData.status !== "ok") return row;
 
   return {
     ...row,
     gender: row.gender.trim() ? row.gender : aiData.gender || "",
-    root_word: row.root_word.trim() ? row.root_word : normalizeRootWord(aiData.root_word),
+    root_word: row.root_word.trim() ? row.root_word : sanitizeRootWordForImport(row.word, aiData.root_word, languageCode),
     conjugation: row.conjugation.trim() ? row.conjugation : aiData.conjugation || "",
     example_sentence: row.example_sentence.trim() ? row.example_sentence : aiData.example_sentence || "",
     example_translation: row.example_translation.trim() ? row.example_translation : aiData.example_translation || "",
@@ -192,9 +150,11 @@ function toImportReadyWord(
   index: number,
   row: ParsedRow,
   aiData?: Awaited<ReturnType<typeof generateVocabInfo>>,
-  message?: string
+  message?: string,
+  languageCode?: string
 ): AnalyzedWord {
   const canUseAiEnrichment = aiData && aiData.status === "ok";
+  const resolvedLanguageCode = languageCode || "";
 
   return {
     id: index,
@@ -202,7 +162,7 @@ function toImportReadyWord(
     translation: row.translation || "",
     part_of_speech: row.pos || "",
     gender: (canUseAiEnrichment && aiData.gender) || "",
-    root_word: normalizeRootWord(canUseAiEnrichment ? aiData.root_word : null),
+    root_word: sanitizeRootWordForImport(row.word, canUseAiEnrichment ? aiData.root_word : null, resolvedLanguageCode),
     verb_type: (canUseAiEnrichment && aiData.verb_type) || "",
     category_id: (canUseAiEnrichment && aiData.category_id) || "",
     example_sentence: (canUseAiEnrichment && aiData.example_sentence) || "",
@@ -375,7 +335,8 @@ export function useImportWorkflow() {
                 index,
                 currentRow,
                 undefined,
-                "Used CSV part of speech and meaning because the AI stayed conservative."
+                "Used CSV part of speech and meaning because the AI stayed conservative.",
+                selectedLang
               );
               if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech)) {
                 setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${fallbackRow.part_of_speech}` }, ...prev]);
@@ -395,7 +356,7 @@ export function useImportWorkflow() {
               continue;
             }
 
-            nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData));
+            nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData, selectedLang));
             setAnalyzedData([...nextAnalyzed]);
             setLogs((prev) => [
               {
@@ -414,7 +375,8 @@ export function useImportWorkflow() {
                 index,
                 currentRow,
                 undefined,
-                "Used CSV part of speech and meaning because AI enrichment was unavailable."
+                "Used CSV part of speech and meaning because AI enrichment was unavailable.",
+                selectedLang
               );
               if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech)) {
                 setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${fallbackRow.part_of_speech}` }, ...prev]);
@@ -439,8 +401,8 @@ export function useImportWorkflow() {
           }
 
           const preparedRow = hasCsvDisambiguation
-            ? toImportReadyWord(index, currentRow, aiData)
-            : toAnalyzedWord(index, currentRow, aiData);
+            ? toImportReadyWord(index, currentRow, aiData, undefined, selectedLang)
+            : toAnalyzedWord(index, currentRow, aiData, selectedLang);
 
           if (hasDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech)) {
             setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${preparedRow.part_of_speech}` }, ...prev]);
@@ -526,7 +488,8 @@ export function useImportWorkflow() {
             id,
             rerunSourceRow,
             undefined,
-            "Used the current POS and meaning because AI enrichment was unavailable."
+            "Used the current POS and meaning because AI enrichment was unavailable.",
+            selectedLang
           );
           setAnalyzedData((prev) =>
             prev.map((item) =>
@@ -571,9 +534,10 @@ export function useImportWorkflow() {
                   id,
                   rerunSourceRow,
                   aiData.status === "ok" ? aiData : undefined,
-                  aiData.status === "needs_hint" ? "Used the current POS and meaning because the AI stayed conservative." : ""
+                  aiData.status === "needs_hint" ? "Used the current POS and meaning because the AI stayed conservative." : "",
+                  selectedLang
                 )
-              : toAnalyzedWord(id, rerunSourceRow, aiData);
+              : toAnalyzedWord(id, rerunSourceRow, aiData, selectedLang);
 
           return {
             ...item,
@@ -668,7 +632,7 @@ export function useImportWorkflow() {
             setAnalyzedData((prev) =>
               prev.map((item) => {
                 if (item.id !== row.id) return item;
-                const next = mergeMissingSupportFields(item, aiData);
+                const next = mergeMissingSupportFields(item, aiData, selectedLang);
                 const changed =
                   next.gender !== item.gender ||
                   next.root_word !== item.root_word ||
@@ -974,7 +938,7 @@ export function useImportWorkflow() {
             partOfSpeech: row.part_of_speech,
           });
 
-          const nextRootWord = normalizeRootWord(result.root_word);
+          const nextRootWord = sanitizeRootWordForImport(row.word, result.root_word, selectedLang);
           if (nextRootWord) {
             setAnalyzedData((prev) =>
               prev.map((item) => {

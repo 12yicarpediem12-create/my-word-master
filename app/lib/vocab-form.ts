@@ -103,6 +103,128 @@ export function normalizeRootWord(value: string | null | undefined): string {
   return String(value || "").replace(/^\*/, "").replace(/\s*↗$/, "");
 }
 
+function getComparableSurfaceLemma(word: string): string {
+  return word
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getComparableRootLemma(rootWord: string): string {
+  return normalizeRootWord(rootWord)
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getRootLanguageLabel(rootWord: string): string {
+  const match = normalizeRootWord(rootWord).match(/\(([^)]+)\)\s*$/);
+  return match ? match[1].trim().toLowerCase() : "";
+}
+
+function getCurrentLanguageLabels(languageCode: string): string[] {
+  const normalized = languageCode.trim().toLowerCase();
+
+  if (normalized === "it") return ["italian", "italiano"];
+  if (normalized === "es") return ["spanish", "espanol", "español"];
+  if (normalized === "fr") return ["french", "francais", "français"];
+  if (normalized === "de") return ["german", "deutsch"];
+  if (normalized === "pt") return ["portuguese", "portugues", "português"];
+
+  return [normalized];
+}
+
+function isRomanceLanguageCode(languageCode: string): boolean {
+  const normalized = languageCode.trim().toLowerCase();
+  return normalized === "it" || normalized === "es" || normalized === "fr" || normalized === "pt";
+}
+
+function getBigramDiceCoefficient(left: string, right: string): number {
+  if (left === right) return 1;
+  if (left.length < 2 || right.length < 2) return 0;
+
+  const leftBigrams = new Map<string, number>();
+  for (let index = 0; index < left.length - 1; index++) {
+    const gram = left.slice(index, index + 2);
+    leftBigrams.set(gram, (leftBigrams.get(gram) || 0) + 1);
+  }
+
+  let overlap = 0;
+  for (let index = 0; index < right.length - 1; index++) {
+    const gram = right.slice(index, index + 2);
+    const count = leftBigrams.get(gram) || 0;
+    if (count > 0) {
+      overlap += 1;
+      leftBigrams.set(gram, count - 1);
+    }
+  }
+
+  return (2 * overlap) / ((left.length - 1) + (right.length - 1));
+}
+
+function looksOpaqueHistoricalRoot(word: string, rootWord: string, languageCode: string): boolean {
+  if (!isRomanceLanguageCode(languageCode)) return false;
+
+  const rootLanguage = getRootLanguageLabel(rootWord);
+  if (rootLanguage !== "latin") return false;
+
+  const surfaceLemma = getComparableSurfaceLemma(word);
+  const rootLemma = getComparableRootLemma(rootWord);
+
+  if (surfaceLemma.length < 5 || rootLemma.length < 5) return false;
+
+  const similarity = getBigramDiceCoefficient(surfaceLemma, rootLemma);
+
+  return similarity < 0.32;
+}
+
+export function isSuspiciousRootWord(
+  word: string | null | undefined,
+  rootWord: string | null | undefined,
+  languageCode: string | null | undefined
+): boolean {
+  const normalizedRoot = normalizeRootWord(rootWord);
+  const normalizedLanguage = String(languageCode || "").trim().toLowerCase();
+  const surfaceWord = String(word || "").trim();
+
+  if (!normalizedRoot || !normalizedLanguage || !surfaceWord) return false;
+
+  if (!/^.+ \([A-Za-z][A-Za-z\s-]*\)$/.test(normalizedRoot)) {
+    return true;
+  }
+
+  if (/\((?:Late Latin|Vulgar Latin|Medieval Latin|Post-Classical Latin)\)$/i.test(normalizedRoot)) {
+    return true;
+  }
+
+  const rootLanguage = getRootLanguageLabel(normalizedRoot);
+  if (getCurrentLanguageLabels(normalizedLanguage).includes(rootLanguage)) {
+    return true;
+  }
+
+  const rootLemma = getComparableRootLemma(normalizedRoot);
+  const surfaceLemma = getComparableSurfaceLemma(surfaceWord);
+
+  if (rootLemma === surfaceLemma) {
+    return true;
+  }
+
+  return looksOpaqueHistoricalRoot(surfaceWord, normalizedRoot, normalizedLanguage);
+}
+
+export function sanitizeRootWordForImport(
+  word: string | null | undefined,
+  rootWord: string | null | undefined,
+  languageCode: string | null | undefined
+): string {
+  const normalizedRoot = normalizeRootWord(rootWord);
+  if (!normalizedRoot) return "";
+  return isSuspiciousRootWord(word, normalizedRoot, languageCode) ? "" : normalizedRoot;
+}
+
 export function buildDuplicateIndex(rows: Array<{ word: string; part_of_speech?: string | null }>): DuplicateIndexEntry[] {
   return rows.map((row) => ({
     cleanWord: normalizeWordForLookup(row.word),
