@@ -14,6 +14,10 @@ import {
   WorkspaceSelectionBar,
   WorkspaceUtilityPanel,
 } from "../components/workspace/VocabWorkspace";
+import {
+  buildLibraryExportFilename,
+  downloadLibraryCsvExport,
+} from "../lib/export-csv";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
 const supabase = getSupabaseBrowserClient();
@@ -153,7 +157,7 @@ export default function LibraryPage() {
         supabase.from("languages").select("*"),
         supabase
           .from("vocab")
-          .select("id, language_code, word, translation, part_of_speech, gender, verb_type, is_remembered")
+          .select("id, language_code, word, translation, part_of_speech, gender, verb_type, root_word, example_sentence, example_translation, conjugation, notes, category_id, is_remembered")
           .order("created_at", { ascending: false })
       ]);
       
@@ -204,6 +208,13 @@ export default function LibraryPage() {
     setIsDeleting(false);
   };
 
+  const handleExportCurrentView = () => {
+    downloadLibraryCsvExport(
+      filteredVocab,
+      buildLibraryExportFilename(selectedLang, filterStatus),
+    );
+  };
+
   return (
     <AppShell className="pb-32 relative">
       <AppHeader primarySection="library" backHref="/" backLabel="Dashboard" />
@@ -227,6 +238,13 @@ export default function LibraryPage() {
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-500">
                   {selectedIds.length} selected
                 </span>
+                <button
+                  onClick={handleExportCurrentView}
+                  disabled={filteredVocab.length === 0}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-500 shadow-sm transition-all hover:text-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:text-slate-500"
+                >
+                  Export current view
+                </button>
                 {filteredVocab.length > 0 && (
                   <button
                     onClick={handleSelectAll}
