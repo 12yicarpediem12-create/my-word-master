@@ -674,11 +674,13 @@ export function useImportWorkflow() {
     let updatedCount = 0;
     let noResultCount = 0;
     let errorCount = 0;
+    let sampleDetail: string | undefined;
     setMissingGenderSummary({
       attempted: eligibleRows.length,
       updated: 0,
       noResult: 0,
       failed: 0,
+      sampleDetail: undefined,
     });
 
     try {
@@ -699,8 +701,8 @@ export function useImportWorkflow() {
             partOfSpeech: row.part_of_speech,
           });
 
-          const nextGender = result.gender;
-          if (nextGender) {
+          if (result.status === "ok" && result.gender) {
+            const nextGender = result.gender;
             setAnalyzedData((prev) =>
               prev.map((item) => {
                 if (item.id !== row.id || item.gender.trim()) return item;
@@ -711,17 +713,20 @@ export function useImportWorkflow() {
                 };
               })
             );
-          } else if (result.error) {
+          } else if (result.status === "error") {
             errorCount += 1;
+            if (!sampleDetail && result.detail) sampleDetail = result.detail;
             setLogs((prev) => [
-              { word: row.word, status: "error", message: `Gender enrichment failed: ${result.error}` },
+              { word: row.word, status: "error", message: `Gender enrichment failed: ${result.detail || "Unknown error"}` },
               ...prev,
             ]);
           } else {
             noResultCount += 1;
+            if (!sampleDetail && result.detail) sampleDetail = result.detail;
           }
         } catch {
           errorCount += 1;
+          if (!sampleDetail) sampleDetail = `Gender enrichment failed unexpectedly for ${row.word}.`;
           setLogs((prev) => [
             { word: row.word, status: "error", message: "Gender enrichment failed." },
             ...prev,
@@ -749,6 +754,7 @@ export function useImportWorkflow() {
         updated: updatedCount,
         noResult: noResultCount,
         failed: errorCount,
+        sampleDetail,
       });
     } finally {
       setMissingGenderProgress({

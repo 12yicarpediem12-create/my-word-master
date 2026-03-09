@@ -42,4 +42,5 @@ export type ImportBatchRunSummary = {
   updated: number;
   noResult: number;
   failed: number;
+  sampleDetail?: string;
 };

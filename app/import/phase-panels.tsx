@@ -71,6 +71,11 @@ function BatchRunSummary({
         <span>No usable value: {summary.noResult}</span>
         <span>Failed: {summary.failed}</span>
       </div>
+      {summary.sampleDetail && (
+        <p className="mt-3 text-xs leading-relaxed text-slate-700">
+          <span className="font-semibold text-slate-900">Sample detail:</span> {summary.sampleDetail}
+        </p>
+      )}
     </div>
   );
 }

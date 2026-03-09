@@ -45,6 +45,14 @@ function toSafeAiErrorMessage(error: unknown): string {
   return "AI request failed. Please try again.";
 }
 
+function toAiDebugDetail(error: unknown): string {
+  if (error instanceof Error) {
+    const trimmed = error.message.trim();
+    if (trimmed) return trimmed;
+  }
+  return "Unknown AI error";
+}
+
 function parseAiJsonContent<T>(content: string): T | null {
   const trimmed = content.trim();
   const candidates = [
@@ -284,6 +292,12 @@ export type GenerateImportNounGenderInput = {
   partOfSpeech: string;
 };
 
+type ImportNounGenderResult = {
+  status: "ok" | "no_result" | "error";
+  gender: "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null;
+  detail?: string;
+};
+
 export type GenerateImportVerbConjugationInput = {
   word: string;
   langCode: string;
@@ -315,7 +329,7 @@ export type GenerateImportBetterRootWordInput = {
 
 export async function generateImportNounGender(
   input: GenerateImportNounGenderInput
-): Promise<{ gender: "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null; error?: string }> {
+): Promise<ImportNounGenderResult> {
   const word = input.word.trim();
   const langCode = input.langCode.trim();
   const intendedMeaning = input.intendedMeaning.trim();
@@ -366,19 +380,25 @@ export async function generateImportNounGender(
     const parsed = parseAiJsonContent<{ gender?: unknown } | string>(content);
     if (typeof parsed === "string") {
       return {
+        status: normalizeNounGender(parsed) ? "ok" : "no_result",
         gender: normalizeNounGender(parsed) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+        detail: normalizeNounGender(parsed) ? undefined : `Targeted gender call returned an unrecognized scalar: ${parsed}`,
       };
     }
 
     if (parsed && typeof parsed === "object") {
+      const normalizedGender = normalizeNounGender(parsed.gender);
       return {
-        gender: normalizeNounGender(parsed.gender) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+        status: normalizedGender ? "ok" : "no_result",
+        gender: normalizedGender as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+        detail: normalizedGender ? undefined : `Targeted gender call returned no usable gender for ${word}.`,
       };
     }
 
     const fallbackGender = normalizeNounGender(content);
     if (fallbackGender) {
       return {
+        status: "ok",
         gender: fallbackGender as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
       };
     }
@@ -397,27 +417,37 @@ export async function generateImportNounGender(
       });
 
       if (fallback.status === "ok") {
+        const fallbackGender = normalizeNounGender(fallback.gender);
         return {
-          gender: normalizeNounGender(fallback.gender) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+          status: fallbackGender ? "ok" : "no_result",
+          gender: fallbackGender as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+          detail: fallbackGender ? undefined : `Targeted gender call failed, and the broad fallback returned no noun gender for ${word}.`,
+        };
+      }
+
+      if (fallback.status === "needs_hint") {
+        return {
+          status: "no_result",
+          gender: null,
+          detail: `Targeted gender call failed, and the broad fallback stayed conservative for ${word}.`,
         };
       }
 
       return {
+        status: "error",
         gender: null,
-        error:
-          fallback.status === "error"
-            ? `Targeted gender call failed; broad fallback also failed: ${fallback.error}`
-            : `Targeted gender call failed; broad fallback returned no usable noun gender.`,
+        detail: `Targeted gender call failed; broad fallback also failed: ${fallback.error}`,
       };
     } catch (fallbackError) {
       const targetedMessage =
         error instanceof Error && /Unexpected gender response format/i.test(error.message)
           ? error.message
-          : toSafeAiErrorMessage(error);
+          : `${toSafeAiErrorMessage(error)} Raw: ${toAiDebugDetail(error)}`;
 
       return {
+        status: "error",
         gender: null,
-        error: `Targeted gender call failed: ${targetedMessage}. Broad fallback failed: ${toSafeAiErrorMessage(fallbackError)}`,
+        detail: `Targeted gender call failed: ${targetedMessage}. Broad fallback failed: ${toSafeAiErrorMessage(fallbackError)} Raw: ${toAiDebugDetail(fallbackError)}`,
       };
     }
   }
