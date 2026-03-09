@@ -380,6 +380,7 @@ function WordEntryBlock({
             />
             {entry.gender && <QuickFact label="Gender" value={entry.gender} tone="emerald" />}
             {entry.verb_type && <QuickFact label="Verb Type" value={entry.verb_type} tone="emerald" />}
+            {entry.root_word && <QuickFact label="Root" value={entry.root_word.replace(/^\*/, "")} tone="rose" />}
           </div>
 
           <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-5">

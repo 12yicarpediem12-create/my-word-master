@@ -205,6 +205,67 @@ export function ImportReviewTable({
                         />
                       </td>
                     </tr>
+                    <tr className="border-b border-slate-100 bg-slate-50/35">
+                      <td className="p-4"></td>
+                      <td className="p-4 align-top" colSpan={6}>
+                        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                          <div className="space-y-2">
+                            <label className="support-label">Example sentence</label>
+                            <textarea
+                              value={item.example_sentence}
+                              onChange={(e) => onEditChange(item.id, "example_sentence", e.target.value)}
+                              rows={3}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-blue-400"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="support-label">Example translation</label>
+                            <textarea
+                              value={item.example_translation}
+                              onChange={(e) => onEditChange(item.id, "example_translation", e.target.value)}
+                              rows={3}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-blue-400"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="support-label">Verb type</label>
+                            <input
+                              type="text"
+                              value={item.verb_type}
+                              onChange={(e) => onEditChange(item.id, "verb_type", e.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-emerald-400"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="support-label">Conjugation</label>
+                            <textarea
+                              value={item.conjugation}
+                              onChange={(e) => onEditChange(item.id, "conjugation", e.target.value)}
+                              rows={4}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-amber-400"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="support-label">Notes</label>
+                            <textarea
+                              value={item.notes}
+                              onChange={(e) => onEditChange(item.id, "notes", e.target.value)}
+                              rows={4}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-slate-400"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="support-label">Category ID</label>
+                            <input
+                              type="text"
+                              value={item.category_id}
+                              onChange={(e) => onEditChange(item.id, "category_id", e.target.value)}
+                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-purple-400"
+                            />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
                     {isNeedsHint && (
                       <tr className="border-b border-amber-100 bg-amber-50/25">
                         <td className="p-4"></td>
