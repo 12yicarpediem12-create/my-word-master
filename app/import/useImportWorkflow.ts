@@ -266,6 +266,7 @@ export function useImportWorkflow() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (header) => header.replace(/^\uFEFF/, "").trim().toLowerCase(),
       complete: (results) => {
         if (results.meta.fields && !results.meta.fields.includes("word")) {
           setErrorMsg("CSV must contain a 'word' column header.");
@@ -285,6 +286,12 @@ export function useImportWorkflow() {
           });
           return acc;
         }, []);
+
+        if (formattedData.length === 0) {
+          setErrorMsg("No usable rows were found. Make sure the CSV includes non-empty values in the word column.");
+          setParsedData([]);
+          return;
+        }
 
         setParsedData(formattedData);
       },
