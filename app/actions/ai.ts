@@ -535,6 +535,15 @@ export async function generateImportExamples(
       - Do NOT rewrite the meaning or part of speech.
       - The example must match the exact intended POS and central meaning/use.
       - Prefer a short, natural, beginner-friendly example when possible.
+      - The sentence should sound like something a real person would naturally say or write in everyday use.
+      - Keep the sentence simple enough to say aloud and easy to study.
+      - Prefer one clear use of the target entry over clever, literary, poetic, or highly formal phrasing.
+      - Do NOT write dictionary-style explanatory sentences.
+      - Do NOT add extra nuance, contrast, or multiple senses into the same example.
+      - Avoid examples that feel overly abstract, academic, ceremonial, or rare unless the lexical identity itself requires that register.
+      - Use the target word in a way that makes the intended POS obvious in context.
+      - The English translation should be natural, clear, and closely matched to the example sentence.
+      - The English translation should translate the sentence, not explain the word.
       - If the entry is clear, strongly prefer returning both fields rather than leaving them blank.
 
       Output JSON only:
