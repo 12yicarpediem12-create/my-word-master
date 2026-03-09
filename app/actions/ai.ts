@@ -45,6 +45,32 @@ function toSafeAiErrorMessage(error: unknown): string {
   return "AI request failed. Please try again.";
 }
 
+function parseAiJsonContent<T>(content: string): T | null {
+  const trimmed = content.trim();
+  const candidates = [
+    trimmed,
+    trimmed.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim(),
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      return JSON.parse(candidate) as T;
+    } catch {
+      const objectMatch = candidate.match(/\{[\s\S]*\}/);
+      if (objectMatch) {
+        try {
+          return JSON.parse(objectMatch[0]) as T;
+        } catch {
+          // keep trying
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 export async function generateVocabInfo(
   input: GenerateVocabInfoInput
 ): Promise<AiVocabSuccess | AiVocabNeedsHint | AiVocabError> {
@@ -337,15 +363,35 @@ export async function generateImportNounGender(
 
     if (!content) throw new Error("Gemini returned an empty response");
 
-    const parsed = JSON.parse(content) as { gender?: unknown };
-    return {
-      gender: normalizeNounGender(parsed.gender) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
-    };
+    const parsed = parseAiJsonContent<{ gender?: unknown } | string>(content);
+    if (typeof parsed === "string") {
+      return {
+        gender: normalizeNounGender(parsed) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+      };
+    }
+
+    if (parsed && typeof parsed === "object") {
+      return {
+        gender: normalizeNounGender(parsed.gender) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+      };
+    }
+
+    const fallbackGender = normalizeNounGender(content);
+    if (fallbackGender) {
+      return {
+        gender: fallbackGender as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+      };
+    }
+
+    throw new Error(`Unexpected gender response format: ${content.slice(0, 120)}`);
   } catch (error) {
     console.error("Gemini noun gender enrichment error:", error);
     return {
       gender: null,
-      error: toSafeAiErrorMessage(error),
+      error:
+        error instanceof Error && /Unexpected gender response format/i.test(error.message)
+          ? error.message
+          : toSafeAiErrorMessage(error),
     };
   }
 }
