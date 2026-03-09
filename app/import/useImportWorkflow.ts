@@ -667,6 +667,8 @@ export function useImportWorkflow() {
     });
 
     let updatedCount = 0;
+    let noResultCount = 0;
+    let errorCount = 0;
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -699,12 +701,16 @@ export function useImportWorkflow() {
               })
             );
           } else if (result.error) {
+            errorCount += 1;
             setLogs((prev) => [
               { word: row.word, status: "error", message: `Gender enrichment failed: ${result.error}` },
               ...prev,
             ]);
+          } else {
+            noResultCount += 1;
           }
         } catch {
+          errorCount += 1;
           setLogs((prev) => [
             { word: row.word, status: "error", message: "Gender enrichment failed." },
             ...prev,
@@ -717,8 +723,13 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: `${updatedCount} noun row${updatedCount === 1 ? "" : "s"}`,
-          status: "success",
-          message: "Filled missing noun gender where AI could provide a defensible answer.",
+          status: updatedCount > 0 ? "success" : errorCount > 0 ? "error" : "needs_hint",
+          message:
+            updatedCount > 0
+              ? `Filled missing noun gender for ${updatedCount} row${updatedCount === 1 ? "" : "s"}${noResultCount > 0 ? ` · ${noResultCount} returned no usable gender` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+              : noResultCount > 0 || errorCount > 0
+                ? `No noun gender values were filled${noResultCount > 0 ? ` · ${noResultCount} returned no usable gender` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+                : "No eligible noun rows changed.",
         },
         ...prev,
       ]);
@@ -748,6 +759,8 @@ export function useImportWorkflow() {
     });
 
     let updatedCount = 0;
+    let noResultCount = 0;
+    let errorCount = 0;
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -791,12 +804,16 @@ export function useImportWorkflow() {
               })
             );
           } else if (result.error) {
+            errorCount += 1;
             setLogs((prev) => [
               { word: row.word, status: "error", message: `Conjugation enrichment failed: ${result.error}` },
               ...prev,
             ]);
+          } else {
+            noResultCount += 1;
           }
         } catch {
+          errorCount += 1;
           setLogs((prev) => [
             { word: row.word, status: "error", message: "Conjugation enrichment failed." },
             ...prev,
@@ -809,8 +826,13 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: `${updatedCount} verb row${updatedCount === 1 ? "" : "s"}`,
-          status: "success",
-          message: "Filled missing verb conjugation where AI could provide a defensible answer.",
+          status: updatedCount > 0 ? "success" : errorCount > 0 ? "error" : "needs_hint",
+          message:
+            updatedCount > 0
+              ? `Filled missing verb conjugation for ${updatedCount} row${updatedCount === 1 ? "" : "s"}${noResultCount > 0 ? ` · ${noResultCount} returned no usable conjugation` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+              : noResultCount > 0 || errorCount > 0
+                ? `No conjugation values were filled${noResultCount > 0 ? ` · ${noResultCount} returned no usable conjugation` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+                : "No eligible verb rows changed.",
         },
         ...prev,
       ]);
@@ -840,6 +862,8 @@ export function useImportWorkflow() {
     });
 
     let updatedCount = 0;
+    let noResultCount = 0;
+    let errorCount = 0;
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -872,12 +896,16 @@ export function useImportWorkflow() {
               })
             );
           } else if (result.error) {
+            errorCount += 1;
             setLogs((prev) => [
               { word: row.word, status: "error", message: `Root enrichment failed: ${result.error}` },
               ...prev,
             ]);
+          } else {
+            noResultCount += 1;
           }
         } catch {
+          errorCount += 1;
           setLogs((prev) => [
             { word: row.word, status: "error", message: "Root enrichment failed." },
             ...prev,
@@ -890,8 +918,13 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
-          status: "success",
-          message: "Filled missing root words where AI could provide a defensible answer.",
+          status: updatedCount > 0 ? "success" : errorCount > 0 ? "error" : "needs_hint",
+          message:
+            updatedCount > 0
+              ? `Filled missing roots for ${updatedCount} row${updatedCount === 1 ? "" : "s"}${noResultCount > 0 ? ` · ${noResultCount} returned no usable root` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+              : noResultCount > 0 || errorCount > 0
+                ? `No roots were filled${noResultCount > 0 ? ` · ${noResultCount} returned no usable root` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+                : "No eligible single-word rows changed.",
         },
         ...prev,
       ]);
@@ -921,6 +954,8 @@ export function useImportWorkflow() {
     });
 
     let updatedCount = 0;
+    let noResultCount = 0;
+    let errorCount = 0;
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -964,12 +999,16 @@ export function useImportWorkflow() {
               })
             );
           } else if (result.error) {
+            errorCount += 1;
             setLogs((prev) => [
               { word: row.word, status: "error", message: `Example enrichment failed: ${result.error}` },
               ...prev,
             ]);
+          } else {
+            noResultCount += 1;
           }
         } catch {
+          errorCount += 1;
           setLogs((prev) => [
             { word: row.word, status: "error", message: "Example enrichment failed." },
             ...prev,
@@ -982,8 +1021,13 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
-          status: "success",
-          message: "Filled missing example fields where AI could provide a defensible answer.",
+          status: updatedCount > 0 ? "success" : errorCount > 0 ? "error" : "needs_hint",
+          message:
+            updatedCount > 0
+              ? `Filled missing examples for ${updatedCount} row${updatedCount === 1 ? "" : "s"}${noResultCount > 0 ? ` · ${noResultCount} returned no usable examples` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+              : noResultCount > 0 || errorCount > 0
+                ? `No example fields were filled${noResultCount > 0 ? ` · ${noResultCount} returned no usable examples` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+                : "No eligible rows changed.",
         },
         ...prev,
       ]);
@@ -1013,6 +1057,8 @@ export function useImportWorkflow() {
     });
 
     let updatedCount = 0;
+    let noResultCount = 0;
+    let errorCount = 0;
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -1047,12 +1093,16 @@ export function useImportWorkflow() {
               })
             );
           } else if (result.error) {
+            errorCount += 1;
             setLogs((prev) => [
               { word: row.word, status: "error", message: `Root quality correction failed: ${result.error}` },
               ...prev,
             ]);
+          } else {
+            noResultCount += 1;
           }
         } catch {
+          errorCount += 1;
           setLogs((prev) => [
             { word: row.word, status: "error", message: "Root quality correction failed." },
             ...prev,
@@ -1065,8 +1115,13 @@ export function useImportWorkflow() {
       setLogs((prev) => [
         {
           word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
-          status: "success",
-          message: "Improved weak root values where AI found a clearly better alternative.",
+          status: updatedCount > 0 ? "success" : errorCount > 0 ? "error" : "needs_hint",
+          message:
+            updatedCount > 0
+              ? `Improved weak roots for ${updatedCount} row${updatedCount === 1 ? "" : "s"}${noResultCount > 0 ? ` · ${noResultCount} returned no better root` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+              : noResultCount > 0 || errorCount > 0
+                ? `No roots were improved${noResultCount > 0 ? ` · ${noResultCount} returned no better root` : ""}${errorCount > 0 ? ` · ${errorCount} failed` : ""}.`
+                : "No eligible weak-root rows changed.",
         },
         ...prev,
       ]);
