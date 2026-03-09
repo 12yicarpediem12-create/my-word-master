@@ -17,6 +17,34 @@ function getReviewStatus(item: AnalyzedWord) {
   };
 }
 
+function getSupportSummary(item: AnalyzedWord) {
+  const hasExamples = Boolean(item.example_sentence.trim() && item.example_translation.trim());
+  const hasRoot = Boolean(item.root_word.trim());
+  const hasGender = Boolean(item.gender.trim());
+  const hasConjugation = Boolean(item.conjugation.trim());
+
+  const relevantChecks = [
+    { label: "Examples", complete: hasExamples },
+    { label: "Root", complete: hasRoot },
+    ...(item.part_of_speech.trim() ? [{ label: "Gender", complete: hasGender }] : []),
+    ...(item.part_of_speech.trim() ? [{ label: "Conjugation", complete: hasConjugation }] : []),
+  ];
+
+  const filteredChecks = relevantChecks.filter(({ label }) => {
+    if (label === "Gender") return /noun/i.test(item.part_of_speech);
+    if (label === "Conjugation") return /verb/i.test(item.part_of_speech);
+    return true;
+  });
+
+  const completedCount = filteredChecks.filter((check) => check.complete).length;
+
+  return {
+    checks: filteredChecks,
+    completedCount,
+    totalCount: filteredChecks.length,
+  };
+}
+
 export function ImportReviewTable({
   analyzedData,
   onRemove,
@@ -34,6 +62,7 @@ export function ImportReviewTable({
 }) {
   const tableRef = useRef<HTMLDivElement | null>(null);
   const [showNeedsHintOnly, setShowNeedsHintOnly] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<number[]>([]);
 
   const rowsWithStatus = useMemo(
     () =>
@@ -63,6 +92,10 @@ export function ImportReviewTable({
       setShowNeedsHintOnly(false);
     }
   }, [showNeedsHintOnly, unresolvedRows.length]);
+
+  const toggleExpandedRow = (id: number) => {
+    setExpandedRows((current) => (current.includes(id) ? current.filter((rowId) => rowId !== id) : [...current, id]));
+  };
 
   return (
     <div ref={tableRef} className="overflow-hidden rounded-[2rem] border border-slate-200/80 bg-white/85 shadow-[0_22px_44px_-38px_rgba(15,23,42,0.2)]">
@@ -120,7 +153,7 @@ export function ImportReviewTable({
         <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
             <tr className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-              <th className="w-10 p-4 text-center"></th>
+              <th className="w-14 p-4 text-center"></th>
               <th className="min-w-[100px] p-4">Status</th>
               <th className="min-w-[150px] p-4">Word</th>
               <th className="min-w-[150px] p-4">Meaning</th>
@@ -142,6 +175,8 @@ export function ImportReviewTable({
               displayedRows.map(({ item, status }) => {
                 const isNeedsHint = item.ai_status === "needs_hint";
                 const isRerunning = rerunningRowId === item.id;
+                const isExpanded = isNeedsHint || expandedRows.includes(item.id);
+                const supportSummary = getSupportSummary(item);
 
                 return (
                   <Fragment key={item.id}>
@@ -149,10 +184,19 @@ export function ImportReviewTable({
                       data-needs-hint={isNeedsHint ? "true" : "false"}
                       className={`group scroll-mt-32 transition-colors hover:bg-slate-50/80 ${isNeedsHint ? "bg-amber-50/45 ring-1 ring-inset ring-amber-100" : ""}`}
                     >
-                      <td className="p-4 text-center align-top">
-                        <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
-                          ✖
-                        </button>
+                      <td className="p-4 align-top">
+                        <div className="flex flex-col items-center gap-2">
+                          <button
+                            onClick={() => toggleExpandedRow(item.id)}
+                            className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-500 transition-colors hover:border-blue-200 hover:text-blue-700"
+                            title={isExpanded ? "Collapse support details" : "Expand support details"}
+                          >
+                            {isExpanded ? "Hide" : "Details"}
+                          </button>
+                          <button onClick={() => onRemove(item.id)} className="text-slate-300 transition-colors hover:text-red-500" title="Remove from import list">
+                            ✖
+                          </button>
+                        </div>
                       </td>
                       <td className="p-4 align-top">
                         <div className="space-y-2">
@@ -162,6 +206,28 @@ export function ImportReviewTable({
                           {status.message && (
                             <p className="max-w-[14rem] text-[11px] font-medium leading-relaxed text-slate-500">{status.message}</p>
                           )}
+                          <div className="pt-1">
+                            <p className="support-label">Support fields</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {supportSummary.checks.map(({ label, complete }) => (
+                                <span
+                                  key={label}
+                                  className={`rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
+                                    complete
+                                      ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                                      : "border-slate-200 bg-white text-slate-400"
+                                  }`}
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                            {supportSummary.totalCount > 0 && (
+                              <p className="mt-2 text-[11px] font-medium text-slate-400">
+                                {supportSummary.completedCount} of {supportSummary.totalCount} key support fields filled
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="p-2 align-top">
@@ -205,67 +271,69 @@ export function ImportReviewTable({
                         />
                       </td>
                     </tr>
-                    <tr className="border-b border-slate-100 bg-slate-50/35">
-                      <td className="p-4"></td>
-                      <td className="p-4 align-top" colSpan={6}>
-                        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                          <div className="space-y-2">
-                            <label className="support-label">Example sentence</label>
-                            <textarea
-                              value={item.example_sentence}
-                              onChange={(e) => onEditChange(item.id, "example_sentence", e.target.value)}
-                              rows={3}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-blue-400"
-                            />
+                    {isExpanded && (
+                      <tr className="border-b border-slate-100 bg-slate-50/35">
+                        <td className="p-4"></td>
+                        <td className="p-4 align-top" colSpan={6}>
+                          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                            <div className="space-y-2">
+                              <label className="support-label">Example sentence</label>
+                              <textarea
+                                value={item.example_sentence}
+                                onChange={(e) => onEditChange(item.id, "example_sentence", e.target.value)}
+                                rows={3}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-blue-400"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Example translation</label>
+                              <textarea
+                                value={item.example_translation}
+                                onChange={(e) => onEditChange(item.id, "example_translation", e.target.value)}
+                                rows={3}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-blue-400"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Verb type</label>
+                              <input
+                                type="text"
+                                value={item.verb_type}
+                                onChange={(e) => onEditChange(item.id, "verb_type", e.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-emerald-400"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Conjugation</label>
+                              <textarea
+                                value={item.conjugation}
+                                onChange={(e) => onEditChange(item.id, "conjugation", e.target.value)}
+                                rows={4}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-amber-400"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Notes</label>
+                              <textarea
+                                value={item.notes}
+                                onChange={(e) => onEditChange(item.id, "notes", e.target.value)}
+                                rows={4}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-slate-400"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Category ID</label>
+                              <input
+                                type="text"
+                                value={item.category_id}
+                                onChange={(e) => onEditChange(item.id, "category_id", e.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-purple-400"
+                              />
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <label className="support-label">Example translation</label>
-                            <textarea
-                              value={item.example_translation}
-                              onChange={(e) => onEditChange(item.id, "example_translation", e.target.value)}
-                              rows={3}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-blue-400"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="support-label">Verb type</label>
-                            <input
-                              type="text"
-                              value={item.verb_type}
-                              onChange={(e) => onEditChange(item.id, "verb_type", e.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-emerald-400"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="support-label">Conjugation</label>
-                            <textarea
-                              value={item.conjugation}
-                              onChange={(e) => onEditChange(item.id, "conjugation", e.target.value)}
-                              rows={4}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-amber-400"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="support-label">Notes</label>
-                            <textarea
-                              value={item.notes}
-                              onChange={(e) => onEditChange(item.id, "notes", e.target.value)}
-                              rows={4}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-slate-400"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label className="support-label">Category ID</label>
-                            <input
-                              type="text"
-                              value={item.category_id}
-                              onChange={(e) => onEditChange(item.id, "category_id", e.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-purple-400"
-                            />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                      </tr>
+                    )}
                     {isNeedsHint && (
                       <tr className="border-b border-amber-100 bg-amber-50/25">
                         <td className="p-4"></td>
