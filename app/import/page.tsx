@@ -51,14 +51,19 @@ export default function ImportPage() {
     analyzedCount,
     rerunningRowId,
     isEnrichingMissingGender,
+    missingGenderSummary,
     missingGenderProgress,
     isEnrichingMissingConjugation,
+    missingConjugationSummary,
     missingConjugationProgress,
     isEnrichingMissingRoots,
+    missingRootsSummary,
     missingRootsProgress,
     isEnrichingMissingExamples,
+    missingExamplesSummary,
     missingExamplesProgress,
     isImprovingWeakRoots,
+    weakRootsSummary,
     weakRootsProgress,
     isEnrichingSupportFields,
     supportEnrichmentProgress,
@@ -131,18 +136,23 @@ export default function ImportPage() {
             rerunningRowId={rerunningRowId}
             onFillMissingGender={handleFillMissingGender}
             isEnrichingMissingGender={isEnrichingMissingGender}
+            missingGenderSummary={missingGenderSummary}
             missingGenderProgress={missingGenderProgress}
             onFillMissingConjugation={handleFillMissingConjugation}
             isEnrichingMissingConjugation={isEnrichingMissingConjugation}
+            missingConjugationSummary={missingConjugationSummary}
             missingConjugationProgress={missingConjugationProgress}
             onFillMissingRoots={handleFillMissingRoots}
             isEnrichingMissingRoots={isEnrichingMissingRoots}
+            missingRootsSummary={missingRootsSummary}
             missingRootsProgress={missingRootsProgress}
             onFillMissingExamples={handleFillMissingExamples}
             isEnrichingMissingExamples={isEnrichingMissingExamples}
+            missingExamplesSummary={missingExamplesSummary}
             missingExamplesProgress={missingExamplesProgress}
             onImproveWeakRoots={handleImproveWeakRoots}
             isImprovingWeakRoots={isImprovingWeakRoots}
+            weakRootsSummary={weakRootsSummary}
             weakRootsProgress={weakRootsProgress}
             onEnrichSupportFields={handleEnrichReadyRows}
             isEnrichingSupportFields={isEnrichingSupportFields}

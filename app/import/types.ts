@@ -36,3 +36,10 @@ export type ImportProgress = {
   currentWord: string | null;
   currentStage: string | null;
 };
+
+export type ImportBatchRunSummary = {
+  attempted: number;
+  updated: number;
+  noResult: number;
+  failed: number;
+};

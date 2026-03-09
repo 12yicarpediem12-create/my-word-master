@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { Language } from "@/app/lib/types";
 import { ImportCountCard, LogSummaryPanel } from "./primitives";
 import { ImportReviewTable } from "./review-table";
-import type { AnalyzedWord, ImportLog, Phase } from "./types";
+import type { AnalyzedWord, ImportBatchRunSummary, ImportLog, Phase } from "./types";
 
 function WizardSection({
   eyebrow,
@@ -42,6 +42,37 @@ function SummaryGrid({
   className?: string;
 }) {
   return <div className={`grid grid-cols-2 gap-3 lg:grid-cols-6 ${className || ""}`}>{children}</div>;
+}
+
+function BatchRunSummary({
+  summary,
+  tone = "slate",
+}: {
+  summary: ImportBatchRunSummary | null;
+  tone?: "emerald" | "violet" | "amber" | "sky" | "orange" | "slate";
+}) {
+  if (!summary) return null;
+
+  const toneMap = {
+    emerald: "border-emerald-100 bg-emerald-50/70 text-emerald-900",
+    violet: "border-violet-100 bg-violet-50/70 text-violet-900",
+    amber: "border-amber-100 bg-amber-50/70 text-amber-900",
+    sky: "border-sky-100 bg-sky-50/70 text-sky-900",
+    orange: "border-orange-100 bg-orange-50/70 text-orange-900",
+    slate: "border-slate-200 bg-slate-50/80 text-slate-900",
+  } as const;
+
+  return (
+    <div className={`mt-3 rounded-2xl border px-4 py-3 ${toneMap[tone]}`}>
+      <p className="support-label">Last run</p>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs font-medium">
+        <span>Attempted: {summary.attempted}</span>
+        <span>Updated: {summary.updated}</span>
+        <span>No usable value: {summary.noResult}</span>
+        <span>Failed: {summary.failed}</span>
+      </div>
+    </div>
+  );
 }
 
 export function ImportUploadPanel({
@@ -272,18 +303,23 @@ export function ImportReviewPanel({
   rerunningRowId,
   onFillMissingGender,
   isEnrichingMissingGender,
+  missingGenderSummary,
   missingGenderProgress,
   onFillMissingConjugation,
   isEnrichingMissingConjugation,
+  missingConjugationSummary,
   missingConjugationProgress,
   onFillMissingRoots,
   isEnrichingMissingRoots,
+  missingRootsSummary,
   missingRootsProgress,
   onFillMissingExamples,
   isEnrichingMissingExamples,
+  missingExamplesSummary,
   missingExamplesProgress,
   onImproveWeakRoots,
   isImprovingWeakRoots,
+  weakRootsSummary,
   weakRootsProgress,
   onEnrichSupportFields,
   isEnrichingSupportFields,
@@ -310,18 +346,23 @@ export function ImportReviewPanel({
   rerunningRowId: number | null;
   onFillMissingGender: () => void;
   isEnrichingMissingGender: boolean;
+  missingGenderSummary: ImportBatchRunSummary | null;
   missingGenderProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onFillMissingConjugation: () => void;
   isEnrichingMissingConjugation: boolean;
+  missingConjugationSummary: ImportBatchRunSummary | null;
   missingConjugationProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onFillMissingRoots: () => void;
   isEnrichingMissingRoots: boolean;
+  missingRootsSummary: ImportBatchRunSummary | null;
   missingRootsProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onFillMissingExamples: () => void;
   isEnrichingMissingExamples: boolean;
+  missingExamplesSummary: ImportBatchRunSummary | null;
   missingExamplesProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onImproveWeakRoots: () => void;
   isImprovingWeakRoots: boolean;
+  weakRootsSummary: ImportBatchRunSummary | null;
   weakRootsProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onEnrichSupportFields: () => void;
   isEnrichingSupportFields: boolean;
@@ -394,6 +435,7 @@ export function ImportReviewPanel({
               >
                 {isEnrichingMissingGender ? "Filling gender..." : "Fill missing gender"}
               </button>
+              <BatchRunSummary summary={missingGenderSummary} tone="emerald" />
             </div>
 
             <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
@@ -421,6 +463,7 @@ export function ImportReviewPanel({
               >
                 {isEnrichingMissingConjugation ? "Filling conjugation..." : "Fill missing conjugation"}
               </button>
+              <BatchRunSummary summary={missingConjugationSummary} tone="violet" />
             </div>
 
             <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
@@ -448,6 +491,7 @@ export function ImportReviewPanel({
               >
                 {isEnrichingMissingRoots ? "Filling roots..." : "Fill missing roots"}
               </button>
+              <BatchRunSummary summary={missingRootsSummary} tone="amber" />
             </div>
 
             <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
@@ -475,6 +519,7 @@ export function ImportReviewPanel({
               >
                 {isEnrichingMissingExamples ? "Filling examples..." : "Fill missing examples"}
               </button>
+              <BatchRunSummary summary={missingExamplesSummary} tone="sky" />
             </div>
 
             <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
@@ -502,6 +547,7 @@ export function ImportReviewPanel({
               >
                 {isImprovingWeakRoots ? "Improving roots..." : "Improve weak roots"}
               </button>
+              <BatchRunSummary summary={weakRootsSummary} tone="orange" />
             </div>
 
             <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">

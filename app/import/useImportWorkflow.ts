@@ -21,7 +21,7 @@ import {
   isVerbPartOfSpeech,
   normalizeRootWord,
 } from "@/app/lib/vocab-form";
-import type { AnalyzedWord, ImportLog, ImportProgress, ParsedRow, Phase } from "./types";
+import type { AnalyzedWord, ImportBatchRunSummary, ImportLog, ImportProgress, ParsedRow, Phase } from "./types";
 
 const supabase = getSupabaseBrowserClient();
 
@@ -189,6 +189,7 @@ export function useImportWorkflow() {
     currentStage: null,
   });
   const [isEnrichingMissingGender, setIsEnrichingMissingGender] = useState(false);
+  const [missingGenderSummary, setMissingGenderSummary] = useState<ImportBatchRunSummary | null>(null);
   const [missingGenderProgress, setMissingGenderProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
@@ -196,6 +197,7 @@ export function useImportWorkflow() {
     currentStage: null,
   });
   const [isEnrichingMissingConjugation, setIsEnrichingMissingConjugation] = useState(false);
+  const [missingConjugationSummary, setMissingConjugationSummary] = useState<ImportBatchRunSummary | null>(null);
   const [missingConjugationProgress, setMissingConjugationProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
@@ -203,6 +205,7 @@ export function useImportWorkflow() {
     currentStage: null,
   });
   const [isEnrichingMissingRoots, setIsEnrichingMissingRoots] = useState(false);
+  const [missingRootsSummary, setMissingRootsSummary] = useState<ImportBatchRunSummary | null>(null);
   const [missingRootsProgress, setMissingRootsProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
@@ -210,6 +213,7 @@ export function useImportWorkflow() {
     currentStage: null,
   });
   const [isEnrichingMissingExamples, setIsEnrichingMissingExamples] = useState(false);
+  const [missingExamplesSummary, setMissingExamplesSummary] = useState<ImportBatchRunSummary | null>(null);
   const [missingExamplesProgress, setMissingExamplesProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
@@ -217,6 +221,7 @@ export function useImportWorkflow() {
     currentStage: null,
   });
   const [isImprovingWeakRoots, setIsImprovingWeakRoots] = useState(false);
+  const [weakRootsSummary, setWeakRootsSummary] = useState<ImportBatchRunSummary | null>(null);
   const [weakRootsProgress, setWeakRootsProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
@@ -669,6 +674,12 @@ export function useImportWorkflow() {
     let updatedCount = 0;
     let noResultCount = 0;
     let errorCount = 0;
+    setMissingGenderSummary({
+      attempted: eligibleRows.length,
+      updated: 0,
+      noResult: 0,
+      failed: 0,
+    });
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -733,6 +744,12 @@ export function useImportWorkflow() {
         },
         ...prev,
       ]);
+      setMissingGenderSummary({
+        attempted: eligibleRows.length,
+        updated: updatedCount,
+        noResult: noResultCount,
+        failed: errorCount,
+      });
     } finally {
       setMissingGenderProgress({
         current: eligibleRows.length,
@@ -761,6 +778,12 @@ export function useImportWorkflow() {
     let updatedCount = 0;
     let noResultCount = 0;
     let errorCount = 0;
+    setMissingConjugationSummary({
+      attempted: eligibleRows.length,
+      updated: 0,
+      noResult: 0,
+      failed: 0,
+    });
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -836,6 +859,12 @@ export function useImportWorkflow() {
         },
         ...prev,
       ]);
+      setMissingConjugationSummary({
+        attempted: eligibleRows.length,
+        updated: updatedCount,
+        noResult: noResultCount,
+        failed: errorCount,
+      });
     } finally {
       setMissingConjugationProgress({
         current: eligibleRows.length,
@@ -864,6 +893,12 @@ export function useImportWorkflow() {
     let updatedCount = 0;
     let noResultCount = 0;
     let errorCount = 0;
+    setMissingRootsSummary({
+      attempted: eligibleRows.length,
+      updated: 0,
+      noResult: 0,
+      failed: 0,
+    });
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -928,6 +963,12 @@ export function useImportWorkflow() {
         },
         ...prev,
       ]);
+      setMissingRootsSummary({
+        attempted: eligibleRows.length,
+        updated: updatedCount,
+        noResult: noResultCount,
+        failed: errorCount,
+      });
     } finally {
       setMissingRootsProgress({
         current: eligibleRows.length,
@@ -956,6 +997,12 @@ export function useImportWorkflow() {
     let updatedCount = 0;
     let noResultCount = 0;
     let errorCount = 0;
+    setMissingExamplesSummary({
+      attempted: eligibleRows.length,
+      updated: 0,
+      noResult: 0,
+      failed: 0,
+    });
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -1031,6 +1078,12 @@ export function useImportWorkflow() {
         },
         ...prev,
       ]);
+      setMissingExamplesSummary({
+        attempted: eligibleRows.length,
+        updated: updatedCount,
+        noResult: noResultCount,
+        failed: errorCount,
+      });
     } finally {
       setMissingExamplesProgress({
         current: eligibleRows.length,
@@ -1059,6 +1112,12 @@ export function useImportWorkflow() {
     let updatedCount = 0;
     let noResultCount = 0;
     let errorCount = 0;
+    setWeakRootsSummary({
+      attempted: eligibleRows.length,
+      updated: 0,
+      noResult: 0,
+      failed: 0,
+    });
 
     try {
       for (let index = 0; index < eligibleRows.length; index++) {
@@ -1125,6 +1184,12 @@ export function useImportWorkflow() {
         },
         ...prev,
       ]);
+      setWeakRootsSummary({
+        attempted: eligibleRows.length,
+        updated: updatedCount,
+        noResult: noResultCount,
+        failed: errorCount,
+      });
     } finally {
       setWeakRootsProgress({
         current: eligibleRows.length,
@@ -1280,14 +1345,19 @@ export function useImportWorkflow() {
     analyzedCount,
     rerunningRowId,
     isEnrichingMissingGender,
+    missingGenderSummary,
     missingGenderProgress,
     isEnrichingMissingConjugation,
+    missingConjugationSummary,
     missingConjugationProgress,
     isEnrichingMissingRoots,
+    missingRootsSummary,
     missingRootsProgress,
     isEnrichingMissingExamples,
+    missingExamplesSummary,
     missingExamplesProgress,
     isImprovingWeakRoots,
+    weakRootsSummary,
     weakRootsProgress,
     isEnrichingSupportFields,
     supportEnrichmentProgress,
