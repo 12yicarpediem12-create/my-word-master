@@ -71,7 +71,7 @@ function cleanNullableString(value: unknown): string | null {
   return cleaned || null;
 }
 
-function normalizeNounGender(value: unknown): string | null {
+export function normalizeNounGender(value: unknown): string | null {
   const cleaned = cleanString(value);
   if (!cleaned) return null;
 

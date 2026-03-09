@@ -255,6 +255,7 @@ export function ImportReviewPanel({
   parsedCount,
   readyToSaveCount,
   needsHintCount,
+  genderEnrichableCount,
   enrichableCount,
   skippedCount,
   failedCount,
@@ -265,6 +266,9 @@ export function ImportReviewPanel({
   onEditChange,
   onRerunRow,
   rerunningRowId,
+  onFillMissingGender,
+  isEnrichingMissingGender,
+  missingGenderProgress,
   onEnrichSupportFields,
   isEnrichingSupportFields,
   supportEnrichmentProgress,
@@ -273,6 +277,7 @@ export function ImportReviewPanel({
   parsedCount: number;
   readyToSaveCount: number;
   needsHintCount: number;
+  genderEnrichableCount: number;
   enrichableCount: number;
   skippedCount: number;
   failedCount: number;
@@ -283,6 +288,9 @@ export function ImportReviewPanel({
   onEditChange: (id: number, field: keyof AnalyzedWord, value: string) => void;
   onRerunRow: (id: number) => void;
   rerunningRowId: number | null;
+  onFillMissingGender: () => void;
+  isEnrichingMissingGender: boolean;
+  missingGenderProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onEnrichSupportFields: () => void;
   isEnrichingSupportFields: boolean;
   supportEnrichmentProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
@@ -329,6 +337,33 @@ export function ImportReviewPanel({
                 ? `${readyToSaveCount} reviewed row${readyToSaveCount !== 1 ? "s" : ""} currently meet the one-record-per-POS rule and will be saved.`
                 : "There are no valid rows left to save."}
             </p>
+            <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
+              <p className="support-label">Targeted enrichment</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {genderEnrichableCount > 0
+                  ? `${genderEnrichableCount} ready noun row${genderEnrichableCount !== 1 ? "s" : ""} still need gender.`
+                  : "All ready noun rows already have gender filled."}
+              </p>
+              {isEnrichingMissingGender && (
+                <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-emerald-900">
+                    {missingGenderProgress.currentStage || "Filling noun gender"}
+                  </p>
+                  <p className="mt-1 text-xs text-emerald-700">
+                    {missingGenderProgress.current} / {missingGenderProgress.total}
+                    {missingGenderProgress.currentWord ? ` · ${missingGenderProgress.currentWord}` : ""}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onFillMissingGender}
+                disabled={genderEnrichableCount === 0 || isEnrichingMissingGender}
+                className="mt-4 w-full rounded-2xl border border-emerald-200 bg-white px-5 py-4 font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isEnrichingMissingGender ? "Filling gender..." : "Fill missing gender"}
+              </button>
+            </div>
+
             <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
               <p className="support-label">Support-field enrichment</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">

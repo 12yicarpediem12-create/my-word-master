@@ -28,6 +28,7 @@ export default function ImportPage() {
     handleAnalyzeData,
     handleEditChange,
     handleRerunRow,
+    handleFillMissingGender,
     handleEnrichReadyRows,
     handleRemoveFromReview,
     handleSaveToDatabase,
@@ -37,9 +38,12 @@ export default function ImportPage() {
     remainingCount,
     readyToSaveCount,
     needsHintCount,
+    genderEnrichableCount,
     enrichableCount,
     analyzedCount,
     rerunningRowId,
+    isEnrichingMissingGender,
+    missingGenderProgress,
     isEnrichingSupportFields,
     supportEnrichmentProgress,
   } = useImportWorkflow();
@@ -94,6 +98,7 @@ export default function ImportPage() {
             parsedCount={parsedData.length}
             readyToSaveCount={readyToSaveCount}
             needsHintCount={needsHintCount}
+            genderEnrichableCount={genderEnrichableCount}
             enrichableCount={enrichableCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
@@ -104,6 +109,9 @@ export default function ImportPage() {
             onEditChange={handleEditChange}
             onRerunRow={handleRerunRow}
             rerunningRowId={rerunningRowId}
+            onFillMissingGender={handleFillMissingGender}
+            isEnrichingMissingGender={isEnrichingMissingGender}
+            missingGenderProgress={missingGenderProgress}
             onEnrichSupportFields={handleEnrichReadyRows}
             isEnrichingSupportFields={isEnrichingSupportFields}
             supportEnrichmentProgress={supportEnrichmentProgress}

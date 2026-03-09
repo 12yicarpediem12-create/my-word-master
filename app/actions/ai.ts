@@ -2,6 +2,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
+  normalizeNounGender,
   normalizeAiVocabResponse,
   type AiVocabError,
   type AiVocabNeedsHint,
@@ -246,6 +247,76 @@ export async function generateVocabInfo(
       category_id: null,
       root_word: null,
       notes: null,
+    };
+  }
+}
+
+export type GenerateImportNounGenderInput = {
+  word: string;
+  langCode: string;
+  intendedMeaning: string;
+  partOfSpeech: string;
+};
+
+export async function generateImportNounGender(
+  input: GenerateImportNounGenderInput
+): Promise<{ gender: "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null; error?: string }> {
+  try {
+    const word = input.word.trim();
+    const langCode = input.langCode.trim();
+    const intendedMeaning = input.intendedMeaning.trim();
+    const partOfSpeech = input.partOfSpeech.trim();
+
+    const apiKey = getGeminiApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const prompt = `
+      You are filling ONE field only for an import review row in a vocabulary app.
+
+      The lexical identity is already fixed and authoritative:
+      - Word: "${word}"
+      - Language code: "${langCode}"
+      - Meaning/use: "${intendedMeaning}"
+      - Part of speech: "${partOfSpeech}"
+
+      Task:
+      - Return only the noun gender for this exact entry.
+      - Do NOT re-decide the lexical identity.
+      - Do NOT rewrite the meaning or part of speech.
+      - If this noun can validly refer to masculine or feminine people, return "Masculine/Feminine".
+      - Return null only when no useful or defensible noun gender can be identified.
+
+      Allowed outputs only:
+      - "Masculine"
+      - "Feminine"
+      - "Masculine/Feminine"
+      - "Neuter"
+      - null
+
+      Output JSON only:
+      {
+        "gender": "Masculine | Feminine | Masculine/Feminine | Neuter | null"
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+
+    if (!content) throw new Error("Gemini returned an empty response");
+
+    const parsed = JSON.parse(content) as { gender?: unknown };
+    return {
+      gender: normalizeNounGender(parsed.gender) as "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null,
+    };
+  } catch (error) {
+    console.error("Gemini noun gender enrichment error:", error);
+    return {
+      gender: null,
+      error: toSafeAiErrorMessage(error),
     };
   }
 }

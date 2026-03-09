@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
-import { generateVocabInfo } from "../actions/ai";
+import { generateImportNounGender, generateVocabInfo } from "../actions/ai";
 import { bulkInsertVocabWords } from "../actions/vocab";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import type { Language } from "@/app/lib/types";
@@ -71,6 +71,10 @@ function rowNeedsSupportEnrichment(row: AnalyzedWord): boolean {
   );
 }
 
+function rowNeedsGenderEnrichment(row: AnalyzedWord): boolean {
+  return row.ai_status !== "needs_hint" && isNounPartOfSpeech(row.part_of_speech) && !row.gender.trim();
+}
+
 function mergeMissingSupportFields(row: AnalyzedWord, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
   if (aiData.status !== "ok") return row;
 
@@ -129,6 +133,13 @@ export function useImportWorkflow() {
   const [rerunningRowId, setRerunningRowId] = useState<number | null>(null);
   const [isEnrichingSupportFields, setIsEnrichingSupportFields] = useState(false);
   const [supportEnrichmentProgress, setSupportEnrichmentProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
+  const [isEnrichingMissingGender, setIsEnrichingMissingGender] = useState(false);
+  const [missingGenderProgress, setMissingGenderProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
     currentWord: null,
@@ -563,6 +574,87 @@ export function useImportWorkflow() {
     }
   };
 
+  const handleFillMissingGender = async () => {
+    if (!selectedLang) return;
+
+    const eligibleRows = analyzedData.filter(rowNeedsGenderEnrichment);
+    if (eligibleRows.length === 0) return;
+
+    setIsEnrichingMissingGender(true);
+    setMissingGenderProgress({
+      current: 0,
+      total: eligibleRows.length,
+      currentWord: null,
+      currentStage: "Preparing noun gender enrichment",
+    });
+
+    let updatedCount = 0;
+
+    try {
+      for (let index = 0; index < eligibleRows.length; index++) {
+        const row = eligibleRows[index];
+        setMissingGenderProgress({
+          current: index + 1,
+          total: eligibleRows.length,
+          currentWord: row.word,
+          currentStage: "Filling noun gender",
+        });
+
+        try {
+          const result = await generateImportNounGender({
+            word: row.word,
+            langCode: selectedLang,
+            intendedMeaning: row.translation,
+            partOfSpeech: row.part_of_speech,
+          });
+
+          const nextGender = result.gender;
+          if (nextGender) {
+            setAnalyzedData((prev) =>
+              prev.map((item) => {
+                if (item.id !== row.id || item.gender.trim()) return item;
+                updatedCount += 1;
+                return {
+                  ...item,
+                  gender: nextGender,
+                };
+              })
+            );
+          } else if (result.error) {
+            setLogs((prev) => [
+              { word: row.word, status: "error", message: `Gender enrichment failed: ${result.error}` },
+              ...prev,
+            ]);
+          }
+        } catch {
+          setLogs((prev) => [
+            { word: row.word, status: "error", message: "Gender enrichment failed." },
+            ...prev,
+          ]);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+
+      setLogs((prev) => [
+        {
+          word: `${updatedCount} noun row${updatedCount === 1 ? "" : "s"}`,
+          status: "success",
+          message: "Filled missing noun gender where AI could provide a defensible answer.",
+        },
+        ...prev,
+      ]);
+    } finally {
+      setMissingGenderProgress({
+        current: eligibleRows.length,
+        total: eligibleRows.length,
+        currentWord: null,
+        currentStage: "Noun gender enrichment complete",
+      });
+      setIsEnrichingMissingGender(false);
+    }
+  };
+
   const handleRemoveFromReview = (id: number) => {
     setAnalyzedData((prev) => prev.filter((item) => item.id !== id));
   };
@@ -640,6 +732,10 @@ export function useImportWorkflow() {
     () => analyzedData.filter(rowNeedsSupportEnrichment).length,
     [analyzedData]
   );
+  const genderEnrichableCount = useMemo(
+    () => analyzedData.filter(rowNeedsGenderEnrichment).length,
+    [analyzedData]
+  );
   const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
   const remainingCount = useMemo(() => {
     if (phase === "saving") {
@@ -664,6 +760,7 @@ export function useImportWorkflow() {
     handleAnalyzeData,
     handleEditChange,
     handleRerunRow,
+    handleFillMissingGender,
     handleEnrichReadyRows,
     handleRemoveFromReview,
     handleSaveToDatabase,
@@ -674,8 +771,11 @@ export function useImportWorkflow() {
     readyToSaveCount,
     needsHintCount,
     enrichableCount,
+    genderEnrichableCount,
     analyzedCount,
     rerunningRowId,
+    isEnrichingMissingGender,
+    missingGenderProgress,
     isEnrichingSupportFields,
     supportEnrichmentProgress,
   };
