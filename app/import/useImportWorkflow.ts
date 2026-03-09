@@ -66,8 +66,12 @@ function isSingleWordEntry(word: string): boolean {
   return !/\s/.test(word.trim());
 }
 
+function isReadyImportRow(row: Pick<AnalyzedWord, "ai_status" | "word" | "translation" | "part_of_speech">): boolean {
+  return row.ai_status === "ready" && Boolean(row.word.trim() && row.translation.trim() && row.part_of_speech.trim());
+}
+
 function rowNeedsSupportEnrichment(row: AnalyzedWord): boolean {
-  if (row.ai_status === "needs_hint") return false;
+  if (!isReadyImportRow(row)) return false;
 
   return (
     (isNounPartOfSpeech(row.part_of_speech) && !row.gender.trim()) ||
@@ -79,19 +83,19 @@ function rowNeedsSupportEnrichment(row: AnalyzedWord): boolean {
 }
 
 function rowNeedsGenderEnrichment(row: AnalyzedWord): boolean {
-  return row.ai_status !== "needs_hint" && isNounPartOfSpeech(row.part_of_speech) && !row.gender.trim();
+  return isReadyImportRow(row) && isNounPartOfSpeech(row.part_of_speech) && !row.gender.trim();
 }
 
 function rowNeedsConjugationEnrichment(row: AnalyzedWord): boolean {
-  return row.ai_status !== "needs_hint" && isVerbPartOfSpeech(row.part_of_speech) && !row.conjugation.trim();
+  return isReadyImportRow(row) && isVerbPartOfSpeech(row.part_of_speech) && !row.conjugation.trim();
 }
 
 function rowNeedsRootEnrichment(row: AnalyzedWord): boolean {
-  return row.ai_status !== "needs_hint" && isSingleWordEntry(row.word) && !row.root_word.trim();
+  return isReadyImportRow(row) && isSingleWordEntry(row.word) && !row.root_word.trim();
 }
 
 function rowNeedsExampleEnrichment(row: AnalyzedWord): boolean {
-  return row.ai_status !== "needs_hint" && (!row.example_sentence.trim() || !row.example_translation.trim());
+  return isReadyImportRow(row) && (!row.example_sentence.trim() || !row.example_translation.trim());
 }
 
 function looksSuspiciousRootWord(word: string, rootWord: string): boolean {
@@ -114,7 +118,7 @@ function looksSuspiciousRootWord(word: string, rootWord: string): boolean {
 
 function rowNeedsRootQualityCorrection(row: AnalyzedWord): boolean {
   return (
-    row.ai_status !== "needs_hint" &&
+    isReadyImportRow(row) &&
     isSingleWordEntry(row.word) &&
     row.root_word.trim().length > 0 &&
     looksSuspiciousRootWord(row.word, row.root_word)
