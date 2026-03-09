@@ -29,6 +29,10 @@ export default function ImportPage() {
     handleEditChange,
     handleRerunRow,
     handleFillMissingGender,
+    handleFillMissingConjugation,
+    handleFillMissingRoots,
+    handleFillMissingExamples,
+    handleImproveWeakRoots,
     handleEnrichReadyRows,
     handleRemoveFromReview,
     handleSaveToDatabase,
@@ -39,11 +43,23 @@ export default function ImportPage() {
     readyToSaveCount,
     needsHintCount,
     genderEnrichableCount,
+    conjugationEnrichableCount,
+    rootEnrichableCount,
+    exampleEnrichableCount,
+    weakRootCorrectionCount,
     enrichableCount,
     analyzedCount,
     rerunningRowId,
     isEnrichingMissingGender,
     missingGenderProgress,
+    isEnrichingMissingConjugation,
+    missingConjugationProgress,
+    isEnrichingMissingRoots,
+    missingRootsProgress,
+    isEnrichingMissingExamples,
+    missingExamplesProgress,
+    isImprovingWeakRoots,
+    weakRootsProgress,
     isEnrichingSupportFields,
     supportEnrichmentProgress,
   } = useImportWorkflow();
@@ -99,6 +115,10 @@ export default function ImportPage() {
             readyToSaveCount={readyToSaveCount}
             needsHintCount={needsHintCount}
             genderEnrichableCount={genderEnrichableCount}
+            conjugationEnrichableCount={conjugationEnrichableCount}
+            rootEnrichableCount={rootEnrichableCount}
+            exampleEnrichableCount={exampleEnrichableCount}
+            weakRootCorrectionCount={weakRootCorrectionCount}
             enrichableCount={enrichableCount}
             skippedCount={skippedCount}
             failedCount={failedCount}
@@ -112,6 +132,18 @@ export default function ImportPage() {
             onFillMissingGender={handleFillMissingGender}
             isEnrichingMissingGender={isEnrichingMissingGender}
             missingGenderProgress={missingGenderProgress}
+            onFillMissingConjugation={handleFillMissingConjugation}
+            isEnrichingMissingConjugation={isEnrichingMissingConjugation}
+            missingConjugationProgress={missingConjugationProgress}
+            onFillMissingRoots={handleFillMissingRoots}
+            isEnrichingMissingRoots={isEnrichingMissingRoots}
+            missingRootsProgress={missingRootsProgress}
+            onFillMissingExamples={handleFillMissingExamples}
+            isEnrichingMissingExamples={isEnrichingMissingExamples}
+            missingExamplesProgress={missingExamplesProgress}
+            onImproveWeakRoots={handleImproveWeakRoots}
+            isImprovingWeakRoots={isImprovingWeakRoots}
+            weakRootsProgress={weakRootsProgress}
             onEnrichSupportFields={handleEnrichReadyRows}
             isEnrichingSupportFields={isEnrichingSupportFields}
             supportEnrichmentProgress={supportEnrichmentProgress}

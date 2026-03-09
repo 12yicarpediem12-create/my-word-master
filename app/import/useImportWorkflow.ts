@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
-import { generateImportNounGender, generateVocabInfo } from "../actions/ai";
+import {
+  generateImportBetterRootWord,
+  generateImportExamples,
+  generateImportNounGender,
+  generateImportRootWord,
+  generateImportVerbConjugation,
+  generateVocabInfo,
+} from "../actions/ai";
 import { bulkInsertVocabWords } from "../actions/vocab";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
 import type { Language } from "@/app/lib/types";
@@ -75,6 +82,45 @@ function rowNeedsGenderEnrichment(row: AnalyzedWord): boolean {
   return row.ai_status !== "needs_hint" && isNounPartOfSpeech(row.part_of_speech) && !row.gender.trim();
 }
 
+function rowNeedsConjugationEnrichment(row: AnalyzedWord): boolean {
+  return row.ai_status !== "needs_hint" && isVerbPartOfSpeech(row.part_of_speech) && !row.conjugation.trim();
+}
+
+function rowNeedsRootEnrichment(row: AnalyzedWord): boolean {
+  return row.ai_status !== "needs_hint" && isSingleWordEntry(row.word) && !row.root_word.trim();
+}
+
+function rowNeedsExampleEnrichment(row: AnalyzedWord): boolean {
+  return row.ai_status !== "needs_hint" && (!row.example_sentence.trim() || !row.example_translation.trim());
+}
+
+function looksSuspiciousRootWord(word: string, rootWord: string): boolean {
+  const normalizedRoot = normalizeRootWord(rootWord);
+  if (!normalizedRoot) return false;
+
+  if (!/^.+ \([A-Za-z][A-Za-z\s-]*\)$/.test(normalizedRoot)) {
+    return true;
+  }
+
+  if (/\((?:Late Latin|Vulgar Latin|Medieval Latin|Post-Classical Latin)\)$/i.test(normalizedRoot)) {
+    return true;
+  }
+
+  const rootLemma = normalizedRoot.replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
+  const surfaceLemma = word.trim().toLowerCase();
+
+  return rootLemma === surfaceLemma;
+}
+
+function rowNeedsRootQualityCorrection(row: AnalyzedWord): boolean {
+  return (
+    row.ai_status !== "needs_hint" &&
+    isSingleWordEntry(row.word) &&
+    row.root_word.trim().length > 0 &&
+    looksSuspiciousRootWord(row.word, row.root_word)
+  );
+}
+
 function mergeMissingSupportFields(row: AnalyzedWord, aiData: Awaited<ReturnType<typeof generateVocabInfo>>): AnalyzedWord {
   if (aiData.status !== "ok") return row;
 
@@ -140,6 +186,34 @@ export function useImportWorkflow() {
   });
   const [isEnrichingMissingGender, setIsEnrichingMissingGender] = useState(false);
   const [missingGenderProgress, setMissingGenderProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
+  const [isEnrichingMissingConjugation, setIsEnrichingMissingConjugation] = useState(false);
+  const [missingConjugationProgress, setMissingConjugationProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
+  const [isEnrichingMissingRoots, setIsEnrichingMissingRoots] = useState(false);
+  const [missingRootsProgress, setMissingRootsProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
+  const [isEnrichingMissingExamples, setIsEnrichingMissingExamples] = useState(false);
+  const [missingExamplesProgress, setMissingExamplesProgress] = useState<ImportProgress>({
+    current: 0,
+    total: 0,
+    currentWord: null,
+    currentStage: null,
+  });
+  const [isImprovingWeakRoots, setIsImprovingWeakRoots] = useState(false);
+  const [weakRootsProgress, setWeakRootsProgress] = useState<ImportProgress>({
     current: 0,
     total: 0,
     currentWord: null,
@@ -655,6 +729,354 @@ export function useImportWorkflow() {
     }
   };
 
+  const handleFillMissingConjugation = async () => {
+    if (!selectedLang) return;
+
+    const eligibleRows = analyzedData.filter(rowNeedsConjugationEnrichment);
+    if (eligibleRows.length === 0) return;
+
+    setIsEnrichingMissingConjugation(true);
+    setMissingConjugationProgress({
+      current: 0,
+      total: eligibleRows.length,
+      currentWord: null,
+      currentStage: "Preparing verb conjugation enrichment",
+    });
+
+    let updatedCount = 0;
+
+    try {
+      for (let index = 0; index < eligibleRows.length; index++) {
+        const row = eligibleRows[index];
+        setMissingConjugationProgress({
+          current: index + 1,
+          total: eligibleRows.length,
+          currentWord: row.word,
+          currentStage: "Filling verb conjugation",
+        });
+
+        try {
+          const result = await generateImportVerbConjugation({
+            word: row.word,
+            langCode: selectedLang,
+            intendedMeaning: row.translation,
+            partOfSpeech: row.part_of_speech,
+          });
+
+          const nextConjugation = result.conjugation;
+          const nextVerbType = result.verb_type;
+
+          if (nextConjugation || nextVerbType) {
+            setAnalyzedData((prev) =>
+              prev.map((item) => {
+                if (item.id !== row.id) return item;
+
+                const shouldFillConjugation = !item.conjugation.trim() && Boolean(nextConjugation);
+                const shouldFillVerbType = !item.verb_type.trim() && Boolean(nextVerbType);
+
+                if (!shouldFillConjugation && !shouldFillVerbType) {
+                  return item;
+                }
+
+                updatedCount += 1;
+                return {
+                  ...item,
+                  conjugation: shouldFillConjugation ? nextConjugation! : item.conjugation,
+                  verb_type: shouldFillVerbType ? nextVerbType! : item.verb_type,
+                };
+              })
+            );
+          } else if (result.error) {
+            setLogs((prev) => [
+              { word: row.word, status: "error", message: `Conjugation enrichment failed: ${result.error}` },
+              ...prev,
+            ]);
+          }
+        } catch {
+          setLogs((prev) => [
+            { word: row.word, status: "error", message: "Conjugation enrichment failed." },
+            ...prev,
+          ]);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+
+      setLogs((prev) => [
+        {
+          word: `${updatedCount} verb row${updatedCount === 1 ? "" : "s"}`,
+          status: "success",
+          message: "Filled missing verb conjugation where AI could provide a defensible answer.",
+        },
+        ...prev,
+      ]);
+    } finally {
+      setMissingConjugationProgress({
+        current: eligibleRows.length,
+        total: eligibleRows.length,
+        currentWord: null,
+        currentStage: "Verb conjugation enrichment complete",
+      });
+      setIsEnrichingMissingConjugation(false);
+    }
+  };
+
+  const handleFillMissingRoots = async () => {
+    if (!selectedLang) return;
+
+    const eligibleRows = analyzedData.filter(rowNeedsRootEnrichment);
+    if (eligibleRows.length === 0) return;
+
+    setIsEnrichingMissingRoots(true);
+    setMissingRootsProgress({
+      current: 0,
+      total: eligibleRows.length,
+      currentWord: null,
+      currentStage: "Preparing root-word enrichment",
+    });
+
+    let updatedCount = 0;
+
+    try {
+      for (let index = 0; index < eligibleRows.length; index++) {
+        const row = eligibleRows[index];
+        setMissingRootsProgress({
+          current: index + 1,
+          total: eligibleRows.length,
+          currentWord: row.word,
+          currentStage: "Filling root words",
+        });
+
+        try {
+          const result = await generateImportRootWord({
+            word: row.word,
+            langCode: selectedLang,
+            intendedMeaning: row.translation,
+            partOfSpeech: row.part_of_speech,
+          });
+
+          const nextRootWord = normalizeRootWord(result.root_word);
+          if (nextRootWord) {
+            setAnalyzedData((prev) =>
+              prev.map((item) => {
+                if (item.id !== row.id || item.root_word.trim()) return item;
+                updatedCount += 1;
+                return {
+                  ...item,
+                  root_word: nextRootWord,
+                };
+              })
+            );
+          } else if (result.error) {
+            setLogs((prev) => [
+              { word: row.word, status: "error", message: `Root enrichment failed: ${result.error}` },
+              ...prev,
+            ]);
+          }
+        } catch {
+          setLogs((prev) => [
+            { word: row.word, status: "error", message: "Root enrichment failed." },
+            ...prev,
+          ]);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+
+      setLogs((prev) => [
+        {
+          word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
+          status: "success",
+          message: "Filled missing root words where AI could provide a defensible answer.",
+        },
+        ...prev,
+      ]);
+    } finally {
+      setMissingRootsProgress({
+        current: eligibleRows.length,
+        total: eligibleRows.length,
+        currentWord: null,
+        currentStage: "Root-word enrichment complete",
+      });
+      setIsEnrichingMissingRoots(false);
+    }
+  };
+
+  const handleFillMissingExamples = async () => {
+    if (!selectedLang) return;
+
+    const eligibleRows = analyzedData.filter(rowNeedsExampleEnrichment);
+    if (eligibleRows.length === 0) return;
+
+    setIsEnrichingMissingExamples(true);
+    setMissingExamplesProgress({
+      current: 0,
+      total: eligibleRows.length,
+      currentWord: null,
+      currentStage: "Preparing example enrichment",
+    });
+
+    let updatedCount = 0;
+
+    try {
+      for (let index = 0; index < eligibleRows.length; index++) {
+        const row = eligibleRows[index];
+        setMissingExamplesProgress({
+          current: index + 1,
+          total: eligibleRows.length,
+          currentWord: row.word,
+          currentStage: "Filling example fields",
+        });
+
+        try {
+          const result = await generateImportExamples({
+            word: row.word,
+            langCode: selectedLang,
+            intendedMeaning: row.translation,
+            partOfSpeech: row.part_of_speech,
+          });
+
+          const nextExampleSentence = result.example_sentence;
+          const nextExampleTranslation = result.example_translation;
+
+          if (nextExampleSentence || nextExampleTranslation) {
+            setAnalyzedData((prev) =>
+              prev.map((item) => {
+                if (item.id !== row.id) return item;
+
+                const shouldFillSentence = !item.example_sentence.trim() && Boolean(nextExampleSentence);
+                const shouldFillTranslation = !item.example_translation.trim() && Boolean(nextExampleTranslation);
+
+                if (!shouldFillSentence && !shouldFillTranslation) {
+                  return item;
+                }
+
+                updatedCount += 1;
+                return {
+                  ...item,
+                  example_sentence: shouldFillSentence ? nextExampleSentence! : item.example_sentence,
+                  example_translation: shouldFillTranslation ? nextExampleTranslation! : item.example_translation,
+                };
+              })
+            );
+          } else if (result.error) {
+            setLogs((prev) => [
+              { word: row.word, status: "error", message: `Example enrichment failed: ${result.error}` },
+              ...prev,
+            ]);
+          }
+        } catch {
+          setLogs((prev) => [
+            { word: row.word, status: "error", message: "Example enrichment failed." },
+            ...prev,
+          ]);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+
+      setLogs((prev) => [
+        {
+          word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
+          status: "success",
+          message: "Filled missing example fields where AI could provide a defensible answer.",
+        },
+        ...prev,
+      ]);
+    } finally {
+      setMissingExamplesProgress({
+        current: eligibleRows.length,
+        total: eligibleRows.length,
+        currentWord: null,
+        currentStage: "Example enrichment complete",
+      });
+      setIsEnrichingMissingExamples(false);
+    }
+  };
+
+  const handleImproveWeakRoots = async () => {
+    if (!selectedLang) return;
+
+    const eligibleRows = analyzedData.filter(rowNeedsRootQualityCorrection);
+    if (eligibleRows.length === 0) return;
+
+    setIsImprovingWeakRoots(true);
+    setWeakRootsProgress({
+      current: 0,
+      total: eligibleRows.length,
+      currentWord: null,
+      currentStage: "Preparing root-quality correction",
+    });
+
+    let updatedCount = 0;
+
+    try {
+      for (let index = 0; index < eligibleRows.length; index++) {
+        const row = eligibleRows[index];
+        setWeakRootsProgress({
+          current: index + 1,
+          total: eligibleRows.length,
+          currentWord: row.word,
+          currentStage: "Improving weak roots",
+        });
+
+        try {
+          const result = await generateImportBetterRootWord({
+            word: row.word,
+            langCode: selectedLang,
+            intendedMeaning: row.translation,
+            partOfSpeech: row.part_of_speech,
+            currentRootWord: row.root_word,
+          });
+
+          const nextRootWord = normalizeRootWord(result.root_word);
+          if (nextRootWord && nextRootWord !== normalizeRootWord(row.root_word)) {
+            setAnalyzedData((prev) =>
+              prev.map((item) => {
+                if (item.id !== row.id) return item;
+                if (normalizeRootWord(item.root_word) !== normalizeRootWord(row.root_word)) return item;
+                updatedCount += 1;
+                return {
+                  ...item,
+                  root_word: nextRootWord,
+                };
+              })
+            );
+          } else if (result.error) {
+            setLogs((prev) => [
+              { word: row.word, status: "error", message: `Root quality correction failed: ${result.error}` },
+              ...prev,
+            ]);
+          }
+        } catch {
+          setLogs((prev) => [
+            { word: row.word, status: "error", message: "Root quality correction failed." },
+            ...prev,
+          ]);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 350));
+      }
+
+      setLogs((prev) => [
+        {
+          word: `${updatedCount} row${updatedCount === 1 ? "" : "s"}`,
+          status: "success",
+          message: "Improved weak root values where AI found a clearly better alternative.",
+        },
+        ...prev,
+      ]);
+    } finally {
+      setWeakRootsProgress({
+        current: eligibleRows.length,
+        total: eligibleRows.length,
+        currentWord: null,
+        currentStage: "Root-quality correction complete",
+      });
+      setIsImprovingWeakRoots(false);
+    }
+  };
+
   const handleRemoveFromReview = (id: number) => {
     setAnalyzedData((prev) => prev.filter((item) => item.id !== id));
   };
@@ -736,6 +1158,22 @@ export function useImportWorkflow() {
     () => analyzedData.filter(rowNeedsGenderEnrichment).length,
     [analyzedData]
   );
+  const conjugationEnrichableCount = useMemo(
+    () => analyzedData.filter(rowNeedsConjugationEnrichment).length,
+    [analyzedData]
+  );
+  const rootEnrichableCount = useMemo(
+    () => analyzedData.filter(rowNeedsRootEnrichment).length,
+    [analyzedData]
+  );
+  const exampleEnrichableCount = useMemo(
+    () => analyzedData.filter(rowNeedsExampleEnrichment).length,
+    [analyzedData]
+  );
+  const weakRootCorrectionCount = useMemo(
+    () => analyzedData.filter(rowNeedsRootQualityCorrection).length,
+    [analyzedData]
+  );
   const analyzedCount = Math.min(parsedData.length, readyToSaveCount + needsHintCount + skippedCount + failedCount);
   const remainingCount = useMemo(() => {
     if (phase === "saving") {
@@ -761,6 +1199,10 @@ export function useImportWorkflow() {
     handleEditChange,
     handleRerunRow,
     handleFillMissingGender,
+    handleFillMissingConjugation,
+    handleFillMissingRoots,
+    handleFillMissingExamples,
+    handleImproveWeakRoots,
     handleEnrichReadyRows,
     handleRemoveFromReview,
     handleSaveToDatabase,
@@ -772,10 +1214,22 @@ export function useImportWorkflow() {
     needsHintCount,
     enrichableCount,
     genderEnrichableCount,
+    conjugationEnrichableCount,
+    rootEnrichableCount,
+    exampleEnrichableCount,
+    weakRootCorrectionCount,
     analyzedCount,
     rerunningRowId,
     isEnrichingMissingGender,
     missingGenderProgress,
+    isEnrichingMissingConjugation,
+    missingConjugationProgress,
+    isEnrichingMissingRoots,
+    missingRootsProgress,
+    isEnrichingMissingExamples,
+    missingExamplesProgress,
+    isImprovingWeakRoots,
+    weakRootsProgress,
     isEnrichingSupportFields,
     supportEnrichmentProgress,
   };

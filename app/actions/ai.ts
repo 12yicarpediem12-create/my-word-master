@@ -258,6 +258,35 @@ export type GenerateImportNounGenderInput = {
   partOfSpeech: string;
 };
 
+export type GenerateImportVerbConjugationInput = {
+  word: string;
+  langCode: string;
+  intendedMeaning: string;
+  partOfSpeech: string;
+};
+
+export type GenerateImportRootWordInput = {
+  word: string;
+  langCode: string;
+  intendedMeaning: string;
+  partOfSpeech: string;
+};
+
+export type GenerateImportExamplesInput = {
+  word: string;
+  langCode: string;
+  intendedMeaning: string;
+  partOfSpeech: string;
+};
+
+export type GenerateImportBetterRootWordInput = {
+  word: string;
+  langCode: string;
+  intendedMeaning: string;
+  partOfSpeech: string;
+  currentRootWord: string;
+};
+
 export async function generateImportNounGender(
   input: GenerateImportNounGenderInput
 ): Promise<{ gender: "Masculine" | "Feminine" | "Masculine/Feminine" | "Neuter" | null; error?: string }> {
@@ -316,6 +345,301 @@ export async function generateImportNounGender(
     console.error("Gemini noun gender enrichment error:", error);
     return {
       gender: null,
+      error: toSafeAiErrorMessage(error),
+    };
+  }
+}
+
+export async function generateImportVerbConjugation(
+  input: GenerateImportVerbConjugationInput
+): Promise<{ conjugation: string | null; verb_type: string | null; error?: string }> {
+  try {
+    const word = input.word.trim();
+    const langCode = input.langCode.trim();
+    const intendedMeaning = input.intendedMeaning.trim();
+    const partOfSpeech = input.partOfSpeech.trim();
+
+    const apiKey = getGeminiApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const prompt = `
+      You are filling verb support fields for ONE import review row in a vocabulary app.
+
+      The lexical identity is already fixed and authoritative:
+      - Word: "${word}"
+      - Language code: "${langCode}"
+      - Meaning/use: "${intendedMeaning}"
+      - Part of speech: "${partOfSpeech}"
+
+      Task:
+      - Return verb conjugation for this exact entry.
+      - Optionally return verb_type if it can be identified clearly and it is currently missing in the row.
+      - Do NOT re-decide lexical identity.
+      - Do NOT rewrite the meaning or part of speech.
+      - If the entry is a clear verb, strongly prefer returning conjugation rather than leaving it null.
+
+      Conjugation format:
+      - Start with "Present:"
+      - Include pronouns and forms in the target language
+      - Add one empty line before "Past Participle:"
+      - Example:
+        Present:
+        io parlo
+        tu parli
+        lui/lei parla
+        noi parliamo
+        voi parlate
+        loro parlano
+
+        Past Participle: parlato
+
+      Allowed verb_type values:
+      - "Transitive"
+      - "Intransitive"
+      - null
+
+      Output JSON only:
+      {
+        "conjugation": "formatted conjugation string or null",
+        "verb_type": "Transitive | Intransitive | null"
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+
+    if (!content) throw new Error("Gemini returned an empty response");
+
+    const parsed = JSON.parse(content) as { conjugation?: unknown; verb_type?: unknown };
+    const conjugation =
+      typeof parsed.conjugation === "string" && parsed.conjugation.trim() ? parsed.conjugation.trim() : null;
+    const rawVerbType = typeof parsed.verb_type === "string" ? parsed.verb_type.trim() : "";
+    const normalizedVerbType =
+      rawVerbType.toLowerCase() === "transitive"
+        ? "Transitive"
+        : rawVerbType.toLowerCase() === "intransitive"
+          ? "Intransitive"
+          : null;
+
+    return {
+      conjugation,
+      verb_type: normalizedVerbType,
+    };
+  } catch (error) {
+    console.error("Gemini verb conjugation enrichment error:", error);
+    return {
+      conjugation: null,
+      verb_type: null,
+      error: toSafeAiErrorMessage(error),
+    };
+  }
+}
+
+export async function generateImportRootWord(
+  input: GenerateImportRootWordInput
+): Promise<{ root_word: string | null; error?: string }> {
+  try {
+    const word = input.word.trim();
+    const langCode = input.langCode.trim();
+    const intendedMeaning = input.intendedMeaning.trim();
+    const partOfSpeech = input.partOfSpeech.trim();
+
+    const apiKey = getGeminiApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const prompt = `
+      You are filling one support field for ONE import review row in a vocabulary app.
+
+      The lexical identity is already fixed and authoritative:
+      - Word: "${word}"
+      - Language code: "${langCode}"
+      - Meaning/use: "${intendedMeaning}"
+      - Part of speech: "${partOfSpeech}"
+
+      Task:
+      - Return only a useful root_word for this exact single-word entry.
+      - Do NOT re-decide lexical identity.
+      - Do NOT rewrite the meaning or part of speech.
+      - Prefer a plausible, defensible lexical root over leaving the field blank.
+      - Return null only when no useful or defensible root can be identified.
+
+      Root-word rules:
+      - Format strictly as: "root_word (Language)"
+      - Example: "noctem (Latin)"
+      - For Romance languages, trace to "(Latin)" whenever plausible.
+      - Do not use over-specific labels like "Late Latin" or "Vulgar Latin".
+      - Do not force a weak or artificial root.
+
+      Output JSON only:
+      {
+        "root_word": "root_word (Language) or null"
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+
+    if (!content) throw new Error("Gemini returned an empty response");
+
+    const parsed = JSON.parse(content) as { root_word?: unknown };
+    const rootWord = typeof parsed.root_word === "string" && parsed.root_word.trim() ? parsed.root_word.trim() : null;
+
+    return {
+      root_word: rootWord,
+    };
+  } catch (error) {
+    console.error("Gemini root-word enrichment error:", error);
+    return {
+      root_word: null,
+      error: toSafeAiErrorMessage(error),
+    };
+  }
+}
+
+export async function generateImportExamples(
+  input: GenerateImportExamplesInput
+): Promise<{ example_sentence: string | null; example_translation: string | null; error?: string }> {
+  try {
+    const word = input.word.trim();
+    const langCode = input.langCode.trim();
+    const intendedMeaning = input.intendedMeaning.trim();
+    const partOfSpeech = input.partOfSpeech.trim();
+
+    const apiKey = getGeminiApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const prompt = `
+      You are filling example fields for ONE import review row in a vocabulary app.
+
+      The lexical identity is already fixed and authoritative:
+      - Word: "${word}"
+      - Language code: "${langCode}"
+      - Meaning/use: "${intendedMeaning}"
+      - Part of speech: "${partOfSpeech}"
+
+      Task:
+      - Return only an example sentence and its English translation for this exact entry.
+      - Do NOT re-decide lexical identity.
+      - Do NOT rewrite the meaning or part of speech.
+      - The example must match the exact intended POS and central meaning/use.
+      - Prefer a short, natural, beginner-friendly example when possible.
+      - If the entry is clear, strongly prefer returning both fields rather than leaving them blank.
+
+      Output JSON only:
+      {
+        "example_sentence": "Sentence in the target language or null",
+        "example_translation": "English translation of that sentence or null"
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+
+    if (!content) throw new Error("Gemini returned an empty response");
+
+    const parsed = JSON.parse(content) as {
+      example_sentence?: unknown;
+      example_translation?: unknown;
+    };
+
+    const exampleSentence =
+      typeof parsed.example_sentence === "string" && parsed.example_sentence.trim()
+        ? parsed.example_sentence.trim()
+        : null;
+    const exampleTranslation =
+      typeof parsed.example_translation === "string" && parsed.example_translation.trim()
+        ? parsed.example_translation.trim()
+        : null;
+
+    return {
+      example_sentence: exampleSentence,
+      example_translation: exampleTranslation,
+    };
+  } catch (error) {
+    console.error("Gemini example enrichment error:", error);
+    return {
+      example_sentence: null,
+      example_translation: null,
+      error: toSafeAiErrorMessage(error),
+    };
+  }
+}
+
+export async function generateImportBetterRootWord(
+  input: GenerateImportBetterRootWordInput
+): Promise<{ root_word: string | null; error?: string }> {
+  try {
+    const word = input.word.trim();
+    const langCode = input.langCode.trim();
+    const intendedMeaning = input.intendedMeaning.trim();
+    const partOfSpeech = input.partOfSpeech.trim();
+    const currentRootWord = input.currentRootWord.trim();
+
+    const apiKey = getGeminiApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const prompt = `
+      You are improving ONE support field for ONE import review row in a vocabulary app.
+
+      The lexical identity is already fixed and authoritative:
+      - Word: "${word}"
+      - Language code: "${langCode}"
+      - Meaning/use: "${intendedMeaning}"
+      - Part of speech: "${partOfSpeech}"
+      - Current root_word: "${currentRootWord}"
+
+      Task:
+      - Review the current root_word and decide whether a clearly better, more defensible root_word exists for this exact single-word entry.
+      - Do NOT re-decide lexical identity.
+      - Do NOT rewrite the meaning or part of speech.
+      - Replace the current root only when you can provide a clearly better root.
+      - If the current root is already acceptable, or no better defensible root can be identified, return null.
+
+      Root-word rules:
+      - Format strictly as: "root_word (Language)"
+      - Example: "noctem (Latin)"
+      - For Romance languages, prefer "(Latin)" whenever plausible.
+      - Do not use overly specific labels like "Late Latin", "Vulgar Latin", or "Medieval Latin".
+      - Prefer keeping the current value over replacing it with something weak or artificial.
+
+      Output JSON only:
+      {
+        "root_word": "better root_word (Language) or null"
+      }
+    `;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+
+    if (!content) throw new Error("Gemini returned an empty response");
+
+    const parsed = JSON.parse(content) as { root_word?: unknown };
+    const rootWord =
+      typeof parsed.root_word === "string" && parsed.root_word.trim() ? parsed.root_word.trim() : null;
+
+    return {
+      root_word: rootWord,
+    };
+  } catch (error) {
+    console.error("Gemini root-quality correction error:", error);
+    return {
+      root_word: null,
       error: toSafeAiErrorMessage(error),
     };
   }

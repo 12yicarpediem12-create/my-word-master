@@ -256,6 +256,10 @@ export function ImportReviewPanel({
   readyToSaveCount,
   needsHintCount,
   genderEnrichableCount,
+  conjugationEnrichableCount,
+  rootEnrichableCount,
+  exampleEnrichableCount,
+  weakRootCorrectionCount,
   enrichableCount,
   skippedCount,
   failedCount,
@@ -269,6 +273,18 @@ export function ImportReviewPanel({
   onFillMissingGender,
   isEnrichingMissingGender,
   missingGenderProgress,
+  onFillMissingConjugation,
+  isEnrichingMissingConjugation,
+  missingConjugationProgress,
+  onFillMissingRoots,
+  isEnrichingMissingRoots,
+  missingRootsProgress,
+  onFillMissingExamples,
+  isEnrichingMissingExamples,
+  missingExamplesProgress,
+  onImproveWeakRoots,
+  isImprovingWeakRoots,
+  weakRootsProgress,
   onEnrichSupportFields,
   isEnrichingSupportFields,
   supportEnrichmentProgress,
@@ -278,6 +294,10 @@ export function ImportReviewPanel({
   readyToSaveCount: number;
   needsHintCount: number;
   genderEnrichableCount: number;
+  conjugationEnrichableCount: number;
+  rootEnrichableCount: number;
+  exampleEnrichableCount: number;
+  weakRootCorrectionCount: number;
   enrichableCount: number;
   skippedCount: number;
   failedCount: number;
@@ -291,6 +311,18 @@ export function ImportReviewPanel({
   onFillMissingGender: () => void;
   isEnrichingMissingGender: boolean;
   missingGenderProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
+  onFillMissingConjugation: () => void;
+  isEnrichingMissingConjugation: boolean;
+  missingConjugationProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
+  onFillMissingRoots: () => void;
+  isEnrichingMissingRoots: boolean;
+  missingRootsProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
+  onFillMissingExamples: () => void;
+  isEnrichingMissingExamples: boolean;
+  missingExamplesProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
+  onImproveWeakRoots: () => void;
+  isImprovingWeakRoots: boolean;
+  weakRootsProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
   onEnrichSupportFields: () => void;
   isEnrichingSupportFields: boolean;
   supportEnrichmentProgress: { current: number; total: number; currentWord: string | null; currentStage: string | null };
@@ -361,6 +393,114 @@ export function ImportReviewPanel({
                 className="mt-4 w-full rounded-2xl border border-emerald-200 bg-white px-5 py-4 font-semibold text-emerald-700 transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isEnrichingMissingGender ? "Filling gender..." : "Fill missing gender"}
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
+              <p className="support-label">Targeted enrichment</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {conjugationEnrichableCount > 0
+                  ? `${conjugationEnrichableCount} ready verb row${conjugationEnrichableCount !== 1 ? "s" : ""} still need conjugation.`
+                  : "All ready verb rows already have conjugation filled."}
+              </p>
+              {isEnrichingMissingConjugation && (
+                <div className="mt-3 rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-violet-900">
+                    {missingConjugationProgress.currentStage || "Filling verb conjugation"}
+                  </p>
+                  <p className="mt-1 text-xs text-violet-700">
+                    {missingConjugationProgress.current} / {missingConjugationProgress.total}
+                    {missingConjugationProgress.currentWord ? ` · ${missingConjugationProgress.currentWord}` : ""}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onFillMissingConjugation}
+                disabled={conjugationEnrichableCount === 0 || isEnrichingMissingConjugation}
+                className="mt-4 w-full rounded-2xl border border-violet-200 bg-white px-5 py-4 font-semibold text-violet-700 transition-colors hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isEnrichingMissingConjugation ? "Filling conjugation..." : "Fill missing conjugation"}
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
+              <p className="support-label">Targeted enrichment</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {rootEnrichableCount > 0
+                  ? `${rootEnrichableCount} ready single-word row${rootEnrichableCount !== 1 ? "s" : ""} still need roots.`
+                  : "All ready single-word rows already have roots filled."}
+              </p>
+              {isEnrichingMissingRoots && (
+                <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-amber-900">
+                    {missingRootsProgress.currentStage || "Filling root words"}
+                  </p>
+                  <p className="mt-1 text-xs text-amber-700">
+                    {missingRootsProgress.current} / {missingRootsProgress.total}
+                    {missingRootsProgress.currentWord ? ` · ${missingRootsProgress.currentWord}` : ""}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onFillMissingRoots}
+                disabled={rootEnrichableCount === 0 || isEnrichingMissingRoots}
+                className="mt-4 w-full rounded-2xl border border-amber-200 bg-white px-5 py-4 font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isEnrichingMissingRoots ? "Filling roots..." : "Fill missing roots"}
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
+              <p className="support-label">Targeted enrichment</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {exampleEnrichableCount > 0
+                  ? `${exampleEnrichableCount} ready row${exampleEnrichableCount !== 1 ? "s" : ""} still need examples.`
+                  : "All ready rows already have example fields filled."}
+              </p>
+              {isEnrichingMissingExamples && (
+                <div className="mt-3 rounded-2xl border border-sky-100 bg-sky-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-sky-900">
+                    {missingExamplesProgress.currentStage || "Filling examples"}
+                  </p>
+                  <p className="mt-1 text-xs text-sky-700">
+                    {missingExamplesProgress.current} / {missingExamplesProgress.total}
+                    {missingExamplesProgress.currentWord ? ` · ${missingExamplesProgress.currentWord}` : ""}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onFillMissingExamples}
+                disabled={exampleEnrichableCount === 0 || isEnrichingMissingExamples}
+                className="mt-4 w-full rounded-2xl border border-sky-200 bg-white px-5 py-4 font-semibold text-sky-700 transition-colors hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isEnrichingMissingExamples ? "Filling examples..." : "Fill missing examples"}
+              </button>
+            </div>
+
+            <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white/70 p-4">
+              <p className="support-label">Targeted enrichment</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                {weakRootCorrectionCount > 0
+                  ? `${weakRootCorrectionCount} ready single-word row${weakRootCorrectionCount !== 1 ? "s" : ""} have suspicious roots that can be improved.`
+                  : "No ready single-word rows currently look like they need root correction."}
+              </p>
+              {isImprovingWeakRoots && (
+                <div className="mt-3 rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-orange-900">
+                    {weakRootsProgress.currentStage || "Improving weak roots"}
+                  </p>
+                  <p className="mt-1 text-xs text-orange-700">
+                    {weakRootsProgress.current} / {weakRootsProgress.total}
+                    {weakRootsProgress.currentWord ? ` · ${weakRootsProgress.currentWord}` : ""}
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={onImproveWeakRoots}
+                disabled={weakRootCorrectionCount === 0 || isImprovingWeakRoots}
+                className="mt-4 w-full rounded-2xl border border-orange-200 bg-white px-5 py-4 font-semibold text-orange-700 transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isImprovingWeakRoots ? "Improving roots..." : "Improve weak roots"}
               </button>
             </div>
 
