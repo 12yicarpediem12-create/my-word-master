@@ -96,6 +96,21 @@ export async function addVocabWord(payload: VocabWritePayload): Promise<ActionRe
 
     const { userId, accessToken } = await requireAuthenticatedUser();
     const supabase = getServerSupabase(accessToken);
+    if (payload.part_of_speech?.trim()) {
+      const { data: existingWords, error: existingWordsError } = await supabase
+        .from("vocab")
+        .select("word, part_of_speech, translation")
+        .eq("user_id", userId)
+        .eq("language_code", payload.language_code);
+
+      if (existingWordsError) return { error: existingWordsError.message };
+
+      const duplicateIndex = buildDuplicateIndex((existingWords || []) as Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>);
+      if (hasDuplicateEntry(duplicateIndex, payload.word, payload.part_of_speech, payload.translation)) {
+        return { error: "Another record already exists for this word, part of speech, and meaning." };
+      }
+    }
+
     const { error } = await supabase.from("vocab").insert([
       {
         user_id: userId,
@@ -132,6 +147,31 @@ export async function bulkInsertVocabWords(languageCode: string, items: Omit<Voc
 
     const { userId, accessToken } = await requireAuthenticatedUser();
     const supabase = getServerSupabase(accessToken);
+    const { data: existingWords, error: existingWordsError } = await supabase
+      .from("vocab")
+      .select("word, part_of_speech, translation")
+      .eq("user_id", userId)
+      .eq("language_code", languageCode);
+
+    if (existingWordsError) return { error: existingWordsError.message };
+
+    let duplicateIndex = buildDuplicateIndex((existingWords || []) as Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>);
+    for (const item of items) {
+      if (item.part_of_speech?.trim() && hasDuplicateEntry(duplicateIndex, item.word, item.part_of_speech, item.translation)) {
+        return { error: `Duplicate found for ${item.word} as ${item.part_of_speech} · ${item.translation}.` };
+      }
+      duplicateIndex = [
+        ...duplicateIndex,
+        ...buildDuplicateIndex([
+          {
+            word: item.word,
+            part_of_speech: item.part_of_speech,
+            translation: item.translation,
+          },
+        ]),
+      ];
+    }
+
     const rows = items.map((item) => ({
       user_id: userId,
       language_code: languageCode,
@@ -219,16 +259,16 @@ export async function updateVocabWord(wordId: string, payload: VocabUpdatePayloa
     if (payload.part_of_speech?.trim()) {
       const { data: siblingWords, error: siblingWordsError } = await supabase
         .from("vocab")
-        .select("word, part_of_speech")
+        .select("word, part_of_speech, translation")
         .eq("user_id", userId)
         .eq("language_code", currentWord.language_code)
         .neq("id", wordId);
 
       if (siblingWordsError) return { error: siblingWordsError.message };
 
-      const duplicateIndex = buildDuplicateIndex((siblingWords || []) as Array<{ word: string; part_of_speech?: string | null }>);
-      if (hasDuplicateEntry(duplicateIndex, payload.word, payload.part_of_speech)) {
-        return { error: "Another record already exists for this word and part of speech." };
+      const duplicateIndex = buildDuplicateIndex((siblingWords || []) as Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>);
+      if (hasDuplicateEntry(duplicateIndex, payload.word, payload.part_of_speech, payload.translation)) {
+        return { error: "Another record already exists for this word, part of speech, and meaning." };
       }
     }
 

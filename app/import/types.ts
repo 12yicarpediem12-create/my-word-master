@@ -1,17 +1,32 @@
 export interface ParsedRow {
+  rowNumber: number;
   word: string;
-  translation?: string;
-  pos?: string;
+  translation: string;
+  pos: string;
+  gender: string;
+  verb_type: string;
+  root_word: string;
+  category_main: string;
+  category_sub: string;
+  category_sub_sub: string;
+  example_sentence: string;
+  example_translation: string;
+  conjugation: string;
+  notes: string;
 }
 
 export interface AnalyzedWord {
   id: number;
+  rowNumber: number;
   word: string;
   translation: string;
   part_of_speech: string;
   gender: string;
   root_word: string;
   verb_type: string;
+  category_main: string;
+  category_sub: string;
+  category_sub_sub: string;
   category_id: string;
   example_sentence: string;
   example_translation: string;
@@ -43,4 +58,28 @@ export type ImportBatchRunSummary = {
   noResult: number;
   failed: number;
   sampleDetail?: string;
+};
+
+export type ImportValidationIssue = {
+  rowNumber: number;
+  field: "header" | "word" | "meaning" | "pos" | "gender" | "verb_type" | "file";
+  reason: string;
+};
+
+export type ImportDuplicateCandidate = {
+  rowNumber: number;
+  duplicateOfRowNumber: number;
+  word: string;
+  pos: string;
+  meaning: string;
+};
+
+export type ImportPreviewSummary = {
+  detectedDelimiter: "," | "\t" | "";
+  totalRows: number;
+  validRows: number;
+  skippedRows: number;
+  errorRows: number;
+  issues: ImportValidationIssue[];
+  duplicateCandidates: ImportDuplicateCandidate[];
 };

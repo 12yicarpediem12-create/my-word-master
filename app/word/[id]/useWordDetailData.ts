@@ -66,14 +66,20 @@ async function loadSiblingEntries(languageCode: string, comparableLemma: string,
   };
 }
 
-async function wouldCreateDuplicateWordRecord(wordId: string, languageCode: string, word: string, partOfSpeech: string) {
+async function wouldCreateDuplicateWordRecord(
+  wordId: string,
+  languageCode: string,
+  word: string,
+  partOfSpeech: string,
+  meaning: string
+) {
   if (!partOfSpeech.trim()) {
     return false;
   }
 
   const { data, error } = await supabase
     .from("vocab")
-    .select("word, part_of_speech")
+    .select("word, part_of_speech, translation")
     .eq("language_code", languageCode)
     .neq("id", wordId);
 
@@ -81,8 +87,8 @@ async function wouldCreateDuplicateWordRecord(wordId: string, languageCode: stri
     throw new Error(error.message);
   }
 
-  const duplicateIndex = buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
-  return hasDuplicateEntry(duplicateIndex, word, partOfSpeech);
+  const duplicateIndex = buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>);
+  return hasDuplicateEntry(duplicateIndex, word, partOfSpeech, meaning);
 }
 
 export function useWordDetailData(wordId: string) {
@@ -331,11 +337,12 @@ export function useWordDetailData(wordId: string) {
         wordId,
         vocab.language_code,
         editForm.word,
-        editForm.pos
+        editForm.pos,
+        editForm.translation
       );
 
       if (wouldDuplicate) {
-        setErrorMsg("Another record already exists for this word and part of speech.");
+        setErrorMsg("Another record already exists for this word, part of speech, and meaning.");
         return;
       }
     } catch (error) {

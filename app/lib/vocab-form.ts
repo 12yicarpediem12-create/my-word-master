@@ -5,6 +5,7 @@ const LEADING_ARTICLES_REGEX = /^(il |la |lo |l'|i |gli |le |un |uno |una |un'|d
 export type DuplicateIndexEntry = {
   cleanWord: string;
   pos: string;
+  cleanMeaning: string;
 };
 
 export type CategoryHierarchySelection = {
@@ -24,6 +25,14 @@ export function getComparableLemma(word: string | null | undefined): string {
 
 export function normalizePartOfSpeech(value: string | null | undefined): string {
   return String(value || "").toLowerCase().trim();
+}
+
+export function normalizeMeaningForDuplicateCheck(value: string | null | undefined): string {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFC")
+    .replace(/\s+/g, " ");
 }
 
 export function isNounPartOfSpeech(value: string | null | undefined): boolean {
@@ -225,10 +234,13 @@ export function sanitizeRootWordForImport(
   return isSuspiciousRootWord(word, normalizedRoot, languageCode) ? "" : normalizedRoot;
 }
 
-export function buildDuplicateIndex(rows: Array<{ word: string; part_of_speech?: string | null }>): DuplicateIndexEntry[] {
+export function buildDuplicateIndex(
+  rows: Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>
+): DuplicateIndexEntry[] {
   return rows.map((row) => ({
     cleanWord: normalizeWordForLookup(row.word),
     pos: normalizePartOfSpeech(row.part_of_speech),
+    cleanMeaning: normalizeMeaningForDuplicateCheck(row.translation),
   }));
 }
 
@@ -236,24 +248,37 @@ export function buildDuplicateWordSet(rows: Array<{ word: string }>): Set<string
   return new Set(rows.map((row) => normalizeWordForLookup(row.word)));
 }
 
-export function hasDuplicateEntry(index: DuplicateIndexEntry[], word: string, partOfSpeech: string | null | undefined): boolean {
+export function hasDuplicateEntry(
+  index: DuplicateIndexEntry[],
+  word: string,
+  partOfSpeech: string | null | undefined,
+  meaning: string | null | undefined
+): boolean {
   const cleanWord = normalizeWordForLookup(word);
   const pos = normalizePartOfSpeech(partOfSpeech);
+  const cleanMeaning = normalizeMeaningForDuplicateCheck(meaning);
 
-  if (!pos) return false;
+  if (!pos || !cleanMeaning) return false;
 
-  return index.some((entry) => entry.cleanWord === cleanWord && entry.pos === pos);
+  return index.some((entry) => entry.cleanWord === cleanWord && entry.pos === pos && entry.cleanMeaning === cleanMeaning);
 }
 
-export function appendDuplicateEntry(index: DuplicateIndexEntry[], word: string, partOfSpeech: string | null | undefined): DuplicateIndexEntry[] {
+export function appendDuplicateEntry(
+  index: DuplicateIndexEntry[],
+  word: string,
+  partOfSpeech: string | null | undefined,
+  meaning: string | null | undefined
+): DuplicateIndexEntry[] {
   const pos = normalizePartOfSpeech(partOfSpeech);
-  if (!pos) return index;
+  const cleanMeaning = normalizeMeaningForDuplicateCheck(meaning);
+  if (!pos || !cleanMeaning) return index;
 
   return [
     ...index,
     {
       cleanWord: normalizeWordForLookup(word),
       pos,
+      cleanMeaning,
     },
   ];
 }

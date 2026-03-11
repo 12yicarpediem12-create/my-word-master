@@ -231,12 +231,15 @@ export function ImportReviewTable({
                         </div>
                       </td>
                       <td className="p-2 align-top">
-                        <input
-                          type="text"
-                          value={item.word}
-                          onChange={(e) => onEditChange(item.id, "word", e.target.value)}
-                          className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-slate-950 outline-none transition-colors focus:border-blue-400"
-                        />
+                        <div>
+                          <p className="px-2 text-[10px] font-black uppercase tracking-widest text-slate-300">Row {item.rowNumber}</p>
+                          <input
+                            type="text"
+                            value={item.word}
+                            onChange={(e) => onEditChange(item.id, "word", e.target.value)}
+                            className="w-full border-b-2 border-transparent bg-transparent p-2 font-bold text-slate-950 outline-none transition-colors focus:border-blue-400"
+                          />
+                        </div>
                       </td>
                       <td className="p-2 align-top">
                         <input
@@ -322,13 +325,34 @@ export function ImportReviewTable({
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="support-label">Category ID</label>
+                              <label className="support-label">Category main</label>
                               <input
                                 type="text"
-                                value={item.category_id}
-                                onChange={(e) => onEditChange(item.id, "category_id", e.target.value)}
+                                value={item.category_main}
+                                onChange={(e) => onEditChange(item.id, "category_main", e.target.value)}
                                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-purple-400"
                               />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Category sub</label>
+                              <input
+                                type="text"
+                                value={item.category_sub}
+                                onChange={(e) => onEditChange(item.id, "category_sub", e.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-purple-400"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="support-label">Category sub sub</label>
+                              <input
+                                type="text"
+                                value={item.category_sub_sub}
+                                onChange={(e) => onEditChange(item.id, "category_sub_sub", e.target.value)}
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-950 outline-none transition-colors focus:border-purple-400"
+                              />
+                              <p className="text-[11px] font-medium text-slate-400">
+                                Saved category id: {item.category_id || "Not matched"}
+                              </p>
                             </div>
                           </div>
                         </td>

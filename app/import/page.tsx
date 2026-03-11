@@ -19,6 +19,8 @@ export default function ImportPage() {
     phase,
     setPhase,
     parsedData,
+    uploadPreview,
+    uploadPreviewLogs,
     analyzedData,
     fileName,
     progress,
@@ -91,6 +93,8 @@ export default function ImportPage() {
             selectedLang={selectedLang}
             fileName={fileName}
             parsedCount={parsedData.length}
+            uploadPreview={uploadPreview}
+            uploadPreviewLogs={uploadPreviewLogs}
             onLanguageChange={setSelectedLang}
             onFileUpload={handleFileUpload}
             onAnalyze={handleAnalyzeData}

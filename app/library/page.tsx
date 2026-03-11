@@ -16,7 +16,9 @@ import {
 } from "../components/workspace/VocabWorkspace";
 import {
   buildLibraryExportFilename,
+  buildWordMasterExportFilename,
   downloadLibraryCsvExport,
+  downloadWordMasterCsvExport,
 } from "../lib/export-csv";
 import { getSupabaseBrowserClient } from "../lib/supabase-browser";
 
@@ -141,6 +143,7 @@ const CompactVocabRow = ({ v, isSelected, onToggle }: { v: any, isSelected: bool
 export default function LibraryPage() {
   const [vocab, setVocab] = useState<any[]>([]);
   const [languages, setLanguages] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedLang, setSelectedLang] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -153,16 +156,18 @@ export default function LibraryPage() {
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      const [{ data: langs }, { data: words }] = await Promise.all([
+      const [{ data: langs }, { data: words }, { data: categoryRows }] = await Promise.all([
         supabase.from("languages").select("*"),
         supabase
           .from("vocab")
           .select("id, language_code, word, translation, part_of_speech, gender, verb_type, root_word, example_sentence, example_translation, conjugation, notes, category_id, is_remembered")
-          .order("created_at", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase.from("categories").select("id, name, level, parent_id"),
       ]);
       
       if (langs) setLanguages(langs);
       if (words) setVocab(words);
+      if (categoryRows) setCategories(categoryRows);
       setIsLoading(false);
     }
     fetchData();
@@ -215,6 +220,14 @@ export default function LibraryPage() {
     );
   };
 
+  const handleExportCurrentViewAsWordMaster = () => {
+    downloadWordMasterCsvExport(
+      filteredVocab,
+      categories,
+      buildWordMasterExportFilename(selectedLang, filterStatus),
+    );
+  };
+
   return (
     <AppShell className="pb-32 relative">
       <AppHeader primarySection="library" backHref="/" backLabel="Dashboard" />
@@ -239,11 +252,18 @@ export default function LibraryPage() {
                   {selectedIds.length} selected
                 </span>
                 <button
+                  onClick={handleExportCurrentViewAsWordMaster}
+                  disabled={filteredVocab.length === 0}
+                  className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 shadow-sm transition-all hover:bg-blue-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Export WordMaster CSV
+                </button>
+                <button
                   onClick={handleExportCurrentView}
                   disabled={filteredVocab.length === 0}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-500 shadow-sm transition-all hover:text-slate-900 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:text-slate-500"
                 >
-                  Export current view
+                  Export legacy CSV
                 </button>
                 {filteredVocab.length > 0 && (
                   <button

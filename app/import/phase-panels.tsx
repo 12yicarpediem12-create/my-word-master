@@ -2,9 +2,10 @@ import type { ChangeEvent, ReactNode } from "react";
 import Link from "next/link";
 import { useState } from "react";
 import type { Language } from "@/app/lib/types";
+import { downloadWordMasterImportTemplate } from "@/app/lib/export-csv";
 import { ImportCountCard, LogSummaryPanel } from "./primitives";
 import { ImportReviewTable } from "./review-table";
-import type { AnalyzedWord, ImportBatchRunSummary, ImportLog, Phase } from "./types";
+import type { AnalyzedWord, ImportBatchRunSummary, ImportLog, ImportPreviewSummary, Phase } from "./types";
 
 function WizardSection({
   eyebrow,
@@ -85,6 +86,8 @@ export function ImportUploadPanel({
   selectedLang,
   fileName,
   parsedCount,
+  uploadPreview,
+  uploadPreviewLogs,
   onLanguageChange,
   onFileUpload,
   onAnalyze,
@@ -93,10 +96,19 @@ export function ImportUploadPanel({
   selectedLang: string;
   fileName: string | null;
   parsedCount: number;
+  uploadPreview: ImportPreviewSummary | null;
+  uploadPreviewLogs: ImportLog[];
   onLanguageChange: (value: string) => void;
   onFileUpload: (event: ChangeEvent<HTMLInputElement>) => void;
   onAnalyze: () => void;
 }) {
+  const delimiterLabel =
+    uploadPreview?.detectedDelimiter === "\t"
+      ? "Tab-separated"
+      : uploadPreview?.detectedDelimiter === ","
+        ? "Comma-separated"
+        : "Unknown";
+
   return (
     <WizardSection
       eyebrow="Step 1"
@@ -104,9 +116,16 @@ export function ImportUploadPanel({
       description="Choose the target language, drop in a CSV, and prepare the list for AI analysis."
       actions={
         parsedCount > 0 ? (
-          <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-600">
-            {parsedCount} parsed
-          </span>
+          <>
+            {uploadPreview && (
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-medium text-slate-600">
+                {delimiterLabel}
+              </span>
+            )}
+            <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-medium text-blue-600">
+              {parsedCount} ready
+            </span>
+          </>
         ) : undefined
       }
     >
@@ -126,18 +145,40 @@ export function ImportUploadPanel({
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="ml-2 support-label">Upload CSV</label>
+              <label className="ml-2 support-label">Upload CSV or TSV</label>
               <div className="relative rounded-[2rem] border-2 border-dashed border-purple-200 bg-purple-50/30 p-10 text-center transition-colors hover:bg-purple-50/50">
-                <input type="file" accept=".csv" onChange={onFileUpload} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+                <input type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" onChange={onFileUpload} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
                 <div className="pointer-events-none">
                   <span className="mb-4 block text-4xl">📄</span>
                   <p className="mb-1 text-lg font-semibold text-purple-700">{fileName ? fileName : "Click or drag a CSV here"}</p>
                   <p className="text-sm font-medium text-purple-400">
-                    Required column: <span className="rounded-md border border-purple-100 bg-white px-2 py-0.5">word</span>
+                    Required headers: <span className="rounded-md border border-purple-100 bg-white px-2 py-0.5">word</span>, <span className="rounded-md border border-purple-100 bg-white px-2 py-0.5">meaning</span>, <span className="rounded-md border border-purple-100 bg-white px-2 py-0.5">pos</span>
                   </p>
                 </div>
               </div>
             </div>
+
+            {uploadPreview && (
+              <div className="rounded-[1.8rem] border border-slate-200 bg-white/80 p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="support-label">Import preview</p>
+                    <p className="mt-1 text-sm font-medium text-slate-600">The file was parsed by header name. Review invalid rows and duplicate candidates before analysis.</p>
+                  </div>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600">
+                    Detected: {delimiterLabel}
+                  </span>
+                </div>
+                <SummaryGrid className="mt-4">
+                  <ImportCountCard label="Total Rows" value={uploadPreview.totalRows} tone="blue" />
+                  <ImportCountCard label="Valid" value={uploadPreview.validRows} tone="emerald" />
+                  <ImportCountCard label="Skipped" value={uploadPreview.skippedRows} tone="amber" helper="Empty rows" />
+                  <ImportCountCard label="Errors" value={uploadPreview.errorRows} tone="rose" />
+                  <ImportCountCard label="Duplicates" value={uploadPreview.duplicateCandidates.length} tone="amber" helper="Review before save" />
+                  <ImportCountCard label="Ready" value={parsedCount} tone="blue" helper="Rows sent to AI" />
+                </SummaryGrid>
+              </div>
+            )}
 
             {parsedCount > 0 && (
               <button onClick={onAnalyze} className="mt-2 flex w-full items-center justify-center gap-3 rounded-[2rem] bg-gradient-to-r from-indigo-600 to-purple-600 py-5 text-lg font-semibold text-white shadow-xl shadow-purple-500/20 transition-all hover:opacity-90">
@@ -152,7 +193,13 @@ export function ImportUploadPanel({
           <div className="mt-4 space-y-4">
             <div>
               <p className="font-semibold text-slate-950">1. Upload a raw list</p>
-              <p className="mt-1 text-sm text-slate-600">Use a simple CSV with a required `word` column.</p>
+              <p className="mt-1 text-sm text-slate-600">CSV and TSV are both supported. Delimiter detection is based on file content, not extension.</p>
+              <button
+                onClick={() => downloadWordMasterImportTemplate()}
+                className="mt-3 rounded-full border border-slate-200 bg-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-slate-600 transition-colors hover:border-blue-200 hover:text-blue-700"
+              >
+                Download WordMaster template
+              </button>
             </div>
             <div>
               <p className="font-semibold text-slate-950">2. Let AI structure it</p>
@@ -167,11 +214,21 @@ export function ImportUploadPanel({
           <div className="mt-5 border-t border-slate-200 pt-5">
             <p className="support-label">Good to know</p>
             <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              Duplicate rows are checked by spelling plus part of speech, so the same spelling can still be imported as a different lexical entry.
+              Duplicate checks are conservative: same spelling, same part of speech, and same meaning are treated as duplicate candidates.
             </p>
           </div>
         </div>
       </div>
+
+      {uploadPreviewLogs.length > 0 && (
+        <div className="mt-6">
+          <LogSummaryPanel
+            logs={uploadPreviewLogs}
+            title="Upload issues and duplicate candidates"
+            description="Invalid rows list the row number, field, and reason. Duplicate candidates are shown before AI analysis so they are never silently merged."
+          />
+        </div>
+      )}
     </WizardSection>
   );
 }
@@ -406,7 +463,7 @@ export function ImportReviewPanel({
           />
         </div>
 
-        <div className="space-y-4 xl:sticky xl:top-32">
+        <div className="space-y-4 xl:self-start">
           <div className="surface-muted rounded-[1.85rem] p-6">
             <p className="support-label">Save summary</p>
             <h3 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">Ready to save</h3>

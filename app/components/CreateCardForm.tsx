@@ -84,14 +84,13 @@ export default function CreateCardForm() {
 
     const { data, error } = await supabase
       .from("vocab")
-      .select("word, part_of_speech")
+      .select("word, part_of_speech, translation")
       .eq("language_code", languageCode);
 
     if (error) {
       throw new Error(`Failed to load duplicate index: ${error.message}`);
     }
-
-    const nextIndex = buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
+    const nextIndex = buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>);
     setDuplicateIndex(nextIndex);
     return nextIndex;
   }, []);
@@ -180,9 +179,14 @@ export default function CreateCardForm() {
       if (aiData?.error) { setErrorMsg("AI Error: " + aiData.error); return; }
 
       if (aiData) {
-        const isDup = hasDuplicateEntry(latestDuplicateIndex, aiData.word || formData.word, aiData.part_of_speech);
+        const isDup = hasDuplicateEntry(
+          latestDuplicateIndex,
+          aiData.word || formData.word,
+          aiData.part_of_speech,
+          aiData.translation || formData.translation
+        );
         if (isDup) {
-          setErrorMsg(`Already in library as ${aiData.part_of_speech}.`);
+          setErrorMsg(`Already in library as ${aiData.part_of_speech} · ${aiData.translation || formData.translation}.`);
           setIsGenerating(false);
           return;
         }
@@ -219,9 +223,9 @@ export default function CreateCardForm() {
 
     try {
       const latestDuplicateIndex = await refreshDuplicateIndex(selectedLang);
-      const isDup = hasDuplicateEntry(latestDuplicateIndex, formData.word, formData.pos);
+      const isDup = hasDuplicateEntry(latestDuplicateIndex, formData.word, formData.pos, formData.translation);
       if (isDup) {
-        setErrorMsg("This word + Part of Speech already exists.");
+        setErrorMsg("This word + Part of Speech + Meaning already exists.");
         setIsSubmitting(false);
         return;
       }
@@ -244,7 +248,7 @@ export default function CreateCardForm() {
     setIsSubmitting(false);
 
     if (!error) {
-      setDuplicateIndex((prev) => appendDuplicateEntry(prev, formData.word, formData.pos));
+      setDuplicateIndex((prev) => appendDuplicateEntry(prev, formData.word, formData.pos, formData.translation));
       setFormData(initialForm);
       setSelL1(""); setSelL2(""); setSelL3("");
       setSuccessMsg(true);

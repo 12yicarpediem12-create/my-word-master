@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Papa from "papaparse";
 import {
   generateImportBetterRootWord,
   generateImportExamples,
@@ -12,7 +11,7 @@ import {
 } from "../actions/ai";
 import { bulkInsertVocabWords } from "../actions/vocab";
 import { getSupabaseBrowserClient } from "@/app/lib/supabase-browser";
-import type { Language } from "@/app/lib/types";
+import type { Category, Language } from "@/app/lib/types";
 import {
   appendDuplicateEntry,
   buildDuplicateIndex,
@@ -23,42 +22,103 @@ import {
   normalizeRootWord,
   sanitizeRootWordForImport,
 } from "@/app/lib/vocab-form";
-import type { AnalyzedWord, ImportBatchRunSummary, ImportLog, ImportProgress, ParsedRow, Phase } from "./types";
+import { getImportCategoryFieldsFromCategoryId, parseWordMasterImportText, resolveCategoryIdFromImportFields } from "./import-parser";
+import type {
+  AnalyzedWord,
+  ImportBatchRunSummary,
+  ImportLog,
+  ImportPreviewSummary,
+  ImportProgress,
+  ParsedRow,
+  Phase,
+} from "./types";
 
 const supabase = getSupabaseBrowserClient();
 
 async function loadDuplicateIndex(lang: string) {
   const { data, error } = await supabase
     .from("vocab")
-    .select("word, part_of_speech")
+    .select("word, part_of_speech, translation")
     .eq("language_code", lang);
   if (error) {
     throw new Error(`Failed to load duplicates: ${error.message}`);
   }
 
-  return buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null }>);
+  return buildDuplicateIndex((data || []) as Array<{ word: string; part_of_speech?: string | null; translation?: string | null }>);
+}
+
+function getResolvedImportCategoryState(
+  row: Pick<ParsedRow, "category_main" | "category_sub" | "category_sub_sub">,
+  categories: Category[],
+  fallbackCategoryId?: string | null
+) {
+  const hasCsvCategoryFields = Boolean(row.category_main.trim() || row.category_sub.trim() || row.category_sub_sub.trim());
+  if (hasCsvCategoryFields) {
+    return {
+      category_main: row.category_main,
+      category_sub: row.category_sub,
+      category_sub_sub: row.category_sub_sub,
+      category_id: resolveCategoryIdFromImportFields(categories, row),
+    };
+  }
+
+  const aiFields = getImportCategoryFieldsFromCategoryId(fallbackCategoryId, categories);
+  return {
+    ...aiFields,
+    category_id: fallbackCategoryId ? String(fallbackCategoryId) : "",
+  };
+}
+
+function buildUploadPreviewLogs(preview: ImportPreviewSummary): ImportLog[] {
+  const issueLogs = preview.issues.map<ImportLog>((issue) => ({
+    word:
+      issue.field === "header"
+        ? "Header"
+        : issue.field === "file"
+          ? "Parser"
+          : `Row ${issue.rowNumber}`,
+    status: "error",
+    message:
+      issue.field === "header" || issue.field === "file"
+        ? issue.reason
+        : `${issue.field}: ${issue.reason}`,
+  }));
+
+  const duplicateLogs = preview.duplicateCandidates.map<ImportLog>((candidate) => ({
+    word: `Row ${candidate.rowNumber}`,
+    status: "skipped",
+    message: `Duplicate candidate of row ${candidate.duplicateOfRowNumber} as ${candidate.pos} · ${candidate.meaning}`,
+  }));
+
+  return [...issueLogs, ...duplicateLogs];
 }
 
 function toAnalyzedWord(
   index: number,
   row: ParsedRow,
   aiData: Awaited<ReturnType<typeof generateVocabInfo>>,
-  languageCode: string
+  languageCode: string,
+  categories: Category[]
 ): AnalyzedWord {
   const isNeedsHint = aiData.status === "needs_hint";
+  const categoryState = getResolvedImportCategoryState(row, categories, aiData?.category_id || "");
   return {
     id: index,
+    rowNumber: row.rowNumber,
     word: aiData?.word || row.word,
-    translation: aiData?.translation || row.translation || "",
-    part_of_speech: aiData?.part_of_speech || row.pos || "",
-    gender: aiData?.gender || "",
-    root_word: sanitizeRootWordForImport(aiData?.word || row.word, aiData?.root_word, languageCode),
-    verb_type: aiData?.verb_type || "",
-    category_id: aiData?.category_id || "",
-    example_sentence: aiData?.example_sentence || "",
-    example_translation: aiData?.example_translation || "",
-    conjugation: aiData?.conjugation || "",
-    notes: aiData?.notes || "",
+    translation: aiData?.translation || row.translation,
+    part_of_speech: aiData?.part_of_speech || row.pos,
+    gender: row.gender || aiData?.gender || "",
+    root_word: row.root_word || sanitizeRootWordForImport(aiData?.word || row.word, aiData?.root_word, languageCode),
+    verb_type: row.verb_type || aiData?.verb_type || "",
+    category_main: categoryState.category_main,
+    category_sub: categoryState.category_sub,
+    category_sub_sub: categoryState.category_sub_sub,
+    category_id: categoryState.category_id,
+    example_sentence: row.example_sentence || aiData?.example_sentence || "",
+    example_translation: row.example_translation || aiData?.example_translation || "",
+    conjugation: row.conjugation || aiData?.conjugation || "",
+    notes: row.notes || aiData?.notes || "",
     ai_hint: "",
     ai_status: isNeedsHint ? "needs_hint" : "ready",
     ai_message: isNeedsHint ? aiData.error : "",
@@ -66,7 +126,7 @@ function toAnalyzedWord(
 }
 
 function hasImportFallbackDisambiguation(row: Pick<ParsedRow, "translation" | "pos">): boolean {
-  return Boolean(row.translation?.trim() && row.pos?.trim());
+  return Boolean(row.translation.trim() && row.pos.trim());
 }
 
 function isSingleWordEntry(word: string): boolean {
@@ -151,24 +211,30 @@ function toImportReadyWord(
   row: ParsedRow,
   aiData?: Awaited<ReturnType<typeof generateVocabInfo>>,
   message?: string,
-  languageCode?: string
+  languageCode?: string,
+  categories: Category[] = []
 ): AnalyzedWord {
   const canUseAiEnrichment = aiData && aiData.status === "ok";
   const resolvedLanguageCode = languageCode || "";
+  const categoryState = getResolvedImportCategoryState(row, categories, canUseAiEnrichment ? aiData.category_id : "");
 
   return {
     id: index,
+    rowNumber: row.rowNumber,
     word: row.word,
-    translation: row.translation || "",
-    part_of_speech: row.pos || "",
-    gender: (canUseAiEnrichment && aiData.gender) || "",
-    root_word: sanitizeRootWordForImport(row.word, canUseAiEnrichment ? aiData.root_word : null, resolvedLanguageCode),
-    verb_type: (canUseAiEnrichment && aiData.verb_type) || "",
-    category_id: (canUseAiEnrichment && aiData.category_id) || "",
-    example_sentence: (canUseAiEnrichment && aiData.example_sentence) || "",
-    example_translation: (canUseAiEnrichment && aiData.example_translation) || "",
-    conjugation: (canUseAiEnrichment && aiData.conjugation) || "",
-    notes: (canUseAiEnrichment && aiData.notes) || "",
+    translation: row.translation,
+    part_of_speech: row.pos,
+    gender: row.gender || ((canUseAiEnrichment && aiData.gender) || ""),
+    root_word: row.root_word || sanitizeRootWordForImport(row.word, canUseAiEnrichment ? aiData.root_word : null, resolvedLanguageCode),
+    verb_type: row.verb_type || ((canUseAiEnrichment && aiData.verb_type) || ""),
+    category_main: categoryState.category_main,
+    category_sub: categoryState.category_sub,
+    category_sub_sub: categoryState.category_sub_sub,
+    category_id: categoryState.category_id,
+    example_sentence: row.example_sentence || ((canUseAiEnrichment && aiData.example_sentence) || ""),
+    example_translation: row.example_translation || ((canUseAiEnrichment && aiData.example_translation) || ""),
+    conjugation: row.conjugation || ((canUseAiEnrichment && aiData.conjugation) || ""),
+    notes: row.notes || ((canUseAiEnrichment && aiData.notes) || ""),
     ai_hint: "",
     ai_status: "ready",
     ai_message: message || "",
@@ -177,9 +243,12 @@ function toImportReadyWord(
 
 export function useImportWorkflow() {
   const [languages, setLanguages] = useState<Language[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedLang, setSelectedLang] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [parsedData, setParsedData] = useState<ParsedRow[]>([]);
+  const [uploadPreview, setUploadPreview] = useState<ImportPreviewSummary | null>(null);
+  const [uploadPreviewLogs, setUploadPreviewLogs] = useState<ImportLog[]>([]);
   const [analyzedData, setAnalyzedData] = useState<AnalyzedWord[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const [progress, setProgress] = useState<ImportProgress>({
@@ -240,19 +309,25 @@ export function useImportWorkflow() {
   });
 
   useEffect(() => {
-    async function fetchLanguages() {
-      const { data } = await supabase.from("languages").select("*");
-      if (!data) return;
-
-      const loadedLanguages = data as Language[];
-      setLanguages(loadedLanguages);
-      if (loadedLanguages.length > 0) setSelectedLang(loadedLanguages[0].code);
+    async function fetchSetupData() {
+      const [languageResult, categoryResult] = await Promise.all([
+        supabase.from("languages").select("*"),
+        supabase.from("categories").select("*"),
+      ]);
+      if (languageResult.data) {
+        const loadedLanguages = languageResult.data as Language[];
+        setLanguages(loadedLanguages);
+        if (loadedLanguages.length > 0) setSelectedLang(loadedLanguages[0].code);
+      }
+      if (categoryResult.data) {
+        setCategories(categoryResult.data as Category[]);
+      }
     }
 
-    fetchLanguages();
+    fetchSetupData();
   }, []);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -261,42 +336,32 @@ export function useImportWorkflow() {
     setAnalyzedData([]);
     setLogs([]);
     setProgress({ current: 0, total: 0, currentWord: null, currentStage: null });
+    setUploadPreview(null);
+    setUploadPreviewLogs([]);
     setErrorMsg(null);
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header) => header.replace(/^\uFEFF/, "").trim().toLowerCase(),
-      complete: (results) => {
-        if (results.meta.fields && !results.meta.fields.includes("word")) {
-          setErrorMsg("CSV must contain a 'word' column header.");
-          setParsedData([]);
-          setFileName(null);
-          return;
-        }
+    try {
+      const text = await file.text();
+      const { rows, preview } = parseWordMasterImportText(text);
+      setParsedData(rows);
+      setUploadPreview(preview);
+      setUploadPreviewLogs(buildUploadPreviewLogs(preview));
 
-        const formattedData = (results.data as Record<string, string>[]).reduce<ParsedRow[]>((acc, row) => {
-          const word = row.word?.trim();
-          if (!word) return acc;
+      const missingHeaderIssues = preview.issues.filter((issue) => issue.field === "header");
+      if (missingHeaderIssues.length > 0) {
+        setErrorMsg(missingHeaderIssues.map((issue) => issue.reason).join(" "));
+        return;
+      }
 
-          acc.push({
-            word,
-            translation: row.translation?.trim() || row.meaning?.trim(),
-            pos: row.pos?.trim(),
-          });
-          return acc;
-        }, []);
-
-        if (formattedData.length === 0) {
-          setErrorMsg("No usable rows were found. Make sure the CSV includes non-empty values in the word column.");
-          setParsedData([]);
-          return;
-        }
-
-        setParsedData(formattedData);
-      },
-      error: (error) => setErrorMsg(`Error parsing CSV: ${error.message}`),
-    });
+      if (rows.length === 0) {
+        setErrorMsg("No valid import rows were found. Check the required fields and review the upload preview.");
+      }
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? `Error parsing import file: ${error.message}` : "Error parsing import file.");
+      setParsedData([]);
+      setUploadPreview(null);
+      setUploadPreviewLogs([]);
+    }
   };
 
   const handleAnalyzeData = async () => {
@@ -323,8 +388,15 @@ export function useImportWorkflow() {
         });
 
         try {
-          if (currentRow.pos && hasDuplicateEntry(existingWords, currentRow.word, currentRow.pos)) {
-            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${currentRow.pos}` }, ...prev]);
+          if (hasDuplicateEntry(existingWords, currentRow.word, currentRow.pos, currentRow.translation)) {
+            setLogs((prev) => [
+              {
+                word: `Row ${currentRow.rowNumber} · ${currentRow.word}`,
+                status: "skipped",
+                message: `Duplicate found as ${currentRow.pos} · ${currentRow.translation}`,
+              },
+              ...prev,
+            ]);
             continue;
           }
 
@@ -343,10 +415,18 @@ export function useImportWorkflow() {
                 currentRow,
                 undefined,
                 "Used CSV part of speech and meaning because the AI stayed conservative.",
-                selectedLang
+                selectedLang,
+                categories
               );
-              if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech)) {
-                setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${fallbackRow.part_of_speech}` }, ...prev]);
+              if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech, fallbackRow.translation)) {
+                setLogs((prev) => [
+                  {
+                    word: `Row ${currentRow.rowNumber} · ${currentRow.word}`,
+                    status: "skipped",
+                    message: `Duplicate found as ${fallbackRow.part_of_speech} · ${fallbackRow.translation}`,
+                  },
+                  ...prev,
+                ]);
                 continue;
               }
               nextAnalyzed.push(fallbackRow);
@@ -359,15 +439,15 @@ export function useImportWorkflow() {
                 },
                 ...prev,
               ]);
-              existingWords = appendDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech);
+              existingWords = appendDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech, fallbackRow.translation);
               continue;
             }
 
-            nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData, selectedLang));
+            nextAnalyzed.push(toAnalyzedWord(index, currentRow, aiData, selectedLang, categories));
             setAnalyzedData([...nextAnalyzed]);
             setLogs((prev) => [
               {
-                word: currentRow.word,
+                word: `Row ${currentRow.rowNumber} · ${currentRow.word}`,
                 status: "needs_hint",
                 message: "Needs one clear part of speech or meaning before save.",
               },
@@ -383,10 +463,18 @@ export function useImportWorkflow() {
                 currentRow,
                 undefined,
                 "Used CSV part of speech and meaning because AI enrichment was unavailable.",
-                selectedLang
+                selectedLang,
+                categories
               );
-              if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech)) {
-                setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${fallbackRow.part_of_speech}` }, ...prev]);
+              if (hasDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech, fallbackRow.translation)) {
+                setLogs((prev) => [
+                  {
+                    word: `Row ${currentRow.rowNumber} · ${currentRow.word}`,
+                    status: "skipped",
+                    message: `Duplicate found as ${fallbackRow.part_of_speech} · ${fallbackRow.translation}`,
+                  },
+                  ...prev,
+                ]);
                 continue;
               }
               nextAnalyzed.push(fallbackRow);
@@ -399,20 +487,27 @@ export function useImportWorkflow() {
                 },
                 ...prev,
               ]);
-              existingWords = appendDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech);
+              existingWords = appendDuplicateEntry(existingWords, fallbackRow.word, fallbackRow.part_of_speech, fallbackRow.translation);
               continue;
             }
 
-            setLogs((prev) => [{ word: currentRow.word, status: "error", message: aiData.error }, ...prev]);
+            setLogs((prev) => [{ word: `Row ${currentRow.rowNumber} · ${currentRow.word}`, status: "error", message: aiData.error }, ...prev]);
             continue;
           }
 
           const preparedRow = hasCsvDisambiguation
-            ? toImportReadyWord(index, currentRow, aiData, undefined, selectedLang)
-            : toAnalyzedWord(index, currentRow, aiData, selectedLang);
+            ? toImportReadyWord(index, currentRow, aiData, undefined, selectedLang, categories)
+            : toAnalyzedWord(index, currentRow, aiData, selectedLang, categories);
 
-          if (hasDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech)) {
-            setLogs((prev) => [{ word: currentRow.word, status: "skipped", message: `Duplicate found as ${preparedRow.part_of_speech}` }, ...prev]);
+          if (hasDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech, preparedRow.translation)) {
+            setLogs((prev) => [
+              {
+                word: `Row ${currentRow.rowNumber} · ${currentRow.word}`,
+                status: "skipped",
+                message: `Duplicate found as ${preparedRow.part_of_speech} · ${preparedRow.translation}`,
+              },
+              ...prev,
+            ]);
             continue;
           }
 
@@ -426,9 +521,9 @@ export function useImportWorkflow() {
             },
             ...prev,
           ]);
-          existingWords = appendDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech);
+          existingWords = appendDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech, preparedRow.translation);
         } catch {
-          setLogs((prev) => [{ word: currentRow.word, status: "error", message: "Unexpected error" }, ...prev]);
+          setLogs((prev) => [{ word: `Row ${currentRow.rowNumber} · ${currentRow.word}`, status: "error", message: "Unexpected error" }, ...prev]);
         }
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -453,7 +548,17 @@ export function useImportWorkflow() {
   };
 
   const handleEditChange = (id: number, field: keyof AnalyzedWord, value: string) => {
-    setAnalyzedData((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+    setAnalyzedData((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+
+        const nextItem = { ...item, [field]: value };
+        if (field === "category_main" || field === "category_sub" || field === "category_sub_sub") {
+          nextItem.category_id = resolveCategoryIdFromImportFields(categories, nextItem);
+        }
+        return nextItem;
+      })
+    );
   };
 
   const handleRerunRow = async (id: number) => {
@@ -473,10 +578,21 @@ export function useImportWorkflow() {
     );
 
     try {
-      const rerunSourceRow = {
+      const rerunSourceRow: ParsedRow = {
+        rowNumber: row.rowNumber,
         word: row.word,
         translation: row.translation,
         pos: row.part_of_speech,
+        gender: row.gender,
+        verb_type: row.verb_type,
+        root_word: row.root_word,
+        category_main: row.category_main,
+        category_sub: row.category_sub,
+        category_sub_sub: row.category_sub_sub,
+        example_sentence: row.example_sentence,
+        example_translation: row.example_translation,
+        conjugation: row.conjugation,
+        notes: row.notes,
       };
       const hasCsvDisambiguation = hasImportFallbackDisambiguation(rerunSourceRow);
 
@@ -496,7 +612,8 @@ export function useImportWorkflow() {
             rerunSourceRow,
             undefined,
             "Used the current POS and meaning because AI enrichment was unavailable.",
-            selectedLang
+            selectedLang,
+            categories
           );
           setAnalyzedData((prev) =>
             prev.map((item) =>
@@ -542,18 +659,23 @@ export function useImportWorkflow() {
                   rerunSourceRow,
                   aiData.status === "ok" ? aiData : undefined,
                   aiData.status === "needs_hint" ? "Used the current POS and meaning because the AI stayed conservative." : "",
-                  selectedLang
+                  selectedLang,
+                  categories
                 )
-              : toAnalyzedWord(id, rerunSourceRow, aiData, selectedLang);
+              : toAnalyzedWord(id, rerunSourceRow, aiData, selectedLang, categories);
 
           return {
             ...item,
+            rowNumber: nextRow.rowNumber,
             word: nextRow.word,
             translation: nextRow.translation,
             part_of_speech: nextRow.part_of_speech,
             gender: nextRow.gender,
             root_word: nextRow.root_word,
             verb_type: nextRow.verb_type,
+            category_main: nextRow.category_main,
+            category_sub: nextRow.category_sub,
+            category_sub_sub: nextRow.category_sub_sub,
             category_id: nextRow.category_id,
             example_sentence: nextRow.example_sentence,
             example_translation: nextRow.example_translation,
@@ -1255,7 +1377,7 @@ export function useImportWorkflow() {
         part_of_speech: item.part_of_speech || null,
         gender: item.gender || null,
         verb_type: item.verb_type || null,
-        category_id: item.category_id || null,
+        category_id: resolveCategoryIdFromImportFields(categories, item) || item.category_id || null,
         example_sentence: item.example_sentence || null,
         example_translation: item.example_translation || null,
         conjugation: item.conjugation || null,
@@ -1340,6 +1462,8 @@ export function useImportWorkflow() {
     phase,
     setPhase,
     parsedData,
+    uploadPreview,
+    uploadPreviewLogs,
     analyzedData,
     fileName,
     progress,
