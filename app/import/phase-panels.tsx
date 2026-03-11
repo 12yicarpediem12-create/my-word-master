@@ -175,8 +175,18 @@ export function ImportUploadPanel({
                   <ImportCountCard label="Skipped" value={uploadPreview.skippedRows} tone="amber" helper="Empty rows" />
                   <ImportCountCard label="Errors" value={uploadPreview.errorRows} tone="rose" />
                   <ImportCountCard label="Duplicates" value={uploadPreview.duplicateCandidates.length} tone="amber" helper="Review before save" />
-                  <ImportCountCard label="Ready" value={parsedCount} tone="blue" helper="Rows sent to AI" />
+                  <ImportCountCard
+                    label="Ready"
+                    value={parsedCount}
+                    tone="blue"
+                    helper={uploadPreview.isCanonicalSchema ? "Rows preserved for review" : "Rows sent to AI"}
+                  />
                 </SummaryGrid>
+                {uploadPreview.isCanonicalSchema && (
+                  <p className="mt-4 text-sm font-medium leading-relaxed text-emerald-700">
+                    Canonical WordMaster schema detected. Initial analysis will preserve imported blanks and values exactly unless you explicitly run enrichment later.
+                  </p>
+                )}
               </div>
             )}
 

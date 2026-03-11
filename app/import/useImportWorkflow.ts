@@ -367,6 +367,7 @@ export function useImportWorkflow() {
   const handleAnalyzeData = async () => {
     if (parsedData.length === 0 || !selectedLang) return;
 
+    const isCanonicalImport = uploadPreview?.isCanonicalSchema === true;
     setPhase("analyzing");
     setProgress({ current: 0, total: parsedData.length, currentWord: null, currentStage: "Preparing analysis queue" });
     setAnalyzedData([]);
@@ -384,7 +385,7 @@ export function useImportWorkflow() {
           current: index + 1,
           total: parsedData.length,
           currentWord: currentRow.word,
-          currentStage: "Checking duplicates and generating entry",
+          currentStage: isCanonicalImport ? "Checking duplicates and preserving canonical row" : "Checking duplicates and generating entry",
         });
 
         try {
@@ -397,6 +398,29 @@ export function useImportWorkflow() {
               },
               ...prev,
             ]);
+            continue;
+          }
+
+          if (isCanonicalImport) {
+            const preparedRow = toImportReadyWord(
+              index,
+              currentRow,
+              undefined,
+              "Prepared directly from canonical WordMaster CSV.",
+              selectedLang,
+              categories
+            );
+            nextAnalyzed.push(preparedRow);
+            setAnalyzedData([...nextAnalyzed]);
+            setLogs((prev) => [
+              {
+                word: `Row ${currentRow.rowNumber} · ${currentRow.word}`,
+                status: "success",
+                message: `Prepared from canonical CSV as ${preparedRow.part_of_speech}${preparedRow.translation ? ` · ${preparedRow.translation}` : ""}`,
+              },
+              ...prev,
+            ]);
+            existingWords = appendDuplicateEntry(existingWords, preparedRow.word, preparedRow.part_of_speech, preparedRow.translation);
             continue;
           }
 

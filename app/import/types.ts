@@ -76,6 +76,7 @@ export type ImportDuplicateCandidate = {
 
 export type ImportPreviewSummary = {
   detectedDelimiter: "," | "\t" | "";
+  isCanonicalSchema: boolean;
   totalRows: number;
   validRows: number;
   skippedRows: number;

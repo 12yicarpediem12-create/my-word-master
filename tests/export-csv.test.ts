@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildWordMasterCsvExport, buildWordMasterImportTemplateCsv, WORDMASTER_IMPORT_COLUMNS } from "../app/lib/export-csv.ts";
+import { parseWordMasterImportText } from "../app/import/import-parser.ts";
 
 test("builds the exact canonical WordMaster template header", () => {
   const csv = buildWordMasterImportTemplateCsv();
@@ -82,4 +83,36 @@ test("leaves category hierarchy blank when category_id does not resolve", () => 
   const row = csv.trimEnd().split("\n")[1];
   const values = row.split(",");
   assert.deepEqual(values.slice(0, 9), ["hola", "hello", "interjection", "", "", "", "", "", ""]);
+});
+
+test("canonical export parses back as canonical schema and preserves intentional blanks", () => {
+  const csv = buildWordMasterCsvExport(
+    [
+      {
+        id: "3",
+        language_code: "it",
+        word: "ciao",
+        translation: "hello",
+        part_of_speech: "interjection",
+        gender: null,
+        verb_type: null,
+        root_word: null,
+        example_sentence: "",
+        example_translation: "",
+        conjugation: null,
+        notes: "",
+        category_id: null,
+        is_remembered: false,
+      },
+    ],
+    []
+  );
+
+  const { rows, preview } = parseWordMasterImportText(csv);
+  assert.equal(preview.isCanonicalSchema, true);
+  assert.equal(rows[0]?.root_word, "");
+  assert.equal(rows[0]?.notes, "");
+  assert.equal(rows[0]?.category_main, "");
+  assert.equal(rows[0]?.category_sub, "");
+  assert.equal(rows[0]?.category_sub_sub, "");
 });

@@ -145,6 +145,7 @@ export function parseWordMasterImportText(text: string): { rows: ParsedRow[]; pr
   }
 
   const presentHeaders = new Set((result.meta.fields || []).map(canonicalizeHeader));
+  const isCanonicalSchema = CANONICAL_HEADERS.every((header) => presentHeaders.has(header));
   for (const requiredHeader of REQUIRED_HEADERS) {
     if (!presentHeaders.has(requiredHeader)) {
       issues.push({
@@ -220,6 +221,7 @@ export function parseWordMasterImportText(text: string): { rows: ParsedRow[]; pr
     rows,
     preview: {
       detectedDelimiter: (result.meta.delimiter as ImportPreviewSummary["detectedDelimiter"]) || "",
+      isCanonicalSchema,
       totalRows: (result.data || []).length,
       validRows: rows.length,
       skippedRows,
